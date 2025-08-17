@@ -7,8 +7,9 @@ import { Bell, LogOut, ChartPie, Users, PlusCircle, FileText, BarChart, Folder, 
 import PortfolioOverview from "@/components/admin/portfolio-overview";
 import InvestorsTable from "@/components/admin/investors-table";
 import AddInvestmentForm from "@/components/admin/add-investment-form";
+import AddInvestorForm from "@/components/admin/add-investor-form";
 
-type AdminView = "overview" | "investors" | "add-investment" | "plans" | "reports" | "documents" | "settings";
+type AdminView = "overview" | "investors" | "add-investor" | "add-investment" | "plans" | "reports" | "documents" | "settings";
 
 export default function AdminPortal() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -17,7 +18,7 @@ export default function AdminPortal() {
 
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || user?.role !== "admin")) {
+    if (!isLoading && (!isAuthenticated || (user as any)?.role !== "admin")) {
       toast({
         title: "Unauthorized",
         description: "You are logged out. Logging in again...",
@@ -45,6 +46,7 @@ export default function AdminPortal() {
   const navigationItems = [
     { id: "overview", label: "Portfolio Overview", icon: ChartPie },
     { id: "investors", label: "All Investors", icon: Users },
+    { id: "add-investor", label: "Add Investor", icon: PlusCircle },
     { id: "add-investment", label: "Add Investment", icon: PlusCircle },
     { id: "plans", label: "Investment Plans", icon: FileText },
     { id: "reports", label: "Reports", icon: BarChart },
@@ -58,6 +60,8 @@ export default function AdminPortal() {
         return <PortfolioOverview />;
       case "investors":
         return <InvestorsTable />;
+      case "add-investor":
+        return <AddInvestorForm />;
       case "add-investment":
         return <AddInvestmentForm />;
       case "plans":

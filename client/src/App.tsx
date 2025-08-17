@@ -26,7 +26,7 @@ function Router() {
         <Route path="/" component={Landing} />
       ) : (
         <>
-          <Route path="/" component={user?.role === "admin" ? AdminPortal : InvestorPortal} />
+          <Route path="/" component={Landing} />
           <Route path="/investor" component={InvestorPortal} />
           <Route path="/admin" component={AdminPortal} />
         </>

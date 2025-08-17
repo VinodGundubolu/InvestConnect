@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useAuth } from "@/hooks/useAuth";
+import { Link } from "wouter";
 
 export default function Landing() {
+  const { isAuthenticated, user } = useAuth();
   const [portalType, setPortalType] = useState("investor");
 
   const handleLogin = () => {
@@ -13,6 +16,58 @@ export default function Landing() {
     const params = new URLSearchParams({ portal: portalType });
     window.location.href = `/api/login?${params.toString()}`;
   };
+
+  // If authenticated, show portal selection
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50" data-testid="portal-selection-page">
+        <div className="bg-primary text-white py-6">
+          <div className="container mx-auto px-6">
+            <h1 className="text-3xl font-bold">Welcome, {(user as any)?.firstName || (user as any)?.email}!</h1>
+            <p className="text-primary-100 mt-2">Choose your portal to continue</p>
+          </div>
+        </div>
+        
+        <div className="container mx-auto px-6 py-12">
+          <div className="max-w-2xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Link href="/investor">
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" data-testid="card-investor-portal">
+                  <CardContent className="p-8 text-center">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-blue-600 text-2xl">👤</span>
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Investor Portal</h3>
+                    <p className="text-gray-600">View your investments, returns, and transaction history</p>
+                  </CardContent>
+                </Card>
+              </Link>
+              
+              {(user as any)?.role === "admin" && (
+                <Link href="/admin">
+                  <Card className="cursor-pointer hover:shadow-lg transition-shadow" data-testid="card-admin-portal">
+                    <CardContent className="p-8 text-center">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span className="text-green-600 text-2xl">⚙️</span>
+                      </div>
+                      <h3 className="text-xl font-bold mb-2">Admin Portal</h3>
+                      <p className="text-gray-600">Manage investors, investments, and view portfolio overview</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              )}
+            </div>
+            
+            <div className="text-center mt-8">
+              <Button variant="outline" onClick={() => window.location.href = '/api/logout'}>
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50" data-testid="landing-page">

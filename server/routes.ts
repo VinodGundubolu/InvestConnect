@@ -219,6 +219,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/admin/investors', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const validatedData = insertInvestorSchema.parse(req.body);
+      const investor = await storage.createInvestor(validatedData);
+      res.json(investor);
+    } catch (error) {
+      console.error("Error creating investor:", error);
+      res.status(500).json({ message: "Failed to create investor" });
+    }
+  });
+
   app.get('/api/admin/portfolio-overview', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
