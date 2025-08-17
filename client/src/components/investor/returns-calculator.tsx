@@ -59,10 +59,12 @@ export default function ReturnsCalculator() {
                   placeholder="Enter amount (₹20L, ₹40L, or ₹60L)"
                   className="mt-2"
                   data-testid="input-investment-amount"
+                  max={maxAmount}
                 />
                 <div className="mt-2 text-sm text-gray-500">
-                  <p>Maximum: {formatCurrency(maxAmount)}</p>
-                  <p>Units: ₹20 lakhs each (Max 3 units)</p>
+                  <p>Maximum: {formatCurrency(maxAmount)} (3 units)</p>
+                  <p>Must be in multiples of ₹20 lakhs</p>
+                  <p className="text-red-600 font-medium">Lock-in Period: 3 Years Minimum</p>
                 </div>
               </div>
               <div>
@@ -94,58 +96,131 @@ export default function ReturnsCalculator() {
             </div>
           </div>
 
-          {/* Returns Breakdown */}
+          {/* Bond Returns Schedule Table */}
           <div>
-            <h4 className="font-medium mb-4">Projected Returns (10 Years)</h4>
+            <h4 className="font-medium mb-4">
+              Bond Returns Schedule 
+              {calculation && (
+                <span className="text-sm font-normal text-gray-600">
+                  (Per ₹20 Lakh Bond)
+                </span>
+              )}
+            </h4>
             {calculation ? (
-              <div className="space-y-2 text-sm" data-testid="returns-breakdown">
-                {calculation.yearlyBreakdown.map((year) => (
-                  <div
-                    key={year.year}
-                    className={`flex justify-between ${
-                      year.bonus > 0 ? "text-green-600 font-medium" : ""
-                    }`}
-                    data-testid={`year-${year.year}-breakdown`}
-                  >
-                    <span>
-                      Year {year.year} ({year.rate}%)
-                      {year.bonus > 0 && " + 100% Bonus"}
-                    </span>
-                    <span data-testid={`year-${year.year}-total`}>
-                      {formatCurrency(year.total)}
-                    </span>
-                  </div>
-                ))}
-                <div className="border-t pt-2 flex justify-between font-bold text-lg">
-                  <span>Total Maturity Value</span>
-                  <span data-testid="total-maturity-value">
-                    {formatCurrency(calculation.summary.maturityValue)}
-                  </span>
+              <div className="border border-gray-200 rounded-lg overflow-hidden" data-testid="returns-breakdown">
+                <div className="bg-gray-50 border-b border-gray-200 p-3 flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">Lock-in Period:</span>
+                  <Badge variant="destructive" className="text-xs">
+                    3 Years Minimum
+                  </Badge>
                 </div>
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Original Principal:</span>
-                    <span data-testid="summary-principal">
-                      {formatCurrency(calculation.summary.principal)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Total Dividends:</span>
-                    <span data-testid="summary-dividends">
-                      {formatCurrency(calculation.summary.totalDividends)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Total Bonuses:</span>
-                    <span data-testid="summary-bonuses">
-                      {formatCurrency(calculation.summary.totalBonuses)}
-                    </span>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="text-left p-3 font-medium text-gray-700">Year</th>
+                        <th className="text-left p-3 font-medium text-gray-700">Dividend Yield</th>
+                        <th className="text-right p-3 font-medium text-gray-700">Dividend Amount</th>
+                        <th className="text-left p-3 font-medium text-gray-700">Bonus Yield</th>
+                        <th className="text-right p-3 font-medium text-gray-700">Bonus Amount</th>
+                        <th className="text-right p-3 font-medium text-gray-700">Present Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {calculation.yearlyBreakdown.map((year, index) => {
+                        // Calculate present value per 20L bond (from reference image)
+                        const perBondPrincipal = 2000000; // ₹20 lakhs
+                        const perBondDividend = year.dividend * (perBondPrincipal / calculation.summary.principal);
+                        const perBondBonus = year.bonus * (perBondPrincipal / calculation.summary.principal);
+                        
+                        // Present values from reference image
+                        const presentValues = {
+                          1: 2000000,   // ₹20,00,000
+                          2: 2120000,   // ₹21,20,000  
+                          3: 2300000,   // ₹23,00,000
+                          4: 2540000,   // ₹25,40,000
+                          5: 4900000,   // ₹49,00,000
+                          6: 360000,    // 360000/year (displayed differently)
+                          7: 360000,    // 360000/year
+                          8: 360000,    // 360000/year
+                          9: 360000,    // 360000/year (18% of 20L)
+                          10: 8340000   // ₹83,40,000
+                        };
+                        
+                        return (
+                          <tr
+                            key={year.year}
+                            className={`border-b border-gray-100 ${
+                              year.bonus > 0 ? "bg-orange-50" : ""
+                            }`}
+                            data-testid={`year-${year.year}-breakdown`}
+                          >
+                            <td className="p-3 font-medium">{year.year}</td>
+                            <td className="p-3">
+                              <span className={year.rate > 0 ? "text-green-600 font-medium" : ""}>
+                                {year.rate}%
+                              </span>
+                            </td>
+                            <td className="p-3 text-right font-medium">
+                              {perBondDividend > 0 ? formatCurrency(perBondDividend) : "₹0"}
+                            </td>
+                            <td className="p-3">
+                              <span className={year.bonus > 0 ? "text-orange-600 font-medium" : ""}>
+                                {year.bonus > 0 ? "100%" : "0%"}
+                              </span>
+                            </td>
+                            <td className="p-3 text-right font-medium">
+                              {perBondBonus > 0 ? (
+                                <span className="text-orange-600">
+                                  {formatCurrency(perBondBonus)}
+                                </span>
+                              ) : (
+                                "₹0"
+                              )}
+                            </td>
+                            <td className="p-3 text-right font-semibold">
+                              {(year.year >= 6 && year.year <= 9) ? (
+                                <span className="text-blue-600">36000/year</span>
+                              ) : (
+                                <span className="text-blue-600">
+                                  {formatCurrency(presentValues[year.year as keyof typeof presentValues])}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Summary Section */}
+                <div className="bg-gray-50 border-t border-gray-200 p-4">
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="text-center">
+                      <div className="font-medium text-blue-600 text-lg">316%</div>
+                      <div className="text-gray-600">Total Investment Recovery</div>
+                      <div className="text-xs text-gray-500">Over 10 years</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-medium text-green-600 text-lg">11.6%</div>
+                      <div className="text-gray-600">Annual Average Return</div>
+                      <div className="text-xs text-gray-500">Compounded</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-medium text-orange-600 text-lg">
+                        ₹83,40,000
+                      </div>
+                      <div className="text-gray-600">Final Value (10Y)</div>
+                      <div className="text-xs text-gray-500">Per bond</div>
+                    </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="text-gray-500 text-sm">
-                Enter an amount and date to calculate projected returns
+              <div className="text-gray-500 text-sm border border-gray-200 rounded-lg p-8 text-center">
+                Enter an amount and date to see bond returns schedule
               </div>
             )}
           </div>

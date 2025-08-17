@@ -32,18 +32,18 @@ export interface ReturnsCalculation {
   };
 }
 
-// Dividend rates by year as per the system requirements
+// Dividend rates by year as per the bond returns schedule
 const DIVIDEND_RATES = {
   1: 0,    // 0% in year 1
-  2: 6,    // 6% from year 2
-  3: 6,    // 6% in year 3  
-  4: 9,    // 9% in year 4
-  5: 9,    // 9% in year 5
-  6: 12,   // 12% from year 6
-  7: 12,   // 12% in year 7
-  8: 12,   // 12% in year 8
+  2: 6,    // 6% in year 2
+  3: 9,    // 9% in year 3  
+  4: 12,   // 12% in year 4
+  5: 18,   // 18% in year 5
+  6: 18,   // 18% in year 6
+  7: 18,   // 18% in year 7
+  8: 18,   // 18% in year 8
   9: 18,   // 18% in year 9
-  10: 18,  // 18% in year 10
+  10: 0,   // 0% in year 10 (only bonus)
 };
 
 const BONUS_YEARS = [5, 10]; // 100% bonus at years 5 and 10
@@ -149,8 +149,8 @@ export function getInvestmentUnits(amount: number): number {
 
 export function getMaxInvestmentAmount(): number {
   const MAX_UNITS = 3;
-  const UNIT_VALUE = 2000000;
-  return MAX_UNITS * UNIT_VALUE; // ₹60 lakhs maximum
+  const UNIT_VALUE = 2000000; // ₹20 lakhs per unit
+  return MAX_UNITS * UNIT_VALUE; // ₹60 lakhs (6 crores) maximum
 }
 
 export function validateInvestmentAmount(amount: number): {
@@ -168,7 +168,7 @@ export function validateInvestmentAmount(amount: number): {
   if (amount % UNIT_VALUE !== 0) {
     return { 
       isValid: false, 
-      error: `Investment must be in multiples of ₹${(UNIT_VALUE / 100000).toFixed(0)} lakhs` 
+      error: `Investment must be in multiples of ₹20 lakhs (₹20L, ₹40L, or ₹60L only)` 
     };
   }
   
@@ -176,7 +176,7 @@ export function validateInvestmentAmount(amount: number): {
   if (units > MAX_UNITS) {
     return { 
       isValid: false, 
-      error: `Maximum ${MAX_UNITS} units (₹${(MAX_UNITS * UNIT_VALUE / 100000).toFixed(0)} lakhs) allowed per investor` 
+      error: `Maximum ${MAX_UNITS} units (₹60 lakhs total) allowed per investor` 
     };
   }
   
