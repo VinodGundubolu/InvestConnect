@@ -111,7 +111,7 @@ export default function InvestorPortal() {
         <ReturnsCalculator />
 
         {/* Transaction History */}
-        <TransactionHistory />
+        <TransactionHistory investorProfile={investorProfile} />
       </div>
     </div>
   );

@@ -33,9 +33,9 @@ export default function TransactionHistory({ investorProfile }: TransactionHisto
       case "dividend_disbursement":
         return { label: "Dividend", variant: "secondary" as const };
       case "bonus_disbursement":
-        return { label: "Bonus", variant: "success" as const };
+        return { label: "Bonus", variant: "secondary" as const };
       case "maturity_disbursement":
-        return { label: "Maturity", variant: "warning" as const };
+        return { label: "Maturity", variant: "outline" as const };
       default:
         return { label: type, variant: "outline" as const };
     }
@@ -44,9 +44,9 @@ export default function TransactionHistory({ investorProfile }: TransactionHisto
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "completed":
-        return { label: "Completed", variant: "success" as const };
+        return { label: "Completed", variant: "secondary" as const };
       case "pending":
-        return { label: "Pending", variant: "warning" as const };
+        return { label: "Pending", variant: "outline" as const };
       case "failed":
         return { label: "Failed", variant: "destructive" as const };
       default:
