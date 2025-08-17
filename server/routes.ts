@@ -151,11 +151,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Store for dynamic investor credentials and data
-  const investorDatabase = new Map<string, any>();
+  // Store for temporary credentials mapping (will be replaced with database)
   const credentialsMap = new Map<string, { username: string; password: string; investorId: string }>();
 
-  // Create new investor with database integration
+  // Create new investor with database storage
   app.post("/api/admin/investors", async (req, res) => {
     try {
       const {
@@ -178,16 +177,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate unique credentials
       const username = firstName.toLowerCase();
       const password = `${firstName}@${new Date().getFullYear()}`;
-      const investorId = `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
-      const userId = `user-${investorId}`;
-      
-      // Create investor record
-      const investor = {
-        id: investorId,
-        userId,
+      const investorId = await storage.generateInvestorId({
         firstName,
         lastName,
-        middleName,
+        email,
+        primaryMobile: mobileNumber,
+        primaryAddress: address,
+        primaryAddressPin: zipcode,
+        identityProofType: proofType,
+        identityProofNumber: proofNumber
+      });
+      
+      // Create investor in database
+      const investor = await storage.createInvestor({
+        id: investorId,
+        firstName,
+        lastName,
+        middleName: middleName || null,
         email,
         primaryMobile: mobileNumber,
         secondaryMobile: null,
@@ -197,52 +203,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         secondaryAddressPin: null,
         identityProofType: proofType,
         identityProofNumber: proofNumber,
-        // Compatibility fields
-        address,
-        city,
-        state,
-        zipcode,
-        proofType,
-        proofNumber,
-        kycStatus: "verified",
-        status: "active",
-        createdAt: new Date().toISOString()
-      };
-
-      // Create investment record
-      const investment = {
-        id: `${investorId}-INV-001`,
-        investorId,
-        planId: "default-plan-v1",
-        investmentDate: startDate,
-        investedAmount: investmentAmount,
-        bondsPurchased: bondsCount,
-        lockInExpiry: new Date(new Date(startDate).setFullYear(new Date(startDate).getFullYear() + 3)).toISOString().split('T')[0],
-        maturityDate: new Date(new Date(startDate).setFullYear(new Date(startDate).getFullYear() + 10)).toISOString().split('T')[0],
-        bonusEarned: 0,
-        isActive: true,
-        createdAt: new Date().toISOString()
-      };
-
-      // Store in memory database
-      investorDatabase.set(investorId, {
-        investor,
-        investments: [investment],
-        username,
-        password
       });
 
-      // Store credentials mapping
+      // Get or create default investment plan
+      let plans = await storage.getAllInvestmentPlans();
+      if (plans.length === 0) {
+        const defaultPlan = await storage.createInvestmentPlan({
+          name: "Fixed Income Bond Plan V1",
+          version: 1,
+          launchDate: "2024-01-01",
+          bondValue: "2000000",
+          bondsAvailable: 50,
+          maxBondsPerInvestor: 3,
+          lockInPeriodYears: 3,
+          bonusEligibilityYears: 5,
+          maturityEligibilityYears: 10,
+        });
+        plans = [defaultPlan];
+      }
+
+      // Create investment record in database
+      const startDateObj = new Date(startDate);
+      const maturityDate = new Date(startDateObj);
+      maturityDate.setFullYear(maturityDate.getFullYear() + 10);
+      const lockInExpiry = new Date(startDateObj);
+      lockInExpiry.setFullYear(lockInExpiry.getFullYear() + 3);
+
+      await storage.createInvestment({
+        investorId: investorId,
+        planId: plans[0].id,
+        investmentDate: startDate,
+        investedAmount: investmentAmount.toString(),
+        bondsPurchased: bondsCount,
+        lockInExpiry: lockInExpiry.toISOString().split('T')[0],
+        maturityDate: maturityDate.toISOString().split('T')[0],
+      });
+
+      // Store credentials mapping for login
       credentialsMap.set(username, { username, password, investorId });
 
-      console.log('New investor created and stored:', investor);
+      console.log('New investor created in database:', investor);
 
       res.json({
         success: true,
         investor,
         username,
         password,
-        message: "Investor created successfully with login credentials"
+        message: "Investor created successfully in database with login credentials"
       });
 
     } catch (error) {
