@@ -61,6 +61,38 @@ export default function ReturnsCalculator() {
                   data-testid="input-investment-amount"
                   max={maxAmount}
                 />
+                
+                {/* Quick selection buttons */}
+                <div className="mt-3 flex gap-2">
+                  <Button
+                    variant={amount === "2000000" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setAmount("2000000")}
+                    className="text-xs"
+                    data-testid="button-select-20l"
+                  >
+                    ₹20L (1 Unit)
+                  </Button>
+                  <Button
+                    variant={amount === "4000000" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setAmount("4000000")}
+                    className="text-xs"
+                    data-testid="button-select-40l"
+                  >
+                    ₹40L (2 Units)
+                  </Button>
+                  <Button
+                    variant={amount === "6000000" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setAmount("6000000")}
+                    className="text-xs"
+                    data-testid="button-select-60l"
+                  >
+                    ₹60L (3 Units)
+                  </Button>
+                </div>
+                
                 <div className="mt-2 text-sm text-gray-500">
                   <p>Maximum: {formatCurrency(maxAmount)} (3 units)</p>
                   <p>Must be in multiples of ₹20 lakhs</p>
@@ -102,7 +134,10 @@ export default function ReturnsCalculator() {
               Bond Returns Schedule 
               {calculation && (
                 <span className="text-sm font-normal text-gray-600">
-                  (Per ₹20 Lakh Bond)
+                  ({calculation.summary.principal === 2000000 ? 'Per ₹20 Lakh Bond' : 
+                    calculation.summary.principal === 4000000 ? 'Total for ₹40 Lakhs (2 Bonds)' :
+                    calculation.summary.principal === 6000000 ? 'Total for ₹60 Lakhs (3 Bonds)' :
+                    `Total for ${formatCurrency(calculation.summary.principal)}`})
                 </span>
               )}
             </h4>
@@ -129,13 +164,11 @@ export default function ReturnsCalculator() {
                     </thead>
                     <tbody>
                       {calculation.yearlyBreakdown.map((year, index) => {
-                        // Calculate present value per 20L bond (from reference image)
-                        const perBondPrincipal = 2000000; // ₹20 lakhs
-                        const perBondDividend = year.dividend * (perBondPrincipal / calculation.summary.principal);
-                        const perBondBonus = year.bonus * (perBondPrincipal / calculation.summary.principal);
+                        // Calculate the number of bonds based on total investment
+                        const numberOfBonds = calculation.summary.principal / 2000000;
                         
-                        // Present values from reference image
-                        const presentValues = {
+                        // Present values per bond from reference image
+                        const perBondPresentValues = {
                           1: 2000000,   // ₹20,00,000
                           2: 2120000,   // ₹21,20,000  
                           3: 2300000,   // ₹23,00,000
@@ -147,6 +180,9 @@ export default function ReturnsCalculator() {
                           9: 360000,    // 360000/year (18% of 20L)
                           10: 8340000   // ₹83,40,000
                         };
+                        
+                        // Calculate total present value for all bonds
+                        const totalPresentValue = perBondPresentValues[year.year as keyof typeof perBondPresentValues] * numberOfBonds;
                         
                         return (
                           <tr
@@ -163,7 +199,7 @@ export default function ReturnsCalculator() {
                               </span>
                             </td>
                             <td className="p-3 text-right font-medium">
-                              {perBondDividend > 0 ? formatCurrency(perBondDividend) : "₹0"}
+                              {year.dividend > 0 ? formatCurrency(year.dividend) : "₹0"}
                             </td>
                             <td className="p-3">
                               <span className={year.bonus > 0 ? "text-orange-600 font-medium" : ""}>
@@ -171,9 +207,9 @@ export default function ReturnsCalculator() {
                               </span>
                             </td>
                             <td className="p-3 text-right font-medium">
-                              {perBondBonus > 0 ? (
+                              {year.bonus > 0 ? (
                                 <span className="text-orange-600">
-                                  {formatCurrency(perBondBonus)}
+                                  {formatCurrency(year.bonus)}
                                 </span>
                               ) : (
                                 "₹0"
@@ -181,10 +217,12 @@ export default function ReturnsCalculator() {
                             </td>
                             <td className="p-3 text-right font-semibold">
                               {(year.year >= 6 && year.year <= 9) ? (
-                                <span className="text-blue-600">36000/year</span>
+                                <span className="text-blue-600">
+                                  {formatCurrency(360000 * numberOfBonds)}/year
+                                </span>
                               ) : (
                                 <span className="text-blue-600">
-                                  {formatCurrency(presentValues[year.year as keyof typeof presentValues])}
+                                  {formatCurrency(totalPresentValue)}
                                 </span>
                               )}
                             </td>
@@ -210,10 +248,10 @@ export default function ReturnsCalculator() {
                     </div>
                     <div className="text-center">
                       <div className="font-medium text-orange-600 text-lg">
-                        ₹83,40,000
+                        {formatCurrency(calculation.summary.maturityValue)}
                       </div>
                       <div className="text-gray-600">Final Value (10Y)</div>
-                      <div className="text-xs text-gray-500">Per bond</div>
+                      <div className="text-xs text-gray-500">Total amount</div>
                     </div>
                   </div>
                 </div>
