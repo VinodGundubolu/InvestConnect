@@ -1,0 +1,154 @@
+I want to build an Investment Relationship Management (IRM) Tool for my organization with the following features and requirements:
+1. Two Custom Domains
+•	Investor Domain: For investors to log in and securely view their individual investment details only.
+•	Admin Domain: For admin users to log in, manage all investors, and enter new investments/investment details.
+2. Investor Portal Features
+•	Investor only sees their own data:
+•	Principal Amount
+•	Interest Earned to Date
+•	Current Year Interest Rate
+•	Maturity Date
+•	Debt & Credit (Interest Amounts)
+•	Downloadable reports and statements showing the above data.
+3. Admin Portal Features
+•	Admin can:
+•	View all investors and their aggregated investment data.
+•	Click into a profile to view a single investor’s details.
+•	Add and edit investment details directly from the Admin Portal, including all fields in the provided Excel (Investor Info, Investment Summary, Investment Plan Module, Transaction Summary, Disbursement).
+•	System should store all updates in a secure backend/database and instantly reflect them on respective investor/admin dashboards.
+4. Backend & Hosting Requirements
+•	All investment entries and changes should be saved to a secure backend database (e.g., PostgreSQL, MySQL, MongoDB, etc.).
+•	Web application should be hosted on a reliable platform (like AWS, Azure, or any other recommended host).
+•	Data privacy and access control: Investors cannot see others’ data; only admins have full data visibility and edit rights.
+5. Dashboards
+•	Dashboards on both portals should be designed as per the attached Excel sheet structure (fields like Investor Info, Investment Summary, Plan details, Transactions, Disbursements, Bonus, etc.).
+•	Investors see only their dashboard; Admins see all investors and can select one to view detailed dashboards.
+6. Reporting
+•	Investors and admins can download detailed investment reports, statements, and transaction history as PDF/Excel.
+•	Admins can download overall investment summaries and performance reports.
+7. Other Features
+•	Auto-generated Investor ID per the formula in the attached Excel sheet (Year, terms version, bond count, Aadhaar digits, and serial number).
+•	Secure login system (role-based access: Investor/Admin).
+•	User-friendly UI with clear separation of investor and admin functions.
+________________________________________
+⚡ For the development team or AI assistant:
+•	Model the dashboards, data entry forms, and exportable report formats on the attached Excel (“Project_2025.xlsx” – IRM tab).
+•	Recommend a hosting solution suitable for production use.
+•	Propose a backend system, database schema, and frontend framework (suggested: React/Vue/Angular).
+•	Ensure easy scalability and security.
+________________________________________
+Certainly! Here’s a structured breakdown of the dashboards and their fields based on your attached Excel file (IRM sheet). This covers both the organization and field names for each module/section.
+
+I also want to build an Investment Relationship Management (IRM) Tool for my organization with the following features and requirements:
+
+________________________________________
+IRM Tool Dashboards & Fields
+1. Investor Dashboard
+This dashboard is shown to individual investors and displays only their own information.
+A. Investor Info
+•	First Name
+•	Middle Name
+•	Last Name
+•	Primary Mobile Number
+•	Secondary Mobile Number
+•	Email ID
+•	Primary Address
+•	Primary Address Pin
+•	Secondary Address
+•	Secondary Address Pin
+•	Type of Identity Proof (Dropdown)
+•	Identity Proof Number
+B. Investment Summary
+•	Investment Plan Type (Dropdown)
+•	Investment Date
+•	Invested Amount (Currency)
+•	Dividend Generated to Date (Formula)
+•	Dividend Disbursed to Date (Formula)
+•	Age of Investment in Months (Number)
+•	Investment Lock-in Expiry (Date)
+•	Number of Bonds Purchased
+•	Bonus Earned (Dropdown)
+•	Bonus Value (Dropdown)
+•	Bonus Earned Date (Date)
+•	Maturity Date (Date)
+C. Investment Plan Module
+•	Plan Name (Rich Text)
+•	Plan Version (Number)
+•	Plan Launch Date
+•	Plan Expiry Date (Formula)
+•	Fund Value (Formula)
+•	Bond Value (Currency)
+•	Number of Bonds Available
+•	Minimum Bonds Issued to an Individual (Number)
+•	Maximum Bonds Issued to an Individual (Date)
+•	Lock-in Period in Years (Number)
+•	Bonus Eligibility in Years (Number)
+•	Bonus Value (Formula; e.g., 2X)
+•	Dividend Period (Dropdown; e.g., 0–12, 13–24, ...)
+D. Transaction Summary
+Investment Sub-section:
+•	Transaction Mode (Dropdown)
+•	Transaction ID (Rich Text)
+•	Proof of Transaction (Upload)
+Disbursement Sub-section:
+•	Disbursement Type (Dropdown; e.g., Dividend, Exit with Bonus, Exit with Maturity)
+•	Transaction Mode (Dropdown)
+•	Transaction ID
+•	Proof of Transaction (Upload)
+Other Transaction Fields:
+•	Dividend Value (Dropdown; values like 6, 9, 12, 18)
+•	Maturity Eligibility in Years (Number; e.g., 10)
+•	Maturity Value (Formula; e.g., 3X)
+•	Maturity Disbursement Type (Dropdown, e.g., Value in Cash Exit, Value in Shares with 30% Bonus at Current Share Price)
+2. Admin Dashboard
+This dashboard offers a global view for admin users, plus drilldown for each investor.
+E. Summary Dashboard (Portfolio Overview)
+•	List of All Investors (with filter/search)
+•	Aggregate Principal Invested
+•	Aggregate Interest Paid
+•	Outstanding Maturity Obligations
+•	Bonds Distribution (min/max per investor)
+•	Plan Version/Type Distribution Stats
+•	Total Dividend Disbursed
+•	Overall Fund Value
+•	Overall Bonus Distributed
+•	Portfolio-wide Investment Yields
+•	Maturity Schedules
+F. Investor Drilldown (Select an Investor from List)
+Shows all Investor Dashboard data, but for the selected investor only.
+G. Documents
+•	Upload and view investment documents (contracts, agreements, ID proofs)
+•	Version history of terms and conditions (“Plan Version” and “T&Cs”)
+H. Report & Export Section
+•	Download/export investor statements (PDF/Excel)
+•	Bulk portfolio reports for admin (summary or detailed per investor)
+________________________________________
+Field Reference Notes
+•	Fields are organized as per Excel sheet grouping (“Investor Info”, “Investment Summary”, etc.).
+•	Most fields specify type (e.g., Rich Text, Number, Date, Dropdown, Formula).
+•	Auto-generated fields, like Investor ID, follow custom rules (year, version, bonds, Aadhaar digits, serial).
+________________________________________
+
+Develop a Returns Calculator for the IRM Tool with the following rules:
+1. Dividend Yield:
+•	Year 1: 0%
+•	Year 2: 6%
+•	Year 3: 9%
+•	Year 4: 12%
+•	Year 5: 18%
+•	Years 6–9: 18% each year
+•	Year 10: 0% (no interest in this year)
+2. Bonus Rules:
+•	On completion of Year 5, add a 100% bonus on the original investment amount.
+•	On completion of Year 10, add a 100% bonus again on the original investment amount.
+3. Interest Calculation:
+•	Dividend/interest is always calculated only on the original investment amount, NOT on the bonus or accumulated interest.
+•	For Year 10, there is no interest/dividend—only the bonus is added.
+4. Functionality:
+•	Returns calculator should accept investment date and amount, and auto-calculate yearly yields and applicable bonuses as per above logic.
+•	Display breakdown: Year-wise interest, cumulative total, and bonuses applied after 5th and 10th years.
+5. Report Output:
+•	Annual returns table (Year, Dividend Rate, Dividend Amount)
+•	Line showing bonuses added at end of Year 5 and 10
+•	Calculation summary: Original amount, total interest/dividends, total bonuses, maturity value
+
