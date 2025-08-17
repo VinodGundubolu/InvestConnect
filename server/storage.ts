@@ -36,6 +36,7 @@ export interface IStorage {
   getInvestorWithInvestments(id: string): Promise<InvestorWithInvestments | undefined>;
   createInvestor(investor: InsertInvestor): Promise<Investor>;
   updateInvestor(id: string, investor: Partial<InsertInvestor>): Promise<Investor>;
+  deleteInvestor(id: string): Promise<boolean>;
   getAllInvestors(): Promise<Investor[]>;
   generateInvestorId(investorData: InsertInvestor): Promise<string>;
 
@@ -161,7 +162,27 @@ export class DatabaseStorage implements IStorage {
       .set({ ...investorData, updatedAt: new Date() })
       .where(eq(investors.id, id))
       .returning();
+    
+    if (!investor) {
+      throw new Error(`Investor with id ${id} not found`);
+    }
+    
     return investor;
+  }
+
+  async deleteInvestor(id: string): Promise<boolean> {
+    try {
+      // First delete all related investments
+      await db.delete(investments).where(eq(investments.investorId, id));
+      
+      // Then delete the investor
+      const result = await db.delete(investors).where(eq(investors.id, id));
+      
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error("Error deleting investor:", error);
+      return false;
+    }
   }
 
   async getAllInvestors(): Promise<Investor[]> {

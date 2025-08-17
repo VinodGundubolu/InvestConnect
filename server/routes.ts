@@ -376,6 +376,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete investor and all related data
+  app.delete('/api/admin/investors/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      if (!id) {
+        return res.status(400).json({ message: "Investor ID is required" });
+      }
+
+      // Get investor details before deletion for logging
+      const investor = await storage.getInvestor(id);
+      if (!investor) {
+        return res.status(404).json({ message: "Investor not found" });
+      }
+
+      // Delete investor (this will also delete related investments via cascade)
+      const success = await storage.deleteInvestor(id);
+      
+      if (success) {
+        // Log the deletion for audit trail
+        console.log(`INVESTOR DELETED:`, {
+          deletedBy: "Admin",
+          investor: {
+            id: investor.id,
+            name: `${investor.firstName} ${investor.lastName}`,
+            email: investor.email,
+            mobile: investor.primaryMobile
+          },
+          deletedAt: new Date().toISOString()
+        });
+
+        // Also remove from in-memory storage if it exists
+        const credentialsMap = req.app.locals.credentialsMap;
+        if (credentialsMap) {
+          // Find and remove credentials for this investor
+          for (const [username, data] of credentialsMap.entries()) {
+            if (data.investorId === id) {
+              credentialsMap.delete(username);
+              break;
+            }
+          }
+        }
+
+        res.json({
+          success: true,
+          message: `Investor ${investor.firstName} ${investor.lastName} has been deleted successfully`
+        });
+      } else {
+        res.status(500).json({ message: "Failed to delete investor" });
+      }
+
+    } catch (error) {
+      console.error("Error deleting investor:", error);
+      res.status(500).json({ message: "Failed to delete investor" });
+    }
+  });
+
   // Investor routes
   app.get('/api/investor/profile', async (req: any, res) => {
     try {

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { Plus, Edit, Eye } from "lucide-react";
 import AddInvestorForm from "./add-investor-form";
+import DeleteInvestorDialog from "./delete-investor-dialog";
 
 export default function InvestorsTable() {
   const { data: investors, isLoading } = useQuery({
@@ -163,12 +164,21 @@ export default function InvestorsTable() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" data-testid={`button-view-investor-${investor.id}`}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" data-testid={`button-edit-investor-${investor.id}`}>
                           <Edit className="h-4 w-4" />
                         </Button>
+                        <DeleteInvestorDialog 
+                          investor={{
+                            id: investor.id,
+                            firstName: investor.name.split(' ')[0],
+                            lastName: investor.name.split(' ').slice(1).join(' '),
+                            email: investor.email,
+                            totalInvestment: investor.totalInvestment
+                          }}
+                        />
                       </div>
                     </td>
                   </tr>
