@@ -23,20 +23,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         admin: { username: 'Admin', password: 'Admin@123', userId: '46536152' }
       };
       
-      const creds = testCredentials[portalType as keyof typeof testCredentials];
-      
-      if (!creds || username !== creds.username || password !== creds.password) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+      if (portalType === 'admin') {
+        const adminCreds = testCredentials.admin;
+        if (username !== adminCreds.username || password !== adminCreds.password) {
+          return res.status(401).json({ message: 'Invalid admin credentials' });
+        }
+        
+        req.session.testUser = {
+          id: adminCreds.userId,
+          portalType: 'admin',
+          isTestAccount: true
+        };
+        
+        return res.json({ success: true, message: 'Admin login successful', portalType: 'admin' });
       }
       
-      // Create a test session
+      // Check investor credentials (both static and dynamic)
+      const staticCreds = testCredentials.investor;
+      let validCreds = null;
+      
+      if (username === staticCreds.username && password === staticCreds.password) {
+        validCreds = { ...staticCreds, investorId: "2024-V1-B5-1234-001" };
+      } else {
+        // Check dynamic credentials
+        const dynamicCred = credentialsMap.get(username);
+        if (dynamicCred && password === dynamicCred.password) {
+          validCreds = { ...dynamicCred, userId: `user-${dynamicCred.investorId}` };
+        }
+      }
+      
+      if (!validCreds) {
+        return res.status(401).json({ message: 'Invalid investor credentials' });
+      }
+      
       req.session.testUser = {
-        id: creds.userId,
-        portalType,
-        isTestAccount: true
+        id: validCreds.userId || validCreds.investorId,
+        portalType: 'investor',
+        isTestAccount: true,
+        investorId: validCreds.investorId
       };
       
-      res.json({ success: true, message: 'Test login successful', portalType });
+      res.json({ success: true, message: 'Investor login successful', portalType: 'investor' });
     } catch (error) {
       console.error('Test login error:', error);
       res.status(500).json({ message: 'Login failed' });
@@ -124,7 +151,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Simple investor creation for demo
+  // Store for dynamic investor credentials and data
+  const investorDatabase = new Map<string, any>();
+  const credentialsMap = new Map<string, { username: string; password: string; investorId: string }>();
+
+  // Create new investor with database integration
   app.post("/api/admin/investors", async (req, res) => {
     try {
       const {
@@ -148,32 +179,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const username = firstName.toLowerCase();
       const password = `${firstName}@${new Date().getFullYear()}`;
       const investorId = `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+      const userId = `user-${investorId}`;
       
-      // For demo purposes, we'll create a simple investor record
+      // Create investor record
       const investor = {
         id: investorId,
+        userId,
         firstName,
         lastName,
         middleName,
         email,
-        mobileNumber,
+        primaryMobile: mobileNumber,
+        secondaryMobile: null,
+        primaryAddress: address,
+        primaryAddressPin: zipcode,
+        secondaryAddress: null,
+        secondaryAddressPin: null,
+        identityProofType: proofType,
+        identityProofNumber: proofNumber,
+        // Compatibility fields
         address,
         city,
         state,
         zipcode,
         proofType,
         proofNumber,
-        startDate,
-        investmentAmount,
-        bondsCount,
-        username,
-        password,
+        kycStatus: "verified",
         status: "active",
         createdAt: new Date().toISOString()
       };
 
-      // In a real app, you'd save this to database
-      console.log('New investor created:', investor);
+      // Create investment record
+      const investment = {
+        id: `${investorId}-INV-001`,
+        investorId,
+        planId: "default-plan-v1",
+        investmentDate: startDate,
+        investedAmount: investmentAmount,
+        bondsPurchased: bondsCount,
+        lockInExpiry: new Date(new Date(startDate).setFullYear(new Date(startDate).getFullYear() + 3)).toISOString().split('T')[0],
+        maturityDate: new Date(new Date(startDate).setFullYear(new Date(startDate).getFullYear() + 10)).toISOString().split('T')[0],
+        bonusEarned: 0,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      };
+
+      // Store in memory database
+      investorDatabase.set(investorId, {
+        investor,
+        investments: [investment],
+        username,
+        password
+      });
+
+      // Store credentials mapping
+      credentialsMap.set(username, { username, password, investorId });
+
+      console.log('New investor created and stored:', investor);
 
       res.json({
         success: true,
@@ -189,18 +251,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Investor routes
-  app.get('/api/investor/profile', isAuthenticated, async (req: any, res) => {
+  // Get all investors for admin portal
+  app.get("/api/admin/investors", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const investor = await storage.getInvestorByUserId(userId);
-      
-      if (!investor) {
-        return res.status(404).json({ message: "Investor profile not found" });
-      }
+      const investors = Array.from(investorDatabase.values()).map(data => ({
+        ...data.investor,
+        totalInvestment: data.investments.reduce((sum: number, inv: any) => sum + parseInt(inv.investedAmount), 0),
+        bondsCount: data.investments.reduce((sum: number, inv: any) => sum + parseInt(inv.bondsPurchased), 0),
+        joinDate: data.investor.createdAt.split('T')[0],
+        currentYear: Math.min(Math.floor((new Date().getTime() - new Date(data.investments[0].investmentDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) + 1, 10),
+        currentRate: [0, 6, 9, 12, 18, 18, 18, 18, 18, 0][Math.min(Math.floor((new Date().getTime() - new Date(data.investments[0].investmentDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000)), 9)],
+        totalReturns: data.investments.reduce((sum: number, inv: any) => {
+          const investmentDate = new Date(inv.investmentDate);
+          const yearsSince = Math.floor((new Date().getTime() - investmentDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+          const currentYear = Math.min(yearsSince + 1, 10);
+          const rates = [0, 6, 9, 12, 18, 18, 18, 18, 18, 0];
+          let totalReturns = 0;
+          for (let year = 1; year <= Math.min(currentYear - 1, 9); year++) {
+            totalReturns += parseInt(inv.investedAmount) * (rates[year] / 100);
+          }
+          return sum + totalReturns;
+        }, 0)
+      }));
 
-      const investorWithInvestments = await storage.getInvestorWithInvestments(investor.id);
-      res.json(investorWithInvestments);
+      res.json(investors);
+    } catch (error) {
+      console.error("Error fetching investors:", error);
+      res.status(500).json({ message: "Failed to fetch investors" });
+    }
+  });
+
+  // Get investor's investment data for their portal
+  app.get('/api/investor/investments', async (req: any, res) => {
+    try {
+      if (req.session?.testUser?.portalType === 'investor') {
+        const investorId = req.session.testUser.investorId || "2024-V1-B5-1234-001";
+        
+        // Check dynamic investor data first
+        const dynamicData = investorDatabase.get(investorId);
+        if (dynamicData) {
+          return res.json(dynamicData.investments);
+        }
+        
+        // Fallback to static test investment
+        const staticInvestment = [{
+          id: "2024-V1-B5-1234-001-INV-001",
+          investorId: "2024-V1-B5-1234-001",
+          planId: "default-plan-v1",
+          investmentDate: "2024-01-15",
+          investedAmount: "2000000",
+          bondsPurchased: 1,
+          lockInExpiry: "2027-01-15",
+          maturityDate: "2034-01-15",
+          bonusEarned: 0,
+          isActive: true,
+          createdAt: "2024-01-15T00:00:00.000Z"
+        }];
+        
+        return res.json(staticInvestment);
+      }
+      
+      res.status(401).json({ message: 'Unauthorized' });
+    } catch (error) {
+      console.error("Error fetching investor investments:", error);
+      res.status(500).json({ message: "Failed to fetch investments" });
+    }
+  });
+
+  // Investor routes
+  app.get('/api/investor/profile', async (req: any, res) => {
+    try {
+      // Check for test session first
+      if (req.session?.testUser?.portalType === 'investor') {
+        const investorId = req.session.testUser.investorId || "2024-V1-B5-1234-001";
+        
+        // Check dynamic investor data first
+        const dynamicData = investorDatabase.get(investorId);
+        if (dynamicData) {
+          return res.json(dynamicData.investor);
+        }
+        
+        // Fallback to static test investor
+        const staticInvestor = {
+          id: "2024-V1-B5-1234-001",
+          userId: "test-investor-1",
+          firstName: "Suresh",
+          lastName: "Kumar",
+          middleName: "R",
+          email: "suresh.kumar@example.com",
+          primaryMobile: "+91 98765 43210",
+          primaryAddress: "123 Main Street, Apartment 4B",
+          primaryAddressPin: "400001",
+          identityProofType: "aadhar",
+          identityProofNumber: "1234-5678-9012",
+          city: "Mumbai",
+          state: "Maharashtra",
+          zipcode: "400001",
+          proofType: "aadhar",
+          proofNumber: "1234-5678-9012",
+          status: "active",
+          createdAt: "2024-01-15T00:00:00.000Z"
+        };
+        
+        return res.json(staticInvestor);
+      }
+      
+      // Handle authenticated users (Replit Auth) - remove isAuthenticated middleware temporarily
+      if (req.user?.claims?.sub) {
+        const userId = req.user.claims.sub;
+        const investor = await storage.getInvestorByUserId(userId);
+        
+        if (!investor) {
+          return res.status(404).json({ message: "Investor profile not found" });
+        }
+
+        const investorWithInvestments = await storage.getInvestorWithInvestments(investor.id);
+        return res.json(investorWithInvestments);
+      }
+      
+      res.status(401).json({ message: 'Unauthorized' });
     } catch (error) {
       console.error("Error fetching investor profile:", error);
       res.status(500).json({ message: "Failed to fetch investor profile" });

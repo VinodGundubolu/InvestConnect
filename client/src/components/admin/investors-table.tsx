@@ -8,7 +8,7 @@ import AddInvestorForm from "./add-investor-form";
 
 export default function InvestorsTable() {
   const { data: investors, isLoading } = useQuery({
-    queryKey: ["/api/investors"],
+    queryKey: ["/api/admin/investors"],
   });
 
   const sampleInvestors = investors || [
