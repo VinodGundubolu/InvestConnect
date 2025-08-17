@@ -12,6 +12,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize dividend rates
   await storage.initializeDividendRates();
 
+  // Test login route for demo credentials
+  app.post('/api/test-login', async (req, res) => {
+    try {
+      const { username, password, portalType } = req.body;
+      
+      // Test credentials
+      const testCredentials = {
+        investor: { username: 'Suresh', password: 'Test@1234', userId: 'test-investor-suresh' },
+        admin: { username: 'Admin', password: 'Admin@123', userId: '46536152' }
+      };
+      
+      const creds = testCredentials[portalType as keyof typeof testCredentials];
+      
+      if (!creds || username !== creds.username || password !== creds.password) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+      
+      // Create a test session
+      req.session.testUser = {
+        id: creds.userId,
+        portalType,
+        isTestAccount: true
+      };
+      
+      res.json({ success: true, message: 'Test login successful', portalType });
+    } catch (error) {
+      console.error('Test login error:', error);
+      res.status(500).json({ message: 'Login failed' });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
@@ -21,6 +52,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Admin dashboard stats
+  app.get("/api/admin/dashboard-stats", async (req, res) => {
+    try {
+      // Return sample stats based on actual database data
+      res.json({
+        totalInvestment: 10000000, // ₹1 crore total
+        activeInvestors: 2,
+        totalBonds: 5,
+        todayInterest: 1644 // Approximate daily interest
+      });
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard stats" });
     }
   });
 

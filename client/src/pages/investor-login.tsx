@@ -50,14 +50,25 @@ export default function InvestorLogin() {
                   </div>
                 </div>
 
-                <Button 
-                  onClick={handleLogin}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
-                  size="lg"
-                  data-testid="button-investor-login"
-                >
-                  Login to Investor Portal
-                </Button>
+                <div className="space-y-3">
+                  <Button 
+                    onClick={handleLogin}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
+                    size="lg"
+                    data-testid="button-investor-login"
+                  >
+                    Login with Replit Account
+                  </Button>
+                  
+                  <div className="text-center">
+                    <div className="text-sm text-gray-600 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <p className="font-medium text-yellow-800 mb-1">Test Demo Account:</p>
+                      <p><strong>Username:</strong> Suresh</p>
+                      <p><strong>Password:</strong> Test@1234</p>
+                      <p className="text-xs text-yellow-700 mt-1">Use these credentials to test the investor portal</p>
+                    </div>
+                  </div>
+                </div>
 
                 <div className="text-center">
                   <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
