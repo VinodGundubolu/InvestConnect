@@ -8,12 +8,13 @@ import { Bell, LogOut } from "lucide-react";
 import InvestmentSummary from "@/components/investor/investment-summary";
 import ReturnsCalculator from "@/components/investor/returns-calculator";
 import TransactionHistory from "@/components/investor/transaction-history";
+import { InvestorWithInvestments } from "@shared/schema";
 
 export default function InvestorPortal() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
 
-  const { data: investorProfile, isLoading: profileLoading, error } = useQuery({
+  const { data: investorProfile, isLoading: profileLoading, error } = useQuery<InvestorWithInvestments>({
     queryKey: ["/api/investor/profile"],
     enabled: isAuthenticated && !isLoading,
   });
@@ -104,13 +105,13 @@ export default function InvestorPortal() {
 
       <div className="container mx-auto px-6 py-8">
         {/* Investment Summary */}
-        <InvestmentSummary investorProfile={investorProfile} />
+        <InvestmentSummary investor={investorProfile} />
 
         {/* Returns Calculator */}
         <ReturnsCalculator />
 
         {/* Transaction History */}
-        <TransactionHistory investorProfile={investorProfile} />
+        <TransactionHistory />
       </div>
     </div>
   );

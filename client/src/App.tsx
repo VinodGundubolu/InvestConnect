@@ -22,14 +22,12 @@ function Router() {
 
   return (
     <Switch>
+      <Route path="/investor" component={InvestorPortal} />
+      <Route path="/admin" component={AdminPortal} />
       {!isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (
-        <>
-          <Route path="/" component={Landing} />
-          <Route path="/investor" component={InvestorPortal} />
-          <Route path="/admin" component={AdminPortal} />
-        </>
+        <Route path="/" component={Landing} />
       )}
       <Route component={NotFound} />
     </Switch>

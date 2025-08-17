@@ -55,7 +55,7 @@ export default function AddInvestorForm() {
 
   const createInvestorMutation = useMutation({
     mutationFn: async (data: InvestorFormData) => {
-      // Generate investor ID
+      // Generate investor ID  
       const currentYear = new Date().getFullYear();
       const investorId = `${currentYear}-V1-B5-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
       

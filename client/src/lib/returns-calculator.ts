@@ -1,16 +1,29 @@
-export interface DividendRate {
+import { differenceInDays, differenceInYears, addYears } from "date-fns";
+
+export interface DailyReturnsData {
+  principalInvestment: number;
+  interestTillDate: number;
+  milestoneBonus: number;
+  dailyInterestRate: number;
+  dailyInterestAmount: number;
+  currentYear: number;
+  currentRate: number;
+  exitValue: string; // "N/A" until after lock-in period
+  daysSinceInvestment: number;
+  yearsSinceInvestment: number;
+}
+
+export interface YearlyBreakdown {
   year: number;
   rate: number;
+  dividend: number;
+  bonus: number;
+  total: number;
 }
 
 export interface ReturnsCalculation {
-  yearlyBreakdown: Array<{
-    year: number;
-    rate: number;
-    dividend: number;
-    bonus: number;
-    total: number;
-  }>;
+  dailyReturns: DailyReturnsData;
+  yearlyBreakdown: YearlyBreakdown[];
   summary: {
     principal: number;
     totalDividends: number;
@@ -19,113 +32,153 @@ export interface ReturnsCalculation {
   };
 }
 
-export const DEFAULT_DIVIDEND_RATES: DividendRate[] = [
-  { year: 1, rate: 0 },
-  { year: 2, rate: 6 },
-  { year: 3, rate: 9 },
-  { year: 4, rate: 12 },
-  { year: 5, rate: 18 },
-  { year: 6, rate: 18 },
-  { year: 7, rate: 18 },
-  { year: 8, rate: 18 },
-  { year: 9, rate: 18 },
-  { year: 10, rate: 0 }, // No dividend in year 10, only bonus
-];
+// Dividend rates by year as per the system requirements
+const DIVIDEND_RATES = {
+  1: 0,    // 0% in year 1
+  2: 6,    // 6% from year 2
+  3: 6,    // 6% in year 3  
+  4: 9,    // 9% in year 4
+  5: 9,    // 9% in year 5
+  6: 12,   // 12% from year 6
+  7: 12,   // 12% in year 7
+  8: 12,   // 12% in year 8
+  9: 18,   // 18% in year 9
+  10: 18,  // 18% in year 10
+};
+
+const BONUS_YEARS = [5, 10]; // 100% bonus at years 5 and 10
+const LOCK_IN_PERIOD_YEARS = 3;
 
 export function calculateReturns(
-  principal: number,
-  startDate: Date,
-  dividendRates: DividendRate[] = DEFAULT_DIVIDEND_RATES
+  principalAmount: number,
+  investmentDate: Date,
+  currentDate: Date = new Date()
 ): ReturnsCalculation {
-  const yearlyBreakdown = [];
-  let totalDividends = 0;
+  const daysSinceInvestment = differenceInDays(currentDate, investmentDate);
+  const yearsSinceInvestment = differenceInYears(currentDate, investmentDate);
+  
+  // Calculate current year (1-10)
+  const currentYear = Math.min(Math.floor(yearsSinceInvestment) + 1, 10);
+  const currentRate = DIVIDEND_RATES[currentYear as keyof typeof DIVIDEND_RATES] || 0;
+  
+  // Calculate interest till date
+  let totalInterest = 0;
   let totalBonuses = 0;
-
+  const yearlyBreakdown: YearlyBreakdown[] = [];
+  
   for (let year = 1; year <= 10; year++) {
-    const rateData = dividendRates.find(r => r.year === year);
-    const rate = rateData ? rateData.rate : 0;
+    const rate = DIVIDEND_RATES[year as keyof typeof DIVIDEND_RATES];
+    const yearStartDate = addYears(investmentDate, year - 1);
+    const yearEndDate = addYears(investmentDate, year);
     
-    // Calculate dividend (always on original principal)
-    const dividend = (principal * rate) / 100;
-    
-    // Calculate bonus
+    let dividend = 0;
     let bonus = 0;
-    if (year === 5 || year === 10) {
-      bonus = principal; // 100% bonus on original principal
+    
+    if (currentDate >= yearEndDate) {
+      // Full year completed
+      dividend = principalAmount * (rate / 100);
+      if (BONUS_YEARS.includes(year)) {
+        bonus = principalAmount; // 100% bonus
+      }
+    } else if (currentDate >= yearStartDate && year === currentYear) {
+      // Partial current year
+      const daysInCurrentYear = differenceInDays(currentDate, yearStartDate);
+      const totalDaysInYear = differenceInDays(yearEndDate, yearStartDate);
+      dividend = (principalAmount * (rate / 100) * daysInCurrentYear) / totalDaysInYear;
     }
     
-    const total = dividend + bonus;
+    totalInterest += dividend;
+    totalBonuses += bonus;
     
     yearlyBreakdown.push({
       year,
       rate,
       dividend,
       bonus,
-      total,
+      total: dividend + bonus,
     });
-    
-    totalDividends += dividend;
-    totalBonuses += bonus;
   }
   
-  const maturityValue = principal + totalDividends + totalBonuses;
+  // Calculate daily interest for current year
+  const dailyInterestRate = currentRate / 365; // Daily rate as percentage
+  const dailyInterestAmount = (principalAmount * currentRate) / (100 * 365);
   
-  return {
-    yearlyBreakdown,
-    summary: {
-      principal,
-      totalDividends,
-      totalBonuses,
-      maturityValue,
-    },
-  };
-}
-
-export function calculateCurrentInterestRate(investmentDate: Date): number {
-  const today = new Date();
-  const yearsDiff = today.getFullYear() - investmentDate.getFullYear();
-  const monthsDiff = today.getMonth() - investmentDate.getMonth();
-  const totalMonths = yearsDiff * 12 + monthsDiff;
+  // Determine exit value availability
+  const isAfterLockIn = yearsSinceInvestment >= LOCK_IN_PERIOD_YEARS;
+  const exitValue = isAfterLockIn ? "Available" : "N/A";
   
-  // Determine which year of investment we're in
-  const currentYear = Math.floor(totalMonths / 12) + 1;
-  
-  // Clamp to 1-10 years
-  const year = Math.max(1, Math.min(10, currentYear));
-  
-  const rateData = DEFAULT_DIVIDEND_RATES.find(r => r.year === year);
-  return rateData ? rateData.rate : 0;
-}
-
-export function calculateInterestEarned(
-  principal: number,
-  investmentDate: Date,
-  currentDate: Date = new Date()
-): number {
-  const yearsDiff = currentDate.getFullYear() - investmentDate.getFullYear();
-  const monthsDiff = currentDate.getMonth() - investmentDate.getMonth();
-  const totalMonths = yearsDiff * 12 + monthsDiff;
-  
-  let totalInterest = 0;
-  
-  // Calculate interest for completed years
-  for (let year = 1; year <= Math.floor(totalMonths / 12); year++) {
-    const rateData = DEFAULT_DIVIDEND_RATES.find(r => r.year === year);
-    const rate = rateData ? rateData.rate : 0;
-    totalInterest += (principal * rate) / 100;
-  }
-  
-  // Add partial year interest if applicable
-  const remainingMonths = totalMonths % 12;
-  if (remainingMonths > 0) {
-    const currentYear = Math.floor(totalMonths / 12) + 1;
-    if (currentYear <= 10) {
-      const rateData = DEFAULT_DIVIDEND_RATES.find(r => r.year === currentYear);
-      const rate = rateData ? rateData.rate : 0;
-      const partialYearInterest = (principal * rate * remainingMonths) / (100 * 12);
-      totalInterest += partialYearInterest;
+  // Calculate milestone bonus earned so far
+  let milestoneBonus = 0;
+  for (const bonusYear of BONUS_YEARS) {
+    if (yearsSinceInvestment >= bonusYear) {
+      milestoneBonus += principalAmount; // 100% bonus per milestone
     }
   }
   
-  return totalInterest;
+  const dailyReturns: DailyReturnsData = {
+    principalInvestment: principalAmount,
+    interestTillDate: totalInterest,
+    milestoneBonus,
+    dailyInterestRate,
+    dailyInterestAmount,
+    currentYear,
+    currentRate,
+    exitValue,
+    daysSinceInvestment,
+    yearsSinceInvestment,
+  };
+  
+  const summary = {
+    principal: principalAmount,
+    totalDividends: totalInterest,
+    totalBonuses: totalBonuses,
+    maturityValue: principalAmount + totalInterest + totalBonuses,
+  };
+  
+  return {
+    dailyReturns,
+    yearlyBreakdown,
+    summary,
+  };
+}
+
+export function getInvestmentUnits(amount: number): number {
+  const UNIT_VALUE = 2000000; // ₹20 lakhs per unit
+  return Math.floor(amount / UNIT_VALUE);
+}
+
+export function getMaxInvestmentAmount(): number {
+  const MAX_UNITS = 3;
+  const UNIT_VALUE = 2000000;
+  return MAX_UNITS * UNIT_VALUE; // ₹60 lakhs maximum
+}
+
+export function validateInvestmentAmount(amount: number): {
+  isValid: boolean;
+  error?: string;
+  units?: number;
+} {
+  const UNIT_VALUE = 2000000;
+  const MAX_UNITS = 3;
+  
+  if (amount <= 0) {
+    return { isValid: false, error: "Investment amount must be greater than 0" };
+  }
+  
+  if (amount % UNIT_VALUE !== 0) {
+    return { 
+      isValid: false, 
+      error: `Investment must be in multiples of ₹${(UNIT_VALUE / 100000).toFixed(0)} lakhs` 
+    };
+  }
+  
+  const units = amount / UNIT_VALUE;
+  if (units > MAX_UNITS) {
+    return { 
+      isValid: false, 
+      error: `Maximum ${MAX_UNITS} units (₹${(MAX_UNITS * UNIT_VALUE / 100000).toFixed(0)} lakhs) allowed per investor` 
+    };
+  }
+  
+  return { isValid: true, units };
 }

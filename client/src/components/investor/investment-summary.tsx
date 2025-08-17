@@ -1,195 +1,136 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Coins, TrendingUp, Percent, Calendar } from "lucide-react";
-import { InvestorWithInvestments } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { calculateReturns, type DailyReturnsData } from "@/lib/returns-calculator";
+import { InvestorWithInvestments } from "@shared/schema";
 
 interface InvestmentSummaryProps {
-  investorProfile: InvestorWithInvestments;
+  investor: InvestorWithInvestments;
 }
 
-export default function InvestmentSummary({ investorProfile }: InvestmentSummaryProps) {
-  // Calculate aggregated investment data
-  const totalPrincipal = investorProfile.investments.reduce(
-    (sum, inv) => sum + parseFloat(inv.investedAmount),
-    0
+export default function InvestmentSummary({ investor }: InvestmentSummaryProps) {
+  // Calculate combined daily returns for all investments
+  const combinedReturns = investor.investments.reduce(
+    (acc, investment) => {
+      const calculation = calculateReturns(
+        parseFloat(investment.investedAmount),
+        new Date(investment.investmentDate)
+      );
+      
+      return {
+        principalInvestment: acc.principalInvestment + calculation.dailyReturns.principalInvestment,
+        interestTillDate: acc.interestTillDate + calculation.dailyReturns.interestTillDate,
+        milestoneBonus: acc.milestoneBonus + calculation.dailyReturns.milestoneBonus,
+        dailyInterestAmount: acc.dailyInterestAmount + calculation.dailyReturns.dailyInterestAmount,
+        currentRate: calculation.dailyReturns.currentRate, // Take rate from last investment
+      };
+    },
+    {
+      principalInvestment: 0,
+      interestTillDate: 0,
+      milestoneBonus: 0,
+      dailyInterestAmount: 0,
+      currentRate: 0,
+    }
   );
 
-  const totalInterestEarned = investorProfile.investments.reduce((sum, inv) => {
-    const dividendTransactions = inv.transactions.filter(
-      (t) => t.type === "dividend_disbursement"
-    );
-    return sum + dividendTransactions.reduce((tSum, t) => tSum + parseFloat(t.amount), 0);
-  }, 0);
-
-  const latestInvestment = investorProfile.investments[0]; // Assuming sorted by date desc
-  const currentRate = latestInvestment ? 12 : 0; // This would be calculated based on investment age
-
-  const nearestMaturity = investorProfile.investments.reduce((nearest, inv) => {
-    if (!nearest || new Date(inv.maturityDate) < new Date(nearest.maturityDate)) {
-      return inv;
-    }
-    return nearest;
-  }, investorProfile.investments[0]);
-
-  const summaryCards = [
-    {
-      title: "Principal Amount",
-      value: formatCurrency(totalPrincipal),
-      icon: Coins,
-      bgColor: "bg-primary-50",
-      iconColor: "text-primary-500",
-      dataTestId: "card-principal-amount",
-    },
-    {
-      title: "Interest Earned",
-      value: formatCurrency(totalInterestEarned),
-      icon: TrendingUp,
-      bgColor: "bg-success-50",
-      iconColor: "text-success-500",
-      dataTestId: "card-interest-earned",
-    },
-    {
-      title: "Current Rate",
-      value: `${currentRate}%`,
-      icon: Percent,
-      bgColor: "bg-orange-50",
-      iconColor: "text-warning-500",
-      dataTestId: "card-current-rate",
-    },
-    {
-      title: "Maturity Date",
-      value: nearestMaturity ? formatDate(nearestMaturity.maturityDate) : "N/A",
-      icon: Calendar,
-      bgColor: "bg-gray-50",
-      iconColor: "text-gray-500",
-      dataTestId: "card-maturity-date",
-    },
-  ];
+  const totalInvestments = investor.investments.length;
+  const totalUnits = investor.investments.reduce((sum, inv) => sum + inv.bondsPurchased, 0);
 
   return (
-    <div className="mb-8">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {summaryCards.map((card) => (
-          <Card key={card.title} className="border shadow-sm" data-testid={card.dataTestId}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">{card.title}</p>
-                  <p className="text-2xl font-bold text-gray-900" data-testid={`text-${card.dataTestId}-value`}>
-                    {card.value}
-                  </p>
-                </div>
-                <div className={`p-3 ${card.bgColor} rounded-lg`}>
-                  <card.icon className={`${card.iconColor} h-5 w-5`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Investor Information */}
-        <Card className="border shadow-sm" data-testid="card-investor-info">
-          <div className="p-6 border-b">
-            <h3 className="text-lg font-semibold">Investor Information</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="investment-summary-grid">
+      {/* Your Principal Investment */}
+      <Card className="bg-gray-800 text-white" data-testid="card-principal-investment">
+        <CardContent className="p-6">
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium text-gray-300">Your Principal Investment</h3>
+            <div className="text-3xl font-bold" data-testid="text-principal-amount">
+              {formatCurrency(combinedReturns.principalInvestment)}
+            </div>
           </div>
-          <CardContent className="p-6 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Name</label>
-                <p className="font-medium" data-testid="text-investor-name">
-                  {`${investorProfile.firstName} ${investorProfile.middleName || ''} ${investorProfile.lastName}`.trim()}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Investor ID</label>
-                <p className="font-medium font-mono" data-testid="text-investor-id">
-                  {investorProfile.id}
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Mobile</label>
-                <p className="font-medium" data-testid="text-investor-mobile">
-                  {investorProfile.primaryMobile}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Email</label>
-                <p className="font-medium" data-testid="text-investor-email">
-                  {investorProfile.email}
-                </p>
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Address</label>
-              <p className="font-medium" data-testid="text-investor-address">
-                {investorProfile.primaryAddress}, {investorProfile.primaryAddressPin}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
 
-        {/* Investment Details */}
-        <Card className="border shadow-sm" data-testid="card-investment-details">
-          <div className="p-6 border-b">
-            <h3 className="text-lg font-semibold">Investment Details</h3>
+      {/* Interest Till Date */}
+      <Card className="bg-gray-800 text-white" data-testid="card-interest-till-date">
+        <CardContent className="p-6">
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium text-gray-300">Interest Till Date</h3>
+            <div className="text-3xl font-bold" data-testid="text-interest-amount">
+              {formatCurrency(combinedReturns.interestTillDate)}
+            </div>
           </div>
-          <CardContent className="p-6 space-y-4">
-            {latestInvestment ? (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Plan Type</label>
-                    <p className="font-medium" data-testid="text-plan-type">
-                      {latestInvestment.plan.name}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Investment Date</label>
-                    <p className="font-medium" data-testid="text-investment-date">
-                      {formatDate(latestInvestment.investmentDate)}
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Bonds Purchased</label>
-                    <p className="font-medium" data-testid="text-bonds-purchased">
-                      {latestInvestment.bondsPurchased}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Lock-in Expires</label>
-                    <p className="font-medium" data-testid="text-lock-expiry">
-                      {formatDate(latestInvestment.lockInExpiry)}
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Bonus Earned</label>
-                    <p className="font-medium text-success-600" data-testid="text-bonus-earned">
-                      {formatCurrency(parseFloat(latestInvestment.bonusEarned))}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Next Bonus</label>
-                    <p className="font-medium" data-testid="text-next-bonus">
-                      Year 5 ({new Date(latestInvestment.investmentDate).getFullYear() + 5})
-                    </p>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <p className="text-gray-500">No investment data available</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+        </CardContent>
+      </Card>
+
+      {/* Milestone Bonus Earned */}
+      <Card className="bg-gray-800 text-white" data-testid="card-milestone-bonus">
+        <CardContent className="p-6">
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium text-gray-300">Milestone Bonus Earned</h3>
+            <div className="text-3xl font-bold" data-testid="text-bonus-amount">
+              {formatCurrency(combinedReturns.milestoneBonus)}
+            </div>
+            <div className="text-sm text-gray-400" data-testid="text-bonus-status">
+              {combinedReturns.milestoneBonus > 0 ? "Bonus earned" : "No bonus earned yet"}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Daily Interest Rate */}
+      <Card className="bg-gray-800 text-white" data-testid="card-daily-interest-rate">
+        <CardContent className="p-6">
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium text-gray-300">Daily Interest Rate</h3>
+            <div className="text-3xl font-bold" data-testid="text-daily-rate">
+              {formatCurrency(combinedReturns.dailyInterestAmount)}
+            </div>
+            <div className="text-sm text-gray-400" data-testid="text-current-year-rate">
+              Current year: {combinedReturns.currentRate}%
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Early Exit Value */}
+      <Card className="bg-gray-800 text-white" data-testid="card-early-exit-value">
+        <CardContent className="p-6">
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium text-gray-300">Early Exit Value</h3>
+            <div className="text-3xl font-bold" data-testid="text-exit-value">
+              N/A
+            </div>
+            <div className="text-sm text-gray-400" data-testid="text-exit-status">
+              Exit only available after Month 36 (3-Year Lock-in)
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Investment Summary */}
+      <Card className="bg-gray-800 text-white" data-testid="card-investment-summary">
+        <CardContent className="p-6">
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium text-gray-300">Investment Summary</h3>
+            <div className="space-y-1">
+              <div className="flex justify-between text-sm">
+                <span>Total Investments:</span>
+                <span data-testid="text-total-investments">{totalInvestments}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Total Units:</span>
+                <span data-testid="text-total-units">{totalUnits}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Investor ID:</span>
+                <span data-testid="text-investor-id" className="font-mono">{investor.id}</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
