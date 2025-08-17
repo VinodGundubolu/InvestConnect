@@ -71,6 +71,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin API routes
+  app.get("/api/admin/investor-portfolio", async (req, res) => {
+    try {
+      // Sample portfolio data
+      res.json([
+        {
+          id: "1",
+          name: "Vinod Sharma",
+          investment: 2000000,
+          bonds: 1,
+          currentYear: 2,
+          rate: 6,
+          todayInterest: 329
+        },
+        {
+          id: "2", 
+          name: "Suresh Kumar",
+          investment: 6000000,
+          bonds: 3,
+          currentYear: 2,
+          rate: 6,
+          todayInterest: 986
+        }
+      ]);
+    } catch (error) {
+      console.error("Error fetching portfolio:", error);
+      res.status(500).json({ message: "Failed to fetch portfolio" });
+    }
+  });
+
+  app.get("/api/admin/interest-breakdown", async (req, res) => {
+    try {
+      // Sample interest breakdown
+      res.json([
+        {
+          name: "Vinod Sharma",
+          bonds: 1,
+          rate: 6,
+          dailyInterest: 329
+        },
+        {
+          name: "Suresh Kumar", 
+          bonds: 3,
+          rate: 6,
+          dailyInterest: 986
+        }
+      ]);
+    } catch (error) {
+      console.error("Error fetching interest breakdown:", error);
+      res.status(500).json({ message: "Failed to fetch interest breakdown" });
+    }
+  });
+
   // Investor routes
   app.get('/api/investor/profile', isAuthenticated, async (req: any, res) => {
     try {

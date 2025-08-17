@@ -74,21 +74,24 @@ export function calculateReturns(
     let dividend = 0;
     let bonus = 0;
     
-    if (currentDate >= yearEndDate) {
-      // Full year completed
-      dividend = principalAmount * (rate / 100);
-      if (BONUS_YEARS.includes(year)) {
-        bonus = principalAmount; // 100% bonus
-      }
-    } else if (currentDate >= yearStartDate && year === currentYear) {
-      // Partial current year
-      const daysInCurrentYear = differenceInDays(currentDate, yearStartDate);
-      const totalDaysInYear = differenceInDays(yearEndDate, yearStartDate);
-      dividend = (principalAmount * (rate / 100) * daysInCurrentYear) / totalDaysInYear;
+    // Always calculate full year dividends for the table display
+    dividend = principalAmount * (rate / 100);
+    if (BONUS_YEARS.includes(year)) {
+      bonus = principalAmount; // 100% bonus
     }
     
-    totalInterest += dividend;
-    totalBonuses += bonus;
+    // For interest till date calculation, only count completed years and partial current year
+    if (currentDate >= yearEndDate) {
+      // Full year completed
+      totalInterest += dividend;
+      totalBonuses += bonus;
+    } else if (currentDate >= yearStartDate && year === currentYear) {
+      // Partial current year for interest till date
+      const daysInCurrentYear = differenceInDays(currentDate, yearStartDate);
+      const totalDaysInYear = differenceInDays(yearEndDate, yearStartDate);
+      const partialDividend = (dividend * daysInCurrentYear) / totalDaysInYear;
+      totalInterest += partialDividend;
+    }
     
     yearlyBreakdown.push({
       year,

@@ -1,0 +1,253 @@
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Download, Calendar, TrendingUp, Users, DollarSign } from "lucide-react";
+import AdminSidebar from "@/components/admin/admin-sidebar";
+import { formatCurrency } from "@/lib/utils";
+
+export default function AdminReports() {
+  const { toast } = useToast();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Unauthorized",
+        description: "You are logged out. Logging in again...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+      return;
+    }
+  }, [isAuthenticated, isLoading, toast]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  const reportData = {
+    totalInvestors: 2,
+    totalInvestment: 10000000,
+    totalDividendsPaid: 480000,
+    averageROI: 6.8,
+    monthlyData: [
+      { month: "Jan 2024", investments: 2000000, dividends: 0, newInvestors: 1 },
+      { month: "Feb 2024", investments: 0, dividends: 0, newInvestors: 0 },
+      { month: "Mar 2024", investments: 6000000, dividends: 0, newInvestors: 1 },
+      { month: "Dec 2024", investments: 0, dividends: 480000, newInvestors: 0 },
+    ]
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      <AdminSidebar />
+      
+      <div className="flex-1 flex flex-col">
+        <header className="bg-white border-b border-gray-200 px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
+              <p className="text-gray-600">Investment performance and portfolio analytics</p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button variant="outline">
+                <Calendar className="h-4 w-4 mr-2" />
+                Date Range
+              </Button>
+              <Button className="bg-blue-500 hover:bg-blue-600">
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 p-8">
+          <div className="space-y-8">
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Total Investors</p>
+                      <p className="text-3xl font-bold">{reportData.totalInvestors}</p>
+                      <p className="text-sm text-green-600 mt-1">+2 this year</p>
+                    </div>
+                    <Users className="h-8 w-8 text-blue-500" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Total Investment</p>
+                      <p className="text-3xl font-bold">{formatCurrency(reportData.totalInvestment)}</p>
+                      <p className="text-sm text-green-600 mt-1">Portfolio Value</p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-green-500" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Dividends Paid</p>
+                      <p className="text-3xl font-bold">{formatCurrency(reportData.totalDividendsPaid)}</p>
+                      <p className="text-sm text-blue-600 mt-1">2024 Total</p>
+                    </div>
+                    <DollarSign className="h-8 w-8 text-purple-500" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Average ROI</p>
+                      <p className="text-3xl font-bold">{reportData.averageROI}%</p>
+                      <p className="text-sm text-orange-600 mt-1">Annual Return</p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-orange-500" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Monthly Performance */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Monthly Performance (2024)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-4 font-medium">Month</th>
+                        <th className="text-right p-4 font-medium">New Investments</th>
+                        <th className="text-right p-4 font-medium">Dividends Paid</th>
+                        <th className="text-right p-4 font-medium">New Investors</th>
+                        <th className="text-left p-4 font-medium">Growth</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportData.monthlyData.map((data, index) => (
+                        <tr key={index} className="border-b hover:bg-gray-50">
+                          <td className="p-4 font-medium">{data.month}</td>
+                          <td className="p-4 text-right">
+                            {data.investments > 0 ? formatCurrency(data.investments) : '-'}
+                          </td>
+                          <td className="p-4 text-right">
+                            {data.dividends > 0 ? formatCurrency(data.dividends) : '-'}
+                          </td>
+                          <td className="p-4 text-right">{data.newInvestors}</td>
+                          <td className="p-4">
+                            {data.investments > 0 || data.newInvestors > 0 ? (
+                              <Badge variant="secondary" className="bg-green-50 text-green-700">
+                                Growth
+                              </Badge>
+                            ) : data.dividends > 0 ? (
+                              <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+                                Dividend
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="bg-gray-50 text-gray-700">
+                                Stable
+                              </Badge>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Investment Distribution */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Investment Distribution</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Vinod Sharma</span>
+                      <span className="text-sm">₹20,00,000 (20%)</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: '20%' }}></div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Suresh Kumar</span>
+                      <span className="text-sm">₹60,00,000 (60%)</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '60%' }}></div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Available Capacity</span>
+                      <span className="text-sm">₹20,00,000 (20%)</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-gray-400 h-2 rounded-full" style={{ width: '20%' }}></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Upcoming Milestones</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h4 className="font-medium">Year 3 Lock-in Expiry</h4>
+                      <p className="text-sm text-gray-600">January 2027 - Vinod Sharma</p>
+                      <p className="text-sm text-gray-600">March 2027 - Suresh Kumar</p>
+                    </div>
+                    
+                    <div className="border-l-4 border-green-500 pl-4">
+                      <h4 className="font-medium">Rate Increase</h4>
+                      <p className="text-sm text-gray-600">2025: 9% dividend rate</p>
+                      <p className="text-sm text-gray-600">2026: 12% dividend rate</p>
+                    </div>
+                    
+                    <div className="border-l-4 border-orange-500 pl-4">
+                      <h4 className="font-medium">First Bonus Year</h4>
+                      <p className="text-sm text-gray-600">2029: 100% bonus payout</p>
+                      <p className="text-sm text-gray-600">₹1,00,00,000 total bonus</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}

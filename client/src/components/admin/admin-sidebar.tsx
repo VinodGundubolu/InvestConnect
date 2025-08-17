@@ -76,8 +76,8 @@ export default function AdminSidebar({ className }: AdminSidebarProps) {
             return (
               <li key={item.name}>
                 <Link href={item.href}>
-                  <a 
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                  <span 
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
                       isActive 
                         ? "bg-white bg-opacity-20 text-white shadow-md" 
                         : "text-blue-100 hover:bg-white hover:bg-opacity-10 hover:text-white"
@@ -86,7 +86,7 @@ export default function AdminSidebar({ className }: AdminSidebarProps) {
                   >
                     <item.icon className="h-5 w-5" />
                     <span className="font-medium">{item.name}</span>
-                  </a>
+                  </span>
                 </Link>
               </li>
             );
