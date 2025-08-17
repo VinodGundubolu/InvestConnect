@@ -38,9 +38,10 @@ Preferred communication style: Simple, everyday language.
 - **Session Storage**: PostgreSQL-backed sessions with configurable TTL
 
 ### Dual Portal Design
-- **Investor Portal**: Limited view showing only personal investment data, returns, and transaction history
-- **Admin Portal**: Full administrative access with portfolio overview, investor management, and investment creation capabilities
-- **Domain Separation**: Role-based routing with distinct user experiences
+- **Investor Portal** (`/investor`): Limited view showing only personal investment data, returns, and transaction history
+- **Admin Portal** (`/admin`): Full administrative access with portfolio overview, investor management, and investment creation capabilities
+- **Separate Login Pages**: Individual login URLs for sharing - `/investor-login` and `/admin-login`
+- **Role-Based Authentication**: Each portal requires appropriate credentials for access
 
 ### Data Models
 - **User Management**: User profiles with role assignments and authentication data

@@ -1,70 +1,20 @@
-import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/hooks/useAuth";
-import { Link } from "wouter";
 
 export default function Landing() {
   const { isAuthenticated, user } = useAuth();
-  const [portalType, setPortalType] = useState("investor");
 
-  const handleLogin = () => {
-    // Redirect to Replit auth with portal type as state
-    const params = new URLSearchParams({ portal: portalType });
-    window.location.href = `/api/login?${params.toString()}`;
-  };
-
-  // If authenticated, show portal selection
+  // If authenticated, redirect to appropriate portal
   if (isAuthenticated) {
+    if ((user as any)?.role === 'admin') {
+      window.location.href = '/admin';
+    } else {
+      window.location.href = '/investor';
+    }
     return (
-      <div className="min-h-screen bg-gray-50" data-testid="portal-selection-page">
-        <div className="bg-primary text-white py-6">
-          <div className="container mx-auto px-6">
-            <h1 className="text-3xl font-bold">Welcome, {(user as any)?.firstName || (user as any)?.email}!</h1>
-            <p className="text-primary-100 mt-2">Choose your portal to continue</p>
-          </div>
-        </div>
-        
-        <div className="container mx-auto px-6 py-12">
-          <div className="max-w-2xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-6">
-              <Link href="/investor">
-                <Card className="cursor-pointer hover:shadow-lg transition-shadow" data-testid="card-investor-portal">
-                  <CardContent className="p-8 text-center">
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-blue-600 text-2xl">👤</span>
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">Investor Portal</h3>
-                    <p className="text-gray-600">View your investments, returns, and transaction history</p>
-                  </CardContent>
-                </Card>
-              </Link>
-              
-              {(user as any)?.role === "admin" && (
-                <Link href="/admin">
-                  <Card className="cursor-pointer hover:shadow-lg transition-shadow" data-testid="card-admin-portal">
-                    <CardContent className="p-8 text-center">
-                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span className="text-green-600 text-2xl">⚙️</span>
-                      </div>
-                      <h3 className="text-xl font-bold mb-2">Admin Portal</h3>
-                      <p className="text-gray-600">Manage investors, investments, and view portfolio overview</p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              )}
-            </div>
-            
-            <div className="text-center mt-8">
-              <Button variant="outline" onClick={() => window.location.href = '/api/logout'}>
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -78,97 +28,48 @@ export default function Landing() {
             Investment Relationship Management
           </h1>
           <p className="text-primary-100 mt-2" data-testid="text-header-subtitle">
-            Secure access to your investment portfolio
+            Choose your portal to access your account
           </p>
         </div>
       </div>
 
       <div className="container mx-auto px-6 py-12">
-        <div className="max-w-md mx-auto">
-          {/* Portal Selection */}
-          <Card className="mb-6" data-testid="card-portal-selection">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-4" data-testid="text-portal-selection-title">
-                Select Portal
-              </h2>
-              <RadioGroup
-                value={portalType}
-                onValueChange={setPortalType}
-                className="space-y-3"
-                data-testid="radio-group-portal-type"
-              >
-                <div className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <RadioGroupItem value="investor" id="investor" data-testid="radio-investor" />
-                  <div className="ml-3">
-                    <Label htmlFor="investor" className="font-medium cursor-pointer">
-                      Investor Portal
-                    </Label>
-                    <div className="text-sm text-gray-500">
-                      View your personal investment details
-                    </div>
-                  </div>
+        <div className="max-w-2xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" data-testid="card-investor-portal">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-blue-600 text-2xl">👤</span>
                 </div>
-                <div className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <RadioGroupItem value="admin" id="admin" data-testid="radio-admin" />
-                  <div className="ml-3">
-                    <Label htmlFor="admin" className="font-medium cursor-pointer">
-                      Admin Portal
-                    </Label>
-                    <div className="text-sm text-gray-500">
-                      Manage all investors and investments
-                    </div>
-                  </div>
-                </div>
-              </RadioGroup>
-            </CardContent>
-          </Card>
-
-          {/* Login Form */}
-          <Card data-testid="card-login-form">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-6" data-testid="text-login-form-title">
-                Secure Login
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="credentials" className="text-sm font-medium text-gray-700">
-                    Email / Investor ID
-                  </Label>
-                  <Input
-                    id="credentials"
-                    type="text"
-                    placeholder="Enter your credentials"
-                    className="mt-2"
-                    data-testid="input-credentials"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                    Password
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    className="mt-2"
-                    data-testid="input-password"
-                  />
-                </div>
-                <Button
-                  onClick={handleLogin}
-                  className="w-full bg-primary hover:bg-primary-600 transition-colors"
-                  data-testid="button-login"
+                <h3 className="text-xl font-bold mb-2">Investor Portal</h3>
+                <p className="text-gray-600 mb-4">View your investments, returns, and transaction history</p>
+                <Button 
+                  onClick={() => window.location.href = '/investor-login'}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  data-testid="button-investor-login"
                 >
-                  Sign In Securely
+                  Access Investor Portal
                 </Button>
-              </div>
-              <div className="mt-4 text-center">
-                <a href="#" className="text-primary text-sm hover:underline" data-testid="link-forgot-password">
-                  Forgot Password?
-                </a>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" data-testid="card-admin-portal">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-green-600 text-2xl">⚙️</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2">Admin Portal</h3>
+                <p className="text-gray-600 mb-4">Manage investors, investments, and view portfolio overview</p>
+                <Button 
+                  onClick={() => window.location.href = '/admin-login'}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  data-testid="button-admin-login"
+                >
+                  Access Admin Portal
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

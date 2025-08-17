@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/landing";
 import InvestorPortal from "@/pages/investor-portal";
 import AdminPortal from "@/pages/admin-portal";
+import InvestorLogin from "@/pages/investor-login";
+import AdminLogin from "@/pages/admin-login";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +24,10 @@ function Router() {
 
   return (
     <Switch>
+      {/* Separate Login Pages */}
+      <Route path="/investor-login" component={InvestorLogin} />
+      <Route path="/admin-login" component={AdminLogin} />
+
       {/* Protected Admin Portal - requires admin role */}
       <Route path="/admin">
         {isAuthenticated && (user as any)?.role === 'admin' ? (
@@ -32,10 +38,10 @@ function Router() {
               <h2 className="text-xl font-semibold mb-2">Admin Access Required</h2>
               <p className="text-gray-600 mb-4">You need admin credentials to access this portal.</p>
               <button 
-                onClick={() => window.location.href = '/api/login'}
-                className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-600"
+                onClick={() => window.location.href = '/admin-login'}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
               >
-                Login as Admin
+                Go to Admin Login
               </button>
             </div>
           </div>
@@ -52,10 +58,10 @@ function Router() {
               <h2 className="text-xl font-semibold mb-2">Investor Access Required</h2>
               <p className="text-gray-600 mb-4">You need investor credentials to access this portal.</p>
               <button 
-                onClick={() => window.location.href = '/api/login'}
-                className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-600"
+                onClick={() => window.location.href = '/investor-login'}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
-                Login as Investor
+                Go to Investor Login
               </button>
             </div>
           </div>
