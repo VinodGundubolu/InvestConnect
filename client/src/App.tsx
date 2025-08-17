@@ -48,15 +48,15 @@ function Router() {
         )}
       </Route>
 
-      {/* Protected Investor Portal - requires investor role */}
+      {/* Protected Investor Portal - requires authentication */}
       <Route path="/investor">
-        {isAuthenticated && ((user as any)?.role === 'investor' || !(user as any)?.role) ? (
+        {isAuthenticated ? (
           <InvestorPortal />
         ) : (
           <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
-              <h2 className="text-xl font-semibold mb-2">Investor Access Required</h2>
-              <p className="text-gray-600 mb-4">You need investor credentials to access this portal.</p>
+              <h2 className="text-xl font-semibold mb-2">Login Required</h2>
+              <p className="text-gray-600 mb-4">Please login to access the investor portal.</p>
               <button 
                 onClick={() => window.location.href = '/investor-login'}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
