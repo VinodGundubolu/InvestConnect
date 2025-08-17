@@ -1,15 +1,20 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { calculateReturns, type DailyReturnsData } from "@/lib/returns-calculator";
 import { InvestorWithInvestments } from "@shared/schema";
+import { User } from "lucide-react";
+import InvestorProfileModal from "./investor-profile-modal";
 
 interface InvestmentSummaryProps {
   investor: InvestorWithInvestments;
 }
 
 export default function InvestmentSummary({ investor }: InvestmentSummaryProps) {
+  const [showProfileModal, setShowProfileModal] = useState(false);
   // Calculate combined daily returns for all investments
   const combinedReturns = investor.investments.reduce(
     (acc, investment) => {
@@ -39,7 +44,29 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
   const totalUnits = investor.investments.reduce((sum, inv) => sum + inv.bondsPurchased, 0);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="investment-summary-grid">
+    <>
+      {/* Investor Name Header - Clickable */}
+      <div className="mb-6 p-4 bg-white rounded-lg border shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Welcome, {`${investor.firstName} ${investor.middleName || ''} ${investor.lastName}`.trim()}
+            </h2>
+            <p className="text-sm text-gray-600">Investor ID: {investor.id}</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setShowProfileModal(true)}
+            className="flex items-center gap-2"
+            data-testid="button-view-profile"
+          >
+            <User className="h-4 w-4" />
+            View Profile
+          </Button>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="investment-summary-grid">
       {/* Your Principal Investment */}
       <Card className="bg-gray-800 text-white" data-testid="card-principal-investment">
         <CardContent className="p-6">
@@ -132,5 +159,13 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
         </CardContent>
       </Card>
     </div>
+    
+    {/* Profile Modal */}
+    <InvestorProfileModal
+      isOpen={showProfileModal}
+      onClose={() => setShowProfileModal(false)}
+      investor={investor}
+    />
+    </>
   );
 }

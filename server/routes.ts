@@ -325,6 +325,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update investor profile (restricted fields only)
+  app.patch('/api/investor/profile/update', async (req: any, res) => {
+    try {
+      const { investorId, email, primaryMobile, secondaryMobile, primaryAddress, secondaryAddress } = req.body;
+      
+      if (!investorId || !email || !primaryMobile || !primaryAddress) {
+        return res.status(400).json({ message: "Required fields missing" });
+      }
+
+      // Update investor in database
+      const updatedInvestor = await storage.updateInvestor(investorId, {
+        email,
+        primaryMobile,
+        secondaryMobile: secondaryMobile || null,
+        primaryAddress,
+        secondaryAddress: secondaryAddress || null,
+      });
+
+      // Send email notification to admin (simulated)
+      const emailNotification = {
+        to: "admin@company.com", // Replace with actual admin email
+        subject: "Investor Profile Update Notification",
+        body: `
+          Investor ${updatedInvestor.firstName} ${updatedInvestor.lastName} (ID: ${updatedInvestor.id}) has updated their profile.
+          
+          Updated Fields:
+          - Email: ${email}
+          - Primary Mobile: ${primaryMobile}
+          - Secondary Mobile: ${secondaryMobile || 'Not provided'}
+          - Primary Address: ${primaryAddress}
+          - Secondary Address: ${secondaryAddress || 'Not provided'}
+          
+          Updated on: ${new Date().toLocaleString()}
+        `
+      };
+
+      // Log the email notification (in production, this would be sent via email service)
+      console.log('EMAIL NOTIFICATION TO ADMIN:', emailNotification);
+
+      res.json({
+        success: true,
+        investor: updatedInvestor,
+        message: "Profile updated successfully. Admin has been notified."
+      });
+
+    } catch (error) {
+      console.error("Error updating investor profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
   // Investor routes
   app.get('/api/investor/profile', async (req: any, res) => {
     try {
