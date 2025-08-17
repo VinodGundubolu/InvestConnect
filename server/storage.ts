@@ -1,0 +1,363 @@
+import {
+  users,
+  investors,
+  investments,
+  investmentPlans,
+  transactions,
+  dividendRates,
+  type User,
+  type UpsertUser,
+  type Investor,
+  type InsertInvestor,
+  type Investment,
+  type InsertInvestment,
+  type InvestmentPlan,
+  type InsertInvestmentPlan,
+  type Transaction,
+  type InsertTransaction,
+  type InvestorWithInvestments,
+  type InvestmentWithDetails,
+} from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and, sql } from "drizzle-orm";
+
+export interface IStorage {
+  // User operations (required for Replit Auth)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+
+  // Investor operations
+  getInvestor(id: string): Promise<Investor | undefined>;
+  getInvestorByUserId(userId: string): Promise<Investor | undefined>;
+  getInvestorWithInvestments(id: string): Promise<InvestorWithInvestments | undefined>;
+  createInvestor(investor: InsertInvestor): Promise<Investor>;
+  updateInvestor(id: string, investor: Partial<InsertInvestor>): Promise<Investor>;
+  getAllInvestors(): Promise<Investor[]>;
+  generateInvestorId(investorData: InsertInvestor): Promise<string>;
+
+  // Investment operations
+  getInvestment(id: string): Promise<Investment | undefined>;
+  getInvestmentWithDetails(id: string): Promise<InvestmentWithDetails | undefined>;
+  getInvestmentsByInvestor(investorId: string): Promise<Investment[]>;
+  createInvestment(investment: InsertInvestment): Promise<Investment>;
+  updateInvestment(id: string, investment: Partial<InsertInvestment>): Promise<Investment>;
+  getAllInvestments(): Promise<Investment[]>;
+
+  // Investment Plan operations
+  getInvestmentPlan(id: string): Promise<InvestmentPlan | undefined>;
+  getAllInvestmentPlans(): Promise<InvestmentPlan[]>;
+  createInvestmentPlan(plan: InsertInvestmentPlan): Promise<InvestmentPlan>;
+  updateInvestmentPlan(id: string, plan: Partial<InsertInvestmentPlan>): Promise<InvestmentPlan>;
+
+  // Transaction operations
+  getTransaction(id: string): Promise<Transaction | undefined>;
+  getTransactionsByInvestment(investmentId: string): Promise<Transaction[]>;
+  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  updateTransaction(id: string, transaction: Partial<InsertTransaction>): Promise<Transaction>;
+
+  // Analytics operations
+  getPortfolioOverview(): Promise<{
+    totalInvestors: number;
+    totalPrincipal: string;
+    totalInterestPaid: string;
+    maturityDue: string;
+  }>;
+
+  // Dividend rates
+  getDividendRates(): Promise<{ year: number; rate: string }[]>;
+  initializeDividendRates(): Promise<void>;
+}
+
+export class DatabaseStorage implements IStorage {
+  // User operations (required for Replit Auth)
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  // Investor operations
+  async getInvestor(id: string): Promise<Investor | undefined> {
+    const [investor] = await db.select().from(investors).where(eq(investors.id, id));
+    return investor;
+  }
+
+  async getInvestorByUserId(userId: string): Promise<Investor | undefined> {
+    const [investor] = await db.select().from(investors).where(eq(investors.userId, userId));
+    return investor;
+  }
+
+  async getInvestorWithInvestments(id: string): Promise<InvestorWithInvestments | undefined> {
+    const investor = await this.getInvestor(id);
+    if (!investor) return undefined;
+
+    const investorInvestments = await db
+      .select()
+      .from(investments)
+      .leftJoin(investmentPlans, eq(investments.planId, investmentPlans.id))
+      .where(eq(investments.investorId, id));
+
+    const investmentsWithTransactions = await Promise.all(
+      investorInvestments.map(async (inv) => {
+        const invTransactions = await this.getTransactionsByInvestment(inv.investments.id);
+        return {
+          ...inv.investments,
+          plan: inv.investment_plans!,
+          transactions: invTransactions,
+        };
+      })
+    );
+
+    return {
+      ...investor,
+      investments: investmentsWithTransactions,
+    };
+  }
+
+  async createInvestor(investorData: InsertInvestor): Promise<Investor> {
+    const id = await this.generateInvestorId(investorData);
+    const [investor] = await db
+      .insert(investors)
+      .values({ ...investorData, id })
+      .returning();
+    return investor;
+  }
+
+  async updateInvestor(id: string, investorData: Partial<InsertInvestor>): Promise<Investor> {
+    const [investor] = await db
+      .update(investors)
+      .set({ ...investorData, updatedAt: new Date() })
+      .where(eq(investors.id, id))
+      .returning();
+    return investor;
+  }
+
+  async getAllInvestors(): Promise<Investor[]> {
+    return await db.select().from(investors).orderBy(desc(investors.createdAt));
+  }
+
+  async generateInvestorId(investorData: InsertInvestor): Promise<string> {
+    const currentYear = new Date().getFullYear();
+    const version = 1; // For now, hardcoded to V1
+    
+    // Get count of bonds purchased (simplified for now)
+    const bondCount = 1; // This would be calculated based on investment
+    
+    // Extract last 4 digits of Aadhaar (from identity proof number)
+    const aadhaarDigits = investorData.identityProofNumber.slice(-4);
+    
+    // Get serial number (count of investors this year + 1)
+    const investorsThisYear = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(investors)
+      .where(sql`extract(year from created_at) = ${currentYear}`);
+    
+    const serialNumber = (investorsThisYear[0]?.count || 0) + 1;
+    
+    return `${currentYear}-V${version}-B${bondCount}-${aadhaarDigits}-${serialNumber.toString().padStart(3, '0')}`;
+  }
+
+  // Investment operations
+  async getInvestment(id: string): Promise<Investment | undefined> {
+    const [investment] = await db.select().from(investments).where(eq(investments.id, id));
+    return investment;
+  }
+
+  async getInvestmentWithDetails(id: string): Promise<InvestmentWithDetails | undefined> {
+    const [investment] = await db
+      .select()
+      .from(investments)
+      .leftJoin(investors, eq(investments.investorId, investors.id))
+      .leftJoin(investmentPlans, eq(investments.planId, investmentPlans.id))
+      .where(eq(investments.id, id));
+
+    if (!investment) return undefined;
+
+    const investmentTransactions = await this.getTransactionsByInvestment(id);
+
+    return {
+      ...investment.investments,
+      investor: investment.investors!,
+      plan: investment.investment_plans!,
+      transactions: investmentTransactions,
+    };
+  }
+
+  async getInvestmentsByInvestor(investorId: string): Promise<Investment[]> {
+    return await db
+      .select()
+      .from(investments)
+      .where(eq(investments.investorId, investorId))
+      .orderBy(desc(investments.createdAt));
+  }
+
+  async createInvestment(investmentData: InsertInvestment): Promise<Investment> {
+    const [investment] = await db
+      .insert(investments)
+      .values(investmentData)
+      .returning();
+    return investment;
+  }
+
+  async updateInvestment(id: string, investmentData: Partial<InsertInvestment>): Promise<Investment> {
+    const [investment] = await db
+      .update(investments)
+      .set({ ...investmentData, updatedAt: new Date() })
+      .where(eq(investments.id, id))
+      .returning();
+    return investment;
+  }
+
+  async getAllInvestments(): Promise<Investment[]> {
+    return await db.select().from(investments).orderBy(desc(investments.createdAt));
+  }
+
+  // Investment Plan operations
+  async getInvestmentPlan(id: string): Promise<InvestmentPlan | undefined> {
+    const [plan] = await db.select().from(investmentPlans).where(eq(investmentPlans.id, id));
+    return plan;
+  }
+
+  async getAllInvestmentPlans(): Promise<InvestmentPlan[]> {
+    return await db
+      .select()
+      .from(investmentPlans)
+      .where(eq(investmentPlans.isActive, true))
+      .orderBy(desc(investmentPlans.createdAt));
+  }
+
+  async createInvestmentPlan(planData: InsertInvestmentPlan): Promise<InvestmentPlan> {
+    const [plan] = await db
+      .insert(investmentPlans)
+      .values(planData)
+      .returning();
+    return plan;
+  }
+
+  async updateInvestmentPlan(id: string, planData: Partial<InsertInvestmentPlan>): Promise<InvestmentPlan> {
+    const [plan] = await db
+      .update(investmentPlans)
+      .set({ ...planData, updatedAt: new Date() })
+      .where(eq(investmentPlans.id, id))
+      .returning();
+    return plan;
+  }
+
+  // Transaction operations
+  async getTransaction(id: string): Promise<Transaction | undefined> {
+    const [transaction] = await db.select().from(transactions).where(eq(transactions.id, id));
+    return transaction;
+  }
+
+  async getTransactionsByInvestment(investmentId: string): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.investmentId, investmentId))
+      .orderBy(desc(transactions.createdAt));
+  }
+
+  async createTransaction(transactionData: InsertTransaction): Promise<Transaction> {
+    const [transaction] = await db
+      .insert(transactions)
+      .values(transactionData)
+      .returning();
+    return transaction;
+  }
+
+  async updateTransaction(id: string, transactionData: Partial<InsertTransaction>): Promise<Transaction> {
+    const [transaction] = await db
+      .update(transactions)
+      .set({ ...transactionData, updatedAt: new Date() })
+      .where(eq(transactions.id, id))
+      .returning();
+    return transaction;
+  }
+
+  // Analytics operations
+  async getPortfolioOverview(): Promise<{
+    totalInvestors: number;
+    totalPrincipal: string;
+    totalInterestPaid: string;
+    maturityDue: string;
+  }> {
+    const [investorCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(investors);
+
+    const [principalSum] = await db
+      .select({ sum: sql<string>`coalesce(sum(invested_amount), 0)` })
+      .from(investments);
+
+    const [interestPaid] = await db
+      .select({ sum: sql<string>`coalesce(sum(amount), 0)` })
+      .from(transactions)
+      .where(eq(transactions.type, "dividend_disbursement"));
+
+    const [maturityDue] = await db
+      .select({ sum: sql<string>`coalesce(sum(invested_amount), 0)` })
+      .from(investments)
+      .where(
+        and(
+          sql`maturity_date >= current_date`,
+          sql`maturity_date <= current_date + interval '12 months'`
+        )
+      );
+
+    return {
+      totalInvestors: investorCount.count || 0,
+      totalPrincipal: principalSum.sum || "0",
+      totalInterestPaid: interestPaid.sum || "0",
+      maturityDue: maturityDue.sum || "0",
+    };
+  }
+
+  // Dividend rates
+  async getDividendRates(): Promise<{ year: number; rate: string }[]> {
+    return await db
+      .select({
+        year: dividendRates.year,
+        rate: dividendRates.rate,
+      })
+      .from(dividendRates)
+      .orderBy(dividendRates.year);
+  }
+
+  async initializeDividendRates(): Promise<void> {
+    const rates = [
+      { year: 1, rate: "0.00" },
+      { year: 2, rate: "6.00" },
+      { year: 3, rate: "9.00" },
+      { year: 4, rate: "12.00" },
+      { year: 5, rate: "18.00" },
+      { year: 6, rate: "18.00" },
+      { year: 7, rate: "18.00" },
+      { year: 8, rate: "18.00" },
+      { year: 9, rate: "18.00" },
+      { year: 10, rate: "0.00" },
+    ];
+
+    for (const rate of rates) {
+      await db
+        .insert(dividendRates)
+        .values(rate)
+        .onConflictDoNothing();
+    }
+  }
+}
+
+export const storage = new DatabaseStorage();
