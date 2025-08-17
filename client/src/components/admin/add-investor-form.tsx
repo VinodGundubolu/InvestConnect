@@ -1,93 +1,114 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import { Button } from "@/components/ui/button";
+import InvestorCredentialsDisplay from "./investor-credentials-display";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
-import { z } from "zod";
+import { Plus } from "lucide-react";
 
 const investorSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters"),
   middleName: z.string().optional(),
-  lastName: z.string().min(1, "Last name is required"),
-  primaryMobile: z.string().min(10, "Valid mobile number is required"),
-  secondaryMobile: z.string().optional(),
-  email: z.string().email("Valid email is required"),
-  primaryAddress: z.string().min(1, "Primary address is required"),
-  primaryAddressPin: z.string().min(6, "Valid PIN code is required"),
-  secondaryAddress: z.string().optional(),
-  secondaryAddressPin: z.string().optional(),
-  identityProofType: z.string().min(1, "Identity proof type is required"),
-  identityProofNumber: z.string().min(1, "Identity proof number is required"),
+  email: z.string().email("Invalid email address"),
+  mobileNumber: z.string().min(10, "Mobile number must be at least 10 digits"),
+  address: z.string().min(5, "Address must be at least 5 characters"),
+  city: z.string().min(2, "City must be at least 2 characters"),
+  state: z.string().min(2, "State must be at least 2 characters"),
+  zipcode: z.string().min(5, "Zipcode must be at least 5 characters"),
+  proofType: z.enum(["aadhar", "pan", "passport", "voter_id"], {
+    required_error: "Please select a proof type",
+  }),
+  proofNumber: z.string().min(5, "Proof number is required"),
+  startDate: z.string().min(1, "Start date is required"),
+  investmentAmount: z.string().min(1, "Investment amount is required"),
+  bondsCount: z.string().min(1, "Number of bonds is required"),
 });
 
 type InvestorFormData = z.infer<typeof investorSchema>;
 
-export default function AddInvestorForm() {
+interface AddInvestorFormProps {
+  trigger?: React.ReactNode;
+}
+
+export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
+  const [open, setOpen] = useState(false);
+  const [showCredentials, setShowCredentials] = useState(false);
+  const [credentialsData, setCredentialsData] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const form = useForm<InvestorFormData>({
     resolver: zodResolver(investorSchema),
     defaultValues: {
       firstName: "",
-      middleName: "",
       lastName: "",
-      primaryMobile: "",
-      secondaryMobile: "",
+      middleName: "",
       email: "",
-      primaryAddress: "",
-      primaryAddressPin: "",
-      secondaryAddress: "",
-      secondaryAddressPin: "",
-      identityProofType: "",
-      identityProofNumber: "",
+      mobileNumber: "",
+      address: "",
+      city: "",
+      state: "",
+      zipcode: "",
+      proofType: undefined,
+      proofNumber: "",
+      startDate: "",
+      investmentAmount: "",
+      bondsCount: "",
     },
   });
 
   const createInvestorMutation = useMutation({
     mutationFn: async (data: InvestorFormData) => {
-      // Generate investor ID  
-      const currentYear = new Date().getFullYear();
-      const investorId = `${currentYear}-V1-B5-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-      
-      return await apiRequest('/api/admin/investors', 'POST', {
-        id: investorId,
+      const payload = {
         ...data,
+        investmentAmount: parseInt(data.investmentAmount),
+        bondsCount: parseInt(data.bondsCount),
+      };
+      return await apiRequest("/api/admin/investors", {
+        method: "POST",
+        body: payload,
       });
     },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Investor created successfully",
-      });
+    onSuccess: (response) => {
+      setCredentialsData(response);
+      setShowCredentials(true);
+      queryClient.invalidateQueries({ queryKey: ["/api/investors"] });
       form.reset();
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/investors'] });
+      setOpen(false);
     },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: "Failed to create investor",
+        title: "Failed to Create Investor",
+        description: error.message || "Something went wrong",
         variant: "destructive",
       });
     },
@@ -98,221 +119,336 @@ export default function AddInvestorForm() {
   };
 
   return (
-    <Card data-testid="card-add-investor-form">
-      <CardHeader>
-        <CardTitle>Add New Investor</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {trigger || (
+          <Button className="bg-blue-500 hover:bg-blue-600">
+            <Plus className="h-4 w-4 mr-2" />
+            Add New Investor
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add New Investor</DialogTitle>
+          <DialogDescription>
+            Create a new investor profile with login credentials and investment details.
+          </DialogDescription>
+        </DialogHeader>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Personal Information */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-first-name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="middleName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Middle Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-middle-name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-last-name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Personal Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John" {...field} data-testid="input-first-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="middleName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Middle Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Michael" {...field} data-testid="input-middle-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Doe" {...field} data-testid="input-last-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-            {/* Contact Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="email" data-testid="input-email" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="primaryMobile"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Primary Mobile</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-primary-mobile" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="secondaryMobile"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Secondary Mobile (Optional)</FormLabel>
-                  <FormControl>
-                    <Input {...field} data-testid="input-secondary-mobile" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="email" 
+                            placeholder="john.doe@example.com" 
+                            {...field} 
+                            data-testid="input-email" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="mobileNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mobile Number *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="+91 98765 43210" 
+                            {...field} 
+                            data-testid="input-mobile" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Address Information */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="md:col-span-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Address Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="primaryAddress"
+                  name="address"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Primary Address</FormLabel>
+                      <FormLabel>Address *</FormLabel>
                       <FormControl>
-                        <Textarea {...field} data-testid="input-primary-address" />
+                        <Input 
+                          placeholder="123 Main Street, Apartment 4B" 
+                          {...field} 
+                          data-testid="input-address" 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="primaryAddressPin"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>PIN Code</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-primary-pin" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>City *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Mumbai" {...field} data-testid="input-city" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="state"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>State *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Maharashtra" {...field} data-testid="input-state" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="zipcode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Zipcode *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="400001" {...field} data-testid="input-zipcode" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="md:col-span-3">
-                <FormField
-                  control={form.control}
-                  name="secondaryAddress"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Secondary Address (Optional)</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} data-testid="input-secondary-address" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="secondaryAddressPin"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>PIN Code</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-secondary-pin" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {/* Proof Documents */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Identity Proof</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="proofType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Proof Type *</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-proof-type">
+                              <SelectValue placeholder="Select proof type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="aadhar">Aadhar Card</SelectItem>
+                            <SelectItem value="pan">PAN Card</SelectItem>
+                            <SelectItem value="passport">Passport</SelectItem>
+                            <SelectItem value="voter_id">Voter ID</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="proofNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Proof Number *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="ABCD1234E" 
+                            {...field} 
+                            data-testid="input-proof-number" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Identity Proof */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="identityProofType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Identity Proof Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-identity-type">
-                          <SelectValue placeholder="Select ID type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="aadhaar">Aadhaar Card</SelectItem>
-                        <SelectItem value="pan">PAN Card</SelectItem>
-                        <SelectItem value="passport">Passport</SelectItem>
-                        <SelectItem value="voter_id">Voter ID</SelectItem>
-                        <SelectItem value="driving_license">Driving License</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="identityProofNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Identity Proof Number</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-identity-number" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {/* Investment Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Investment Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="startDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Investment Start Date *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="date" 
+                            {...field} 
+                            data-testid="input-start-date" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="investmentAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Investment Amount (₹) *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="2000000" 
+                            {...field} 
+                            data-testid="input-investment-amount" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="bondsCount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Number of Bonds *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="1" 
+                            min="1" 
+                            max="3" 
+                            {...field} 
+                            data-testid="input-bonds-count" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
+                  <p><strong>Note:</strong> Each bond unit is ₹20,00,000. Maximum 3 units per investor (₹60,00,000 total).</p>
+                </div>
+              </CardContent>
+            </Card>
 
-            <Button 
-              type="submit" 
-              disabled={createInvestorMutation.isPending}
-              className="w-full"
-              data-testid="button-create-investor"
-            >
-              {createInvestorMutation.isPending ? "Creating..." : "Create Investor"}
-            </Button>
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                data-testid="button-cancel"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createInvestorMutation.isPending}
+                className="bg-blue-500 hover:bg-blue-600"
+                data-testid="button-create-investor"
+              >
+                {createInvestorMutation.isPending ? "Creating..." : "Create Investor"}
+              </Button>
+            </div>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+
+      {/* Credentials Display Dialog */}
+      <Dialog open={showCredentials} onOpenChange={setShowCredentials}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Investor Account Created</DialogTitle>
+            <DialogDescription>
+              The investor account has been successfully created with login credentials.
+            </DialogDescription>
+          </DialogHeader>
+          {credentialsData && (
+            <InvestorCredentialsDisplay investor={credentialsData.investor} />
+          )}
+        </DialogContent>
+      </Dialog>
+    </Dialog>
   );
 }

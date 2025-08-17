@@ -25,6 +25,10 @@ export interface IStorage {
   // User operations (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  createUser(user: any): Promise<User>;
+  
+  // Test credentials for demo
+  storeTestCredentials(userId: string, username: string, password: string): Promise<void>;
 
   // Investor operations
   getInvestor(id: string): Promise<Investor | undefined>;
@@ -88,6 +92,20 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  async createUser(userData: any): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .returning();
+    return user;
+  }
+
+  async storeTestCredentials(userId: string, username: string, password: string): Promise<void> {
+    // In a real app, you'd store this in a credentials table with hashed passwords
+    // For demo purposes, we'll just log it
+    console.log(`Test credentials created - UserId: ${userId}, Username: ${username}, Password: ${password}`);
   }
 
   // Investor operations

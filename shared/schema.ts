@@ -75,6 +75,14 @@ export const investors = pgTable("investors", {
   secondaryAddressPin: varchar("secondary_address_pin"),
   identityProofType: varchar("identity_proof_type").notNull(),
   identityProofNumber: varchar("identity_proof_number").notNull(),
+  proofType: varchar("proof_type"), // For new form compatibility
+  proofNumber: varchar("proof_number"), // For new form compatibility
+  address: varchar("address"), // For new form compatibility  
+  city: varchar("city"), // For new form compatibility
+  state: varchar("state"), // For new form compatibility
+  zipcode: varchar("zipcode"), // For new form compatibility
+  kycStatus: varchar("kyc_status").default("pending"),
+  status: varchar("status").default("active"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

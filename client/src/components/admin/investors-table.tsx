@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { Plus, Edit, Eye } from "lucide-react";
+import AddInvestorForm from "./add-investor-form";
 
 export default function InvestorsTable() {
   const { data: investors, isLoading } = useQuery({
@@ -59,10 +60,7 @@ export default function InvestorsTable() {
           <h2 className="text-xl font-semibold">All Investors</h2>
           <p className="text-gray-600">Manage investor profiles and portfolios</p>
         </div>
-        <Button className="bg-blue-500 hover:bg-blue-600">
-          <Plus className="h-4 w-4 mr-2" />
-          Add New Investor
-        </Button>
+        <AddInvestorForm />
       </div>
 
       {/* Quick Stats */}

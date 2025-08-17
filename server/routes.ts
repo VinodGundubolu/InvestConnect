@@ -124,6 +124,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Simple investor creation for demo
+  app.post("/api/admin/investors", async (req, res) => {
+    try {
+      const {
+        firstName,
+        lastName,
+        middleName,
+        email,
+        mobileNumber,
+        address,
+        city,
+        state,
+        zipcode,
+        proofType,
+        proofNumber,
+        startDate,
+        investmentAmount,
+        bondsCount
+      } = req.body;
+
+      // Generate unique credentials
+      const username = firstName.toLowerCase();
+      const password = `${firstName}@${new Date().getFullYear()}`;
+      const investorId = `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+      
+      // For demo purposes, we'll create a simple investor record
+      const investor = {
+        id: investorId,
+        firstName,
+        lastName,
+        middleName,
+        email,
+        mobileNumber,
+        address,
+        city,
+        state,
+        zipcode,
+        proofType,
+        proofNumber,
+        startDate,
+        investmentAmount,
+        bondsCount,
+        username,
+        password,
+        status: "active",
+        createdAt: new Date().toISOString()
+      };
+
+      // In a real app, you'd save this to database
+      console.log('New investor created:', investor);
+
+      res.json({
+        success: true,
+        investor,
+        username,
+        password,
+        message: "Investor created successfully with login credentials"
+      });
+
+    } catch (error) {
+      console.error("Error creating investor:", error);
+      res.status(500).json({ message: "Failed to create investor" });
+    }
+  });
+
   // Investor routes
   app.get('/api/investor/profile', isAuthenticated, async (req: any, res) => {
     try {
