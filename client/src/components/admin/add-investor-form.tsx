@@ -95,7 +95,7 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
       };
       return await apiRequest("/api/admin/investors", "POST", payload);
     },
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       console.log("Full API Response:", response);
       
       // Transform the response to match the expected format
