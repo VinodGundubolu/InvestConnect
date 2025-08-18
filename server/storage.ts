@@ -178,7 +178,7 @@ export class DatabaseStorage implements IStorage {
       // Then delete the investor
       const result = await db.delete(investors).where(eq(investors.id, id));
       
-      return result.rowCount > 0;
+      return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error("Error deleting investor:", error);
       return false;
@@ -344,14 +344,6 @@ export class DatabaseStorage implements IStorage {
       .from(transactions)
       .where(eq(transactions.investmentId, investmentId))
       .orderBy(desc(transactions.createdAt));
-  }
-
-  async createTransaction(transactionData: InsertTransaction): Promise<Transaction> {
-    const [transaction] = await db
-      .insert(transactions)
-      .values(transactionData)
-      .returning();
-    return transaction;
   }
 
   async updateTransaction(id: string, transactionData: Partial<InsertTransaction>): Promise<Transaction> {

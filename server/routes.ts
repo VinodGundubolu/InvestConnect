@@ -1084,13 +1084,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const disbursement of sampleDisbursements) {
           const transaction = await storage.createTransaction({
             investmentId: disbursement.investmentId,
-            transactionType: disbursement.type,
+            type: 'dividend_disbursement',
             amount: disbursement.amount.toString(),
-            transactionDate: disbursement.disbursementDate,
+            transactionDate: disbursement.disbursementDate.toISOString().split('T')[0], // Convert to date string
             status: 'completed',
             mode: 'bank_transfer',
-            description: disbursement.description,
-            referenceNumber: `DIV-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+            transactionId: `DIV-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            notes: disbursement.description
           });
           disbursedTransactions.push(transaction);
         }
