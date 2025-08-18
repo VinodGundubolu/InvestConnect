@@ -16,6 +16,14 @@ An Investment Relationship Management (IRM) Tool designed for organizations to m
 - ✓ **Universal Login System** - Single URL `/login` supporting Email ID, Phone Number, and Investor ID authentication
 - ✓ **Password Change Feature** - Integrated password update functionality with enhanced security requirements
 
+### **Universal Authentication & Investment Dashboard:**
+1. **Universal Login URLs** - `/login` and `/investor-login` both support multi-identifier authentication
+2. **Multi-Identifier Support** - Email ID, Phone Number, Investor ID, and Username login methods
+3. **Smart UI Detection** - Dynamic icons and labels based on identifier type recognition
+4. **Complete Investment Data** - All login methods provide full access to investment dashboard
+5. **Password Management** - Secure password change functionality with validation requirements
+6. **Session Management** - Robust session handling across all authentication methods
+
 ### **Transaction System Improvements:**
 1. **6 Separate Transactions** - Year 5 creates both interest (₹3.6L) and bonus (₹20L) transactions
 2. **Database Integration** - Fixed PostgreSQL date format compatibility and enum constraints
