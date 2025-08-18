@@ -360,7 +360,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Investor not found" });
       }
 
-      // In a real application, you would set up a session here
+      // Set up session for investor
+      if (!req.session) {
+        req.session = {} as any;
+      }
+      req.session.investorAuth = {
+        isAuthenticated: true,
+        investorId: credentials.investorId,
+        username: username,
+        loginTime: new Date().toISOString()
+      };
+
       res.json({
         success: true,
         investor,
@@ -430,6 +440,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get investor's investment data for their portal
   app.get('/api/investor/investments', async (req: any, res) => {
     try {
+      // Check for investor authentication session first
+      if (req.session?.investorAuth?.isAuthenticated) {
+        const investorId = req.session.investorAuth.investorId;
+        
+        // Get investor investments from database
+        const investments = await storage.getInvestmentsByInvestor(investorId);
+        if (investments.length > 0) {
+          return res.json(investments);
+        }
+        
+        // Return empty array if no investments found
+        return res.json([]);
+      }
+
+      // Check for test session second
       if (req.session?.testUser?.portalType === 'investor') {
         const investorId = req.session.testUser.investorId || "2024-V1-B5-1234-001";
         
@@ -572,10 +597,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Investor logout API
+  app.post("/api/investor/logout", async (req, res) => {
+    try {
+      if (req.session?.investorAuth) {
+        req.session.investorAuth = null;
+        delete req.session.investorAuth;
+      }
+      res.json({ success: true, message: "Logged out successfully" });
+    } catch (error) {
+      console.error("Error during investor logout:", error);
+      res.status(500).json({ message: "Logout failed" });
+    }
+  });
+
   // Investor routes
   app.get('/api/investor/profile', async (req: any, res) => {
     try {
-      // Check for test session first
+      // Check for investor authentication session first
+      if (req.session?.investorAuth?.isAuthenticated) {
+        const investorId = req.session.investorAuth.investorId;
+        
+        // Get investor from database
+        const dbInvestor = await storage.getInvestor(investorId);
+        if (dbInvestor) {
+          return res.json(dbInvestor);
+        }
+      }
+
+      // Check for test session second
       if (req.session?.testUser?.portalType === 'investor') {
         const investorId = req.session.testUser.investorId || "2024-V1-B5-1234-001";
         

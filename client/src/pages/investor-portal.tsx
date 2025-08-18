@@ -11,48 +11,34 @@ import TransactionHistory from "@/components/investor/transaction-history";
 import { InvestorWithInvestments } from "@shared/schema";
 
 export default function InvestorPortal() {
-  const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
 
   const { data: investorProfile, isLoading: profileLoading, error } = useQuery<InvestorWithInvestments>({
     queryKey: ["/api/investor/profile"],
-    enabled: isAuthenticated && !isLoading,
+    retry: false,
   });
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
+    if (error && (error as any).message?.includes("Unauthorized")) {
+      window.location.href = "/investor-login";
       return;
     }
-  }, [isAuthenticated, isLoading, toast]);
+  }, [error]);
 
-  // Handle unauthorized errors
-  useEffect(() => {
-    if (error && isUnauthorizedError(error as Error)) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
+
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/investor/logout", { method: "POST" });
+      window.location.href = "/investor-login";
+    } catch (error) {
+      console.error("Logout error:", error);
+      window.location.href = "/investor-login";
     }
-  }, [error, toast]);
-
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
   };
 
-  if (isLoading || profileLoading) {
+  if (profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
