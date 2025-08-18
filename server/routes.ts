@@ -1030,12 +1030,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Investor not found" });
       }
 
-      // Get investor's investments
+      // Get investor's investments with all transactions
       const investments = await storage.getInvestorInvestments(investorAuth.investorId);
       console.log("Found investments:", investments?.length || 0);
       
-      // Get disbursed transactions (interest payments)
-      let disbursedTransactions = await storage.getInvestorTransactions(investorAuth.investorId, 'dividend_disbursement');
+      // Get disbursed transactions (interest payments) from all investments
+      const allTransactions = [];
+      for (const investment of investments) {
+        if (investment.transactions) {
+          allTransactions.push(...investment.transactions.filter(t => t.transactionType === 'dividend_disbursement'));
+        }
+      }
+      let disbursedTransactions = allTransactions;
       console.log("Found disbursed transactions:", disbursedTransactions?.length || 0);
       
       // For demo: Create sample disbursements for investments that should have them by now
@@ -1074,7 +1080,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
-        disbursedTransactions = sampleDisbursements as any;
+        // Create and store actual transactions in the database
+        for (const disbursement of sampleDisbursements) {
+          const transaction = await storage.createTransaction({
+            investmentId: disbursement.investmentId,
+            transactionType: disbursement.type,
+            amount: disbursement.amount.toString(),
+            transactionDate: disbursement.disbursementDate,
+            status: 'completed',
+            mode: 'bank_transfer',
+            description: disbursement.description,
+            referenceNumber: `DIV-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+          });
+          disbursedTransactions.push(transaction);
+        }
         console.log("Created", sampleDisbursements.length, "sample disbursements totaling:", sampleDisbursements.reduce((sum, t) => sum + t.amount, 0));
       }
       

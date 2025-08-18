@@ -6,15 +6,32 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { calculateReturns, type DailyReturnsData } from "@/lib/returns-calculator";
 import { InvestorWithInvestments } from "@shared/schema";
-import { User } from "lucide-react";
+import { User, TrendingUp, DollarSign, Clock, Calendar } from "lucide-react";
 import InvestorProfileModal from "./investor-profile-modal";
 
 interface InvestmentSummaryProps {
   investor: InvestorWithInvestments;
 }
 
+interface InterestDetails {
+  totalInterestTillDate: number;
+  totalInterestDisbursedTillDate: number;
+  interestToBeDispursedNext: {
+    amount: number;
+    disbursementDate: string;
+    yearCovered: number;
+  };
+}
+
 export default function InvestmentSummary({ investor }: InvestmentSummaryProps) {
   const [showProfileModal, setShowProfileModal] = useState(false);
+  
+  // Fetch interest details
+  const { data: interestDetails } = useQuery<InterestDetails>({
+    queryKey: ["/api/investor/interest-details"],
+    staleTime: 30000, // 30 seconds
+    cacheTime: 60000, // 1 minute
+  });
   // Calculate combined daily returns for all investments
   const combinedReturns = (investor.investments || []).reduce(
     (acc, investment) => {
@@ -79,47 +96,66 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
         </CardContent>
       </Card>
 
-      {/* Interest Till Date */}
-      <Card className="bg-gray-800 text-white" data-testid="card-interest-till-date">
+
+
+      {/* Interest Earned Till Date */}
+      <Card className="bg-green-600 text-white" data-testid="card-interest-earned">
         <CardContent className="p-6">
-          <div className="space-y-2">
-            <h3 className="text-lg font-medium text-gray-300">Interest Till Date</h3>
-            <div className="text-3xl font-bold" data-testid="text-interest-amount">
-              {formatCurrency(combinedReturns.interestTillDate)}
-            </div>
+          <div className="flex items-center justify-between mb-4">
+            <TrendingUp className="w-8 h-8 text-green-200" />
+            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+              Earned
+            </Badge>
           </div>
+          <div className="text-3xl font-bold" data-testid="text-interest-earned">
+            {formatCurrency(interestDetails?.totalInterestTillDate || 0)}
+          </div>
+          <div className="text-sm text-green-100">Interest Till Date</div>
         </CardContent>
       </Card>
 
-      {/* Milestone Bonus Earned */}
-      <Card className="bg-gray-800 text-white" data-testid="card-milestone-bonus">
+      {/* Interest Disbursed Till Date */}
+      <Card className="bg-blue-600 text-white" data-testid="card-interest-disbursed">
         <CardContent className="p-6">
-          <div className="space-y-2">
-            <h3 className="text-lg font-medium text-gray-300">Milestone Bonus Earned</h3>
-            <div className="text-3xl font-bold" data-testid="text-bonus-amount">
-              {formatCurrency(combinedReturns.milestoneBonus)}
-            </div>
-            <div className="text-sm text-gray-400" data-testid="text-bonus-status">
-              {combinedReturns.milestoneBonus > 0 ? "Bonus earned" : "No bonus earned yet"}
-            </div>
+          <div className="flex items-center justify-between mb-4">
+            <DollarSign className="w-8 h-8 text-blue-200" />
+            <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+              Paid Out
+            </Badge>
           </div>
+          <div className="text-3xl font-bold" data-testid="text-interest-disbursed">
+            {formatCurrency(interestDetails?.totalInterestDisbursedTillDate || 0)}
+          </div>
+          <div className="text-sm text-blue-100">Interest Disbursed Till Date</div>
         </CardContent>
       </Card>
 
-      {/* Daily Interest Rate */}
-      <Card className="bg-gray-800 text-white" data-testid="card-daily-interest-rate">
+      {/* Next Disbursement */}
+      <Card className="bg-purple-600 text-white" data-testid="card-next-disbursement">
         <CardContent className="p-6">
-          <div className="space-y-2">
-            <h3 className="text-lg font-medium text-gray-300">Daily Interest Rate</h3>
-            <div className="text-3xl font-bold" data-testid="text-daily-rate">
-              {formatCurrency(combinedReturns.dailyInterestAmount)}
-            </div>
-            <div className="text-sm text-gray-400" data-testid="text-current-year-rate">
-              Current year: {combinedReturns.currentRate}%
-            </div>
+          <div className="flex items-center justify-between mb-4">
+            <Clock className="w-8 h-8 text-purple-200" />
+            <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">
+              Upcoming
+            </Badge>
           </div>
+          <div className="text-3xl font-bold" data-testid="text-next-disbursement">
+            {formatCurrency(interestDetails?.interestToBeDispursedNext?.amount || 0)}
+          </div>
+          <div className="text-sm text-purple-100">Next Disbursement</div>
+          <div className="flex items-center mt-2 text-sm text-purple-100">
+            <Calendar className="w-4 h-4 mr-1" />
+            {interestDetails?.interestToBeDispursedNext?.disbursementDate || "Not scheduled"}
+          </div>
+          {interestDetails?.interestToBeDispursedNext?.yearCovered && (
+            <p className="text-xs text-purple-200 mt-1">
+              Year {interestDetails.interestToBeDispursedNext.yearCovered} Interest
+            </p>
+          )}
         </CardContent>
       </Card>
+
+
 
       {/* Early Exit Value */}
       <Card className="bg-gray-800 text-white" data-testid="card-early-exit-value">

@@ -113,11 +113,7 @@ export default function InvestorPortal() {
         {/* Investment Summary */}
         <InvestmentSummary investor={investorProfile} />
 
-        {/* Interest Summary - New Interest Disbursement System */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Interest & Disbursements</h2>
-          <InterestSummary />
-        </div>
+        {/* Interest & Disbursements moved to Investment Summary */}
 
         {/* Transaction History */}
         <TransactionHistory investorProfile={investorProfile} />

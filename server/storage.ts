@@ -330,6 +330,14 @@ export class DatabaseStorage implements IStorage {
     return transaction;
   }
 
+  async createTransaction(transactionData: InsertTransaction): Promise<Transaction> {
+    const [transaction] = await db
+      .insert(transactions)
+      .values(transactionData)
+      .returning();
+    return transaction;
+  }
+
   async getTransactionsByInvestment(investmentId: string): Promise<Transaction[]> {
     return await db
       .select()
