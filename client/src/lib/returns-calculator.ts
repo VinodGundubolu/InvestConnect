@@ -61,6 +61,9 @@ export function calculateReturns(
   const currentYear = Math.min(Math.floor(yearsSinceInvestment) + 1, 10);
   const currentRate = DIVIDEND_RATES[currentYear as keyof typeof DIVIDEND_RATES] || 0;
   
+  // Check if lock-in period has passed (3 years)
+  const hasPassedLockIn = yearsSinceInvestment >= LOCK_IN_PERIOD_YEARS;
+  
   // Calculate interest till date
   let totalInterest = 0;
   let totalBonuses = 0;
@@ -106,9 +109,14 @@ export function calculateReturns(
   const dailyInterestRate = currentRate / 365; // Daily rate as percentage
   const dailyInterestAmount = (principalAmount * currentRate) / (100 * 365);
   
-  // Determine exit value availability
+  // Determine exit value availability and calculate amount
   const isAfterLockIn = yearsSinceInvestment >= LOCK_IN_PERIOD_YEARS;
-  const exitValue = isAfterLockIn ? "Available" : "N/A";
+  let exitValue = "N/A";
+  if (isAfterLockIn) {
+    // Early exit value is principal + interest till date (no bonuses)
+    const exitAmount = principalAmount + totalInterest;
+    exitValue = formatCurrency(exitAmount);
+  }
   
   // Calculate milestone bonus earned so far
   let milestoneBonus = 0;
@@ -184,4 +192,39 @@ export function validateInvestmentAmount(amount: number): {
   }
   
   return { isValid: true, units };
+}
+
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+export interface MilestoneStatus {
+  year: number;
+  isCompleted: boolean;
+  completionDate?: Date;
+  bonusAmount: number;
+}
+
+export function getMilestoneStatus(
+  investmentDate: Date,
+  currentDate: Date = new Date()
+): MilestoneStatus[] {
+  const yearsSinceInvestment = differenceInYears(currentDate, investmentDate);
+  
+  return BONUS_YEARS.map(year => {
+    const isCompleted = yearsSinceInvestment >= year;
+    const completionDate = isCompleted ? addYears(investmentDate, year) : undefined;
+    
+    return {
+      year,
+      isCompleted,
+      completionDate,
+      bonusAmount: 2000000, // 100% of ₹20 lakhs per unit
+    };
+  });
 }

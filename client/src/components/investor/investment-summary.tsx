@@ -126,33 +126,78 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
         <CardContent className="p-6">
           <div className="space-y-2">
             <h3 className="text-lg font-medium text-gray-300">Early Exit Value</h3>
-            <div className="text-3xl font-bold" data-testid="text-exit-value">
-              N/A
-            </div>
-            <div className="text-sm text-gray-400" data-testid="text-exit-status">
-              Exit only available after Month 36 (3-Year Lock-in)
-            </div>
+            {(() => {
+              // Check if any investment has passed 3-year lock-in
+              const hasPassedLockIn = (investor.investments || []).some(inv => {
+                const yearsSince = Math.floor((new Date().getTime() - new Date(inv.investmentDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+                return yearsSince >= 3;
+              });
+              
+              if (hasPassedLockIn) {
+                const exitValue = combinedReturns.principalInvestment + combinedReturns.interestTillDate;
+                return (
+                  <>
+                    <div className="text-3xl font-bold text-green-400" data-testid="text-exit-value">
+                      {formatCurrency(exitValue)}
+                    </div>
+                    <div className="text-sm text-green-300" data-testid="text-exit-status">
+                      Available (Principal + Interest Till Date)
+                    </div>
+                  </>
+                );
+              } else {
+                return (
+                  <>
+                    <div className="text-3xl font-bold" data-testid="text-exit-value">
+                      N/A
+                    </div>
+                    <div className="text-sm text-gray-400" data-testid="text-exit-status">
+                      Exit only available after Month 36 (3-Year Lock-in)
+                    </div>
+                  </>
+                );
+              }
+            })()}
           </div>
         </CardContent>
       </Card>
 
-      {/* Investment Summary */}
-      <Card className="bg-gray-800 text-white" data-testid="card-investment-summary">
+      {/* Investment Timeline & Milestones */}
+      <Card className="bg-gray-800 text-white" data-testid="card-investment-milestones">
         <CardContent className="p-6">
-          <div className="space-y-2">
-            <h3 className="text-lg font-medium text-gray-300">Investment Summary</h3>
-            <div className="space-y-1">
-              <div className="flex justify-between text-sm">
-                <span>Total Investments:</span>
-                <span data-testid="text-total-investments">{totalInvestments}</span>
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-300">Investment Milestones</h3>
+            
+            {/* Investment Dates */}
+            {(investor.investments || []).map((investment, index) => (
+              <div key={investment.id} className="border-l-2 border-blue-400 pl-3 py-2">
+                <div className="text-sm space-y-1">
+                  <div className="font-medium">Investment {index + 1} ({investment.bondsPurchased} Unit{investment.bondsPurchased > 1 ? 's' : ''})</div>
+                  <div className="text-gray-400">Start: {formatDate(investment.investmentDate)}</div>
+                  <div className="text-gray-400">Maturity: {formatDate(investment.maturityDate)}</div>
+                </div>
               </div>
-              <div className="flex justify-between text-sm">
-                <span>Total Units:</span>
-                <span data-testid="text-total-units">{totalUnits}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Investor ID:</span>
-                <span data-testid="text-investor-id" className="font-mono">{investor.id}</span>
+            ))}
+            
+            {/* Milestone Status */}
+            <div className="pt-2 border-t border-gray-600">
+              <div className="text-sm font-medium text-gray-300 mb-2">Milestone Bonuses:</div>
+              <div className="space-y-1">
+                {[5, 10].map(year => {
+                  const isCompleted = (investor.investments || []).some(inv => {
+                    const yearsSince = Math.floor((new Date().getTime() - new Date(inv.investmentDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+                    return yearsSince >= year;
+                  });
+                  
+                  return (
+                    <div key={year} className="flex items-center justify-between text-sm">
+                      <span>Year {year} Completion:</span>
+                      <span className={isCompleted ? "text-green-400 font-medium" : "text-gray-400"}>
+                        {isCompleted ? "✓ Completed" : "Pending"}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

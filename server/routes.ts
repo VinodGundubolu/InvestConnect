@@ -423,6 +423,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
           
+          // Get investment start date from first investment
+          const investmentStartDate = investments.length > 0 
+            ? new Date(investments[0].investmentDate).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0];
+          
+          // Get maturity date from first investment
+          const maturityDate = investments.length > 0 
+            ? new Date(investments[0].maturityDate).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0];
+
           return {
             id: investor.id,
             name: `${investor.firstName} ${investor.middleName || ''} ${investor.lastName}`.trim(),
@@ -431,6 +441,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             totalInvestment,
             bondsCount,
             joinDate: investor.createdAt ? new Date(investor.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            investmentStartDate,
+            maturityDate,
             status: "Active",
             currentYear,
             currentRate,

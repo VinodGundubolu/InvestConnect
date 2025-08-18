@@ -123,7 +123,8 @@ export default function InvestorsTable() {
                   <th className="text-left p-4 font-medium">Name & Contact</th>
                   <th className="text-right p-4 font-medium">Investment</th>
                   <th className="text-left p-4 font-medium">Bonds</th>
-                  <th className="text-left p-4 font-medium">Join Date</th>
+                  <th className="text-left p-4 font-medium">Investment Start</th>
+                  <th className="text-left p-4 font-medium">Maturity Date</th>
                   <th className="text-left p-4 font-medium">Current Status</th>
                   <th className="text-right p-4 font-medium">Total Returns</th>
                   <th className="text-left p-4 font-medium">Actions</th>
@@ -148,7 +149,8 @@ export default function InvestorsTable() {
                         {investor.bondsCount} Bond{investor.bondsCount > 1 ? 's' : ''}
                       </Badge>
                     </td>
-                    <td className="p-4">{investor.joinDate}</td>
+                    <td className="p-4">{investor.investmentStartDate || investor.joinDate}</td>
+                    <td className="p-4">{investor.maturityDate || 'TBD'}</td>
                     <td className="p-4">
                       <div>
                         <Badge variant="secondary" className="bg-green-50 text-green-700 mb-1">
