@@ -53,10 +53,10 @@ export default function InvestorCredentialsDisplay({ investor }: InvestorCredent
           <div>
             <h3 className="font-semibold text-gray-700 mb-2">Investor Information</h3>
             <div className="space-y-2 text-sm">
-              <p><span className="font-medium">Name:</span> {credentialsData?.investor?.firstName || investor?.firstName || 'N/A'} {credentialsData?.investor?.lastName || investor?.lastName || ''}</p>
-              <p><span className="font-medium">Email:</span> {credentialsData?.investor?.email || investor?.email || 'N/A'}</p>
-              <p><span className="font-medium">Investment:</span> {formatCurrency(credentialsData?.investmentAmount || investor?.investmentAmount || 0)}</p>
-              <p><span className="font-medium">Bonds:</span> {credentialsData?.bondsCount || investor?.bondsCount || 0} units</p>
+              <p><span className="font-medium">Name:</span> {investor?.firstName || 'N/A'} {investor?.lastName || ''}</p>
+              <p><span className="font-medium">Email:</span> {investor?.email || 'N/A'}</p>
+              <p><span className="font-medium">Investment:</span> {formatCurrency(investor?.investmentAmount || 0)}</p>
+              <p><span className="font-medium">Bonds:</span> {investor?.bondsCount || 0} units</p>
             </div>
           </div>
           
@@ -86,12 +86,12 @@ export default function InvestorCredentialsDisplay({ investor }: InvestorCredent
             <div className="flex items-center justify-between bg-white rounded p-3 border">
               <div className="flex-1">
                 <label className="text-sm font-medium text-gray-600">Username</label>
-                <p className="font-mono text-lg">{credentialsData?.username || investor?.username || 'N/A'}</p>
+                <p className="font-mono text-lg">{investor?.username || 'N/A'}</p>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => copyToClipboard(credentialsData?.username || investor?.username || '', "Username")}
+                onClick={() => copyToClipboard(investor?.username || '', "Username")}
                 data-testid="copy-username"
               >
                 <Copy className="h-4 w-4" />
@@ -102,7 +102,7 @@ export default function InvestorCredentialsDisplay({ investor }: InvestorCredent
               <div className="flex-1">
                 <label className="text-sm font-medium text-gray-600">Password</label>
                 <p className="font-mono text-lg">
-                  {showPassword ? (credentialsData?.password || investor?.password || 'N/A') : "••••••••"}
+                  {showPassword ? (investor?.password || 'N/A') : "••••••••"}
                 </p>
               </div>
               <div className="flex items-center space-x-2">
@@ -117,7 +117,7 @@ export default function InvestorCredentialsDisplay({ investor }: InvestorCredent
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => copyToClipboard(credentialsData?.password || investor?.password || '', "Password")}
+                  onClick={() => copyToClipboard(investor?.password || '', "Password")}
                   data-testid="copy-password"
                 >
                   <Copy className="h-4 w-4" />
