@@ -13,6 +13,8 @@ An Investment Relationship Management (IRM) Tool designed for organizations to m
 - ✓ **Transaction History** - Fixed profile endpoint to include transactions using `getInvestorWithInvestments`
 - ✓ **Early Exit Value** - Updated formula to Capital + Interest yet to be disbursed (excluding milestone bonuses)
 - ✓ **Separate Transactions** - Interest and milestone bonuses now show as distinct debit/credit entries
+- ✓ **Universal Login System** - Single URL `/login` supporting Email ID, Phone Number, and Investor ID authentication
+- ✓ **Password Change Feature** - Integrated password update functionality with enhanced security requirements
 
 ### **Transaction System Improvements:**
 1. **6 Separate Transactions** - Year 5 creates both interest (₹3.6L) and bonus (₹20L) transactions

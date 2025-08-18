@@ -31,6 +31,7 @@ function Router() {
     <Switch>
       {/* Separate Login Pages */}
       <Route path="/investor-login" component={InvestorLogin} />
+      <Route path="/login" component={InvestorLogin} />
       <Route path="/admin-login" component={AdminLogin} />
 
       {/* Protected Admin Portal - requires admin role */}

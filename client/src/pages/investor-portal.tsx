@@ -1,17 +1,20 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Button } from "@/components/ui/button";
-import { Bell, LogOut } from "lucide-react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Bell, LogOut, Settings } from "lucide-react";
 import InvestmentSummary from "@/components/investor/investment-summary";
 import InterestSummary from "@/components/investor/interest-summary";
 import TransactionHistory from "@/components/investor/transaction-history";
+import PasswordChange from "@/components/investor/password-change";
 import { InvestorWithInvestments } from "@shared/schema";
 
 export default function InvestorPortal() {
   const { toast } = useToast();
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 
   const { data: investorProfile, isLoading: profileLoading, error } = useQuery<InvestorWithInvestments>({
     queryKey: ["/api/investor/profile"],
@@ -101,6 +104,25 @@ export default function InvestorPortal() {
               <Button variant="ghost" size="sm" data-testid="button-notifications">
                 <Bell className="h-4 w-4" />
               </Button>
+              
+              <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    data-testid="button-settings"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <PasswordChange 
+                    investor={investorProfile} 
+                    onClose={() => setPasswordDialogOpen(false)} 
+                  />
+                </DialogContent>
+              </Dialog>
+              
               <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="button-logout">
                 <LogOut className="h-4 w-4" />
               </Button>

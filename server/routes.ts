@@ -220,7 +220,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Store for temporary credentials mapping (will be replaced with database)
   const credentialsMap = new Map<string, { username: string; password: string; investorId: string }>();
 
-  // Add test credentials for existing investors
+  // Enhanced credentials mapping with multiple identifier support
+  interface InvestorCredentials {
+    username: string;
+    password: string;
+    investorId: string;
+    email?: string;
+    phone?: string;
+  }
+
+  // Store for enhanced credentials mapping
+  const enhancedCredentialsMap = new Map<string, InvestorCredentials>();
+
+  // Add test credentials for existing investors with multiple identifiers
+  const addInvestorCredentials = (creds: InvestorCredentials) => {
+    // Store by username
+    enhancedCredentialsMap.set(creds.username, creds);
+    // Store by investor ID
+    enhancedCredentialsMap.set(creds.investorId, creds);
+    // Store by email if provided
+    if (creds.email) {
+      enhancedCredentialsMap.set(creds.email, creds);
+    }
+    // Store by phone if provided  
+    if (creds.phone) {
+      enhancedCredentialsMap.set(creds.phone, creds);
+    }
+  };
+
+  // Add test credentials
+  addInvestorCredentials({
+    username: "nd_kumar",
+    password: "ND2025", 
+    investorId: "2025-V1-B1-234E-091",
+    email: "nd.kumar@example.com",
+    phone: "+91 98765 43209"
+  });
+  
+  addInvestorCredentials({
+    username: "suresh_kumar",
+    password: "SU2025",
+    investorId: "2025-V1-B1-234E-081", 
+    email: "suresh.kumar@example.com",
+    phone: "+91 98765 43208"
+  });
+  
+  addInvestorCredentials({
+    username: "suri_kumar",
+    password: "SU2025",
+    investorId: "2025-V1-B1-234E-141",
+    email: "suri.kumar@example.com", 
+    phone: "+91 98765 43210"
+  });
+
+  // Legacy credentials map for backward compatibility
   credentialsMap.set("nd_kumar", { username: "nd_kumar", password: "ND2025", investorId: "2025-V1-B1-234E-091" });
   credentialsMap.set("suresh_kumar", { username: "suresh_kumar", password: "SU2025", investorId: "2025-V1-B1-234E-081" });
   credentialsMap.set("suri_kumar", { username: "suri_kumar", password: "SU2025", investorId: "2025-V1-B1-234E-141" });
@@ -265,8 +318,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         identityProofNumber: proofNumber
       });
 
-      // Store credentials in map for login
+      // Store credentials in map for login (both maps for compatibility)
       credentialsMap.set(username, { username, password, investorId });
+      addInvestorCredentials({
+        username,
+        password,
+        investorId,
+        email,
+        phone: mobileNumber
+      });
       
       // Create investor in database
       const investor = await storage.createInvestor({
@@ -396,6 +456,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Investor login API
+  // Universal investor login endpoint (supports email, phone, investor ID)
+  app.post("/api/investor/universal-login", async (req, res) => {
+    try {
+      const { identifier, password } = req.body;
+
+      if (!identifier || !password) {
+        return res.status(400).json({ message: "Identifier and password are required" });
+      }
+
+      // Check enhanced credentials map for any identifier type
+      const credentials = enhancedCredentialsMap.get(identifier);
+      
+      if (!credentials || credentials.password !== password) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      // Get investor from database
+      const investor = await storage.getInvestor(credentials.investorId);
+      
+      if (!investor) {
+        return res.status(404).json({ message: "Investor not found" });
+      }
+
+      // Store session
+      req.session.investorAuth = {
+        isAuthenticated: true,
+        investorId: credentials.investorId,
+        username: credentials.username,
+        loginTime: new Date().toISOString()
+      };
+
+      // Save session
+      req.session.save((err: any) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ message: "Session error" });
+        }
+        
+        console.log("Session saved successfully for investor:", credentials.username);
+        res.json({
+          success: true,
+          investor: {
+            id: investor.id,
+            firstName: investor.firstName,
+            lastName: investor.lastName,
+            email: investor.email
+          }
+        });
+      });
+    } catch (error) {
+      console.error("Universal login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  // Password change endpoint
+  app.post("/api/investor/change-password", async (req, res) => {
+    try {
+      const { investorId, currentPassword, newPassword } = req.body;
+
+      if (!investorId || !currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Find current credentials
+      let currentCredentials: InvestorCredentials | undefined;
+      for (const [key, creds] of enhancedCredentialsMap.entries()) {
+        if (creds.investorId === investorId) {
+          currentCredentials = creds;
+          break;
+        }
+      }
+
+      if (!currentCredentials || currentCredentials.password !== currentPassword) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+
+      // Update password in all credential maps
+      const updatedCredentials: InvestorCredentials = {
+        ...currentCredentials,
+        password: newPassword
+      };
+
+      // Remove old entries
+      enhancedCredentialsMap.delete(currentCredentials.username);
+      enhancedCredentialsMap.delete(currentCredentials.investorId);
+      if (currentCredentials.email) {
+        enhancedCredentialsMap.delete(currentCredentials.email);
+      }
+      if (currentCredentials.phone) {
+        enhancedCredentialsMap.delete(currentCredentials.phone);
+      }
+
+      // Add updated entries
+      addInvestorCredentials(updatedCredentials);
+
+      // Update legacy map
+      credentialsMap.set(currentCredentials.username, {
+        username: currentCredentials.username,
+        password: newPassword,
+        investorId: currentCredentials.investorId
+      });
+
+      res.json({ success: true, message: "Password updated successfully" });
+    } catch (error) {
+      console.error("Password change error:", error);
+      res.status(500).json({ message: "Failed to update password" });
+    }
+  });
+
   app.post("/api/investor/login", async (req, res) => {
     try {
       const { username, password } = req.body;
