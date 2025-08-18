@@ -197,6 +197,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         identityProofType: proofType,
         identityProofNumber: proofNumber
       });
+
+      // Store credentials in map for login
+      credentialsMap.set(username, { username, password, investorId });
       
       // Create investor in database
       const investor = await storage.createInvestor({

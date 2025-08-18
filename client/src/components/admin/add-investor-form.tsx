@@ -96,6 +96,8 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
       return await apiRequest("/api/admin/investors", "POST", payload);
     },
     onSuccess: (response) => {
+      console.log("Full API Response:", response);
+      
       // Transform the response to match the expected format
       const transformedData = {
         firstName: response.investor?.firstName || form.getValues('firstName'),
@@ -106,6 +108,8 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
         username: response.username,
         password: response.password
       };
+      
+      console.log("Transformed Credentials Data:", transformedData);
       
       setCredentialsData(transformedData);
       setShowCredentials(true);
