@@ -113,25 +113,8 @@ function Router() {
         )}
       </Route>
 
-      {/* Protected Investor Portal - requires authentication */}
-      <Route path="/investor">
-        {isAuthenticated ? (
-          <InvestorPortal />
-        ) : (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-xl font-semibold mb-2">Login Required</h2>
-              <p className="text-gray-600 mb-4">Please login to access the investor portal.</p>
-              <button 
-                onClick={() => window.location.href = '/investor-login'}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Go to Investor Login
-              </button>
-            </div>
-          </div>
-        )}
-      </Route>
+      {/* Investor Portal - uses its own authentication */}
+      <Route path="/investor" component={InvestorPortal} />
 
       {/* Landing page with portal selection */}
       <Route path="/" component={Landing} />

@@ -39,8 +39,10 @@ export default function InvestorLogin() {
         title: "Login Successful",
         description: "Welcome to your investor portal!",
       });
-      // Redirect to investor portal
-      window.location.href = '/investor';
+      // Add a longer delay to ensure session is fully set before redirect
+      setTimeout(() => {
+        window.location.href = '/investor';
+      }, 1000); // Increased to 1 second
     },
     onError: (error: any) => {
       toast({
