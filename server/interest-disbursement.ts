@@ -102,11 +102,10 @@ export class InterestDisbursementEngine {
       interestEarnedTillDate += Math.round(currentYearInterest);
     }
     
-    // Add milestone bonuses for completed milestones
-    interestEarnedTillDate += this.getMilestoneBonus(principalAmount, completedYears);
+    // Note: Milestone bonuses are tracked separately, not included in interest calculations
     
-    // Calculate how much SHOULD have been disbursed based on completed years
-    // For each completed year, interest should have been disbursed
+    // Calculate how much interest SHOULD have been disbursed based on completed years
+    // Note: This only includes interest, not milestone bonuses (those are tracked separately)
     let shouldBeDisbursedbyd = 0;
     for (let year = 1; year <= completedYears; year++) {
       const disbursementDate = this.calculateDisbursementDate(investmentStartDate, year);
@@ -114,13 +113,6 @@ export class InterestDisbursementEngine {
       // Only count as "should be disbursed" if the disbursement date has passed
       if (disbursementDate <= today) {
         shouldBeDisbursedbyd += this.calculateYearlyInterest(principalAmount, year);
-        
-        // Add milestone bonuses for years 5 and 10 if those disbursement dates have passed
-        if (year === 5 && disbursementDate <= today) {
-          shouldBeDisbursedbyd += Math.round(principalAmount * 1.0); // 100% bonus
-        } else if (year === 10 && disbursementDate <= today) {
-          shouldBeDisbursedbyd += Math.round(principalAmount * 1.0); // 100% bonus
-        }
       }
     }
     
@@ -139,12 +131,7 @@ export class InterestDisbursementEngine {
       const disbursementDate = this.calculateDisbursementDate(investmentStartDate, nextDisbursementYear);
       nextDisbursementAmount = this.calculateYearlyInterest(principalAmount, nextDisbursementYear);
       
-      // Add milestone bonus if applicable
-      if (nextDisbursementYear === 5) {
-        nextDisbursementAmount += Math.round(principalAmount * 1.0); // 100% bonus
-      } else if (nextDisbursementYear === 10) {
-        nextDisbursementAmount += Math.round(principalAmount * 1.0); // 100% bonus
-      }
+      // Note: Milestone bonuses are disbursed as separate transactions
       
       nextDisbursementDate = format(disbursementDate, 'MMM dd, yyyy');
     }

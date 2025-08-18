@@ -170,14 +170,17 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
               });
               
               if (hasPassedLockIn) {
-                const exitValue = combinedReturns.principalInvestment + combinedReturns.interestTillDate;
+                // Early Exit Value = Capital + Interest yet to be disbursed (excluding milestone bonuses)
+                const exitValue = combinedReturns.principalInvestment + 
+                  (interestDetails?.totalInterestTillDate || 0) - 
+                  (interestDetails?.totalInterestDisbursedTillDate || 0);
                 return (
                   <>
                     <div className="text-3xl font-bold text-green-400" data-testid="text-exit-value">
                       {formatCurrency(exitValue)}
                     </div>
                     <div className="text-sm text-green-300" data-testid="text-exit-status">
-                      Available (Principal + Interest Till Date)
+                      Available (Capital + Interest Yet to be Disbursed)
                     </div>
                   </>
                 );

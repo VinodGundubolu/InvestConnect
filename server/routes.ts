@@ -1034,11 +1034,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const investments = await storage.getInvestorInvestments(investorAuth.investorId);
       console.log("Found investments:", investments?.length || 0);
       
-      // Get disbursed transactions (interest payments) from all investments
+      // Get disbursed transactions (interest payments and bonuses) from all investments
       const allTransactions = [];
       for (const investment of investments) {
         if (investment.transactions) {
-          allTransactions.push(...investment.transactions.filter(t => t.transactionType === 'dividend_disbursement'));
+          allTransactions.push(...investment.transactions.filter(t => 
+            t.transactionType === 'dividend_disbursement' || t.transactionType === 'bonus_disbursement'
+          ));
         }
       }
       let disbursedTransactions = allTransactions;
@@ -1061,22 +1063,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (disbursementDate <= today) {
             const yearlyInterest = InterestDisbursementEngine.calculateYearlyInterest(parseFloat(investment.investedAmount), year);
-            let amount = yearlyInterest;
-            let description = `Year ${year} Interest Disbursement (${InterestDisbursementEngine.getInterestRateForYear(year)}%)`;
             
-            // Add milestone bonus for year 5 (100% bonus)
-            if (year === 5) {
-              amount += Math.round(parseFloat(investment.investedAmount) * 1.0);
-              description += ` + Milestone Bonus (100%)`;
-            }
-            
+            // Create interest disbursement transaction
             sampleDisbursements.push({
-              amount: amount,
+              amount: yearlyInterest,
               disbursementDate: disbursementDate,
               investmentId: investment.id,
               type: 'dividend_disbursement',
-              description: description
+              description: `Year ${year} Interest Disbursement (${InterestDisbursementEngine.getInterestRateForYear(year)}%)`
             });
+            
+            // Create separate milestone bonus transaction for year 5
+            if (year === 5) {
+              const milestoneBonus = Math.round(parseFloat(investment.investedAmount) * 1.0);
+              sampleDisbursements.push({
+                amount: milestoneBonus,
+                disbursementDate: disbursementDate,
+                investmentId: investment.id,
+                type: 'bonus_disbursement',
+                description: `Year 5 Milestone Bonus (100% of Principal Investment)`
+              });
+            }
           }
         }
         
@@ -1084,12 +1091,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const disbursement of sampleDisbursements) {
           const transaction = await storage.createTransaction({
             investmentId: disbursement.investmentId,
-            type: 'dividend_disbursement',
+            type: disbursement.type,
             amount: disbursement.amount.toString(),
             transactionDate: disbursement.disbursementDate.toISOString().split('T')[0], // Convert to date string
             status: 'completed',
             mode: 'bank_transfer',
-            transactionId: `DIV-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            transactionId: `${disbursement.type === 'bonus_disbursement' ? 'BON' : 'DIV'}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
             notes: disbursement.description
           });
           disbursedTransactions.push(transaction);
@@ -1099,12 +1106,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calculate interest details for each investment
       const investmentInterestDetails = investments.map(investment => {
-        const investmentTransactions = disbursedTransactions.filter(t => t.investmentId === investment.id);
+        // Filter only interest disbursements for interest calculations
+        const interestTransactions = disbursedTransactions.filter(t => 
+          t.investmentId === investment.id && t.type === 'dividend_disbursement'
+        );
         
         const interestCalc = InterestDisbursementEngine.calculateInterestDetails(
           new Date(investment.investmentDate),
           parseFloat(investment.investedAmount),
-          investmentTransactions.map(t => ({
+          interestTransactions.map(t => ({
             amount: parseFloat(t.amount),
             disbursementDate: new Date(t.disbursementDate || t.transactionDate)
           }))
@@ -1119,9 +1129,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
 
-      // Aggregate totals across all investments
+      // Aggregate totals across all investments (interest only, excluding bonuses)
       const totalInterestEarned = investmentInterestDetails.reduce((sum, inv) => sum + (inv.interestEarnedTillDate || 0), 0);
-      const totalInterestDisbursed = investmentInterestDetails.reduce((sum, inv) => sum + (inv.interestDisbursedTillDate || 0), 0);
+      const totalInterestDisbursed = disbursedTransactions
+        .filter(t => t.type === 'dividend_disbursement')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
       
       // Find next disbursement (earliest upcoming)
       const upcomingDisbursements = investmentInterestDetails
