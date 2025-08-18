@@ -222,6 +222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add test credentials for existing investors
   credentialsMap.set("nd_kumar", { username: "nd_kumar", password: "ND2025", investorId: "2025-V1-B1-234E-091" });
   credentialsMap.set("suresh_kumar", { username: "suresh_kumar", password: "SU2025", investorId: "2025-V1-B1-234E-081" });
+  credentialsMap.set("suri_kumar", { username: "suri_kumar", password: "SU2025", investorId: "2025-V1-B1-234E-141" });
 
   // Helper function to generate login credentials
   const generateCredentials = (firstName: string, lastName: string) => {
