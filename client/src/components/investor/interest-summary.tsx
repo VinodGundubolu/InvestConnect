@@ -21,13 +21,6 @@ interface InterestDetails {
     completedYears: number;
     currentYearProgress: number;
   }>;
-  disbursementSchedule: Array<{
-    year: number;
-    disbursementDate: string;
-    amount: number;
-    interestRate: number;
-    milestoneBonus?: number;
-  }>;
 }
 
 export default function InterestSummary() {
@@ -211,71 +204,7 @@ export default function InterestSummary() {
         </Card>
       )}
 
-      {/* Disbursement Schedule */}
-      {interestDetails.disbursementSchedule.length > 0 && (
-        <Card className="modern-card-elevated">
-          <CardHeader>
-            <CardTitle className="modern-heading flex items-center">
-              <Calendar className="w-5 h-5 mr-2 text-green-500" />
-              Complete Disbursement Schedule
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="table-modern w-full">
-                <thead>
-                  <tr>
-                    <th>Year</th>
-                    <th>Disbursement Date</th>
-                    <th>Interest Rate</th>
-                    <th>Interest Amount</th>
-                    <th>Milestone Bonus</th>
-                    <th>Total Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {interestDetails.disbursementSchedule.map((schedule) => (
-                    <tr key={schedule.year}>
-                      <td className="font-semibold">Year {schedule.year}</td>
-                      <td>{schedule.disbursementDate}</td>
-                      <td>
-                        <Badge variant={schedule.interestRate === 0 ? "secondary" : "default"}>
-                          {schedule.interestRate}%
-                        </Badge>
-                      </td>
-                      <td className="font-semibold">
-                        {formatCurrency(schedule.amount - (schedule.milestoneBonus || 0))}
-                      </td>
-                      <td>
-                        {schedule.milestoneBonus ? (
-                          <Badge className="bg-orange-100 text-orange-700">
-                            {formatCurrency(schedule.milestoneBonus)}
-                          </Badge>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </td>
-                      <td className="font-bold text-green-600">
-                        {formatCurrency(schedule.amount)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="font-semibold text-blue-800 mb-2">Disbursement Schedule Notes:</h4>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Interest is disbursed annually on the 24th of the month following each anniversary</li>
-                <li>• Year 1 has 0% interest as per investment terms</li>
-                <li>• Milestone bonuses: 5% at year 5, 10% at year 10</li>
-                <li>• All amounts are calculated on the principal investment amount</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Disbursement schedule removed as requested */}
     </div>
   );
 }

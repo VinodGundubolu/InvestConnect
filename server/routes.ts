@@ -1056,16 +1056,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (disbursementDate <= today) {
             const yearlyInterest = InterestDisbursementEngine.calculateYearlyInterest(parseFloat(investment.investedAmount), year);
             let amount = yearlyInterest;
+            let description = `Year ${year} Interest Disbursement (${InterestDisbursementEngine.getInterestRateForYear(year)}%)`;
             
             // Add milestone bonus for year 5 (100% bonus)
             if (year === 5) {
               amount += Math.round(parseFloat(investment.investedAmount) * 1.0);
+              description += ` + Milestone Bonus (100%)`;
             }
             
             sampleDisbursements.push({
               amount: amount,
               disbursementDate: disbursementDate,
-              investmentId: investment.id
+              investmentId: investment.id,
+              type: 'dividend_disbursement',
+              description: description
             });
           }
         }
@@ -1118,11 +1122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalInterestDisbursedTillDate: Math.round(totalInterestDisbursed) || 0,
         interestToBeDispursedNext: nextDisbursement,
         investmentBreakdown: investmentInterestDetails,
-        disbursementSchedule: investments.length > 0 ? 
-          InterestDisbursementEngine.getScheduledDisbursements(
-            new Date(investments[0].investmentDate),
-            parseFloat(investments[0].investedAmount)
-          ) : []
+        // Removed disbursement schedule as requested
       };
 
       console.log("Sending response:", JSON.stringify(response, null, 2));

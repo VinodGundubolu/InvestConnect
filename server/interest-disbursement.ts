@@ -132,30 +132,21 @@ export class InterestDisbursementEngine {
     let nextDisbursementAmount = 0;
     let nextDisbursementDate = '';
     
-    // Find the next year that needs disbursement
-    for (let year = 1; year <= 10; year++) {
-      const disbursementDate = this.calculateDisbursementDate(investmentStartDate, year);
+    // Find the next year that needs disbursement (after completed years)
+    nextDisbursementYear = completedYears + 1;
+    
+    if (nextDisbursementYear <= 10) {
+      const disbursementDate = this.calculateDisbursementDate(investmentStartDate, nextDisbursementYear);
+      nextDisbursementAmount = this.calculateYearlyInterest(principalAmount, nextDisbursementYear);
       
-      // Check if this disbursement has already been made
-      const alreadyDisbursed = disbursedTransactions.some(transaction => 
-        Math.abs(transaction.disbursementDate.getTime() - disbursementDate.getTime()) < 24 * 60 * 60 * 1000 // Within 1 day
-      );
-      
-      // If disbursement date has passed but not disbursed, or future disbursement
-      if (!alreadyDisbursed) {
-        nextDisbursementYear = year;
-        nextDisbursementAmount = this.calculateYearlyInterest(principalAmount, year);
-        
-        // Add milestone bonus if applicable
-        if (year === 5) {
-          nextDisbursementAmount += Math.round(principalAmount * 1.0); // 100% bonus
-        } else if (year === 10) {
-          nextDisbursementAmount += Math.round(principalAmount * 1.0); // 100% bonus
-        }
-        
-        nextDisbursementDate = format(disbursementDate, 'MMM dd, yyyy');
-        break;
+      // Add milestone bonus if applicable
+      if (nextDisbursementYear === 5) {
+        nextDisbursementAmount += Math.round(principalAmount * 1.0); // 100% bonus
+      } else if (nextDisbursementYear === 10) {
+        nextDisbursementAmount += Math.round(principalAmount * 1.0); // 100% bonus
       }
+      
+      nextDisbursementDate = format(disbursementDate, 'MMM dd, yyyy');
     }
     
     return {
