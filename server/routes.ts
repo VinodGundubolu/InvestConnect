@@ -154,6 +154,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Store for temporary credentials mapping (will be replaced with database)
   const credentialsMap = new Map<string, { username: string; password: string; investorId: string }>();
 
+  // Helper function to generate login credentials
+  const generateCredentials = (firstName: string, lastName: string) => {
+    const username = `${firstName.toLowerCase()}_${lastName.toLowerCase()}`;
+    const password = `${firstName.toUpperCase().substring(0, 2)}${new Date().getFullYear()}`;
+    return { username, password };
+  };
+
   // Create new investor with database storage
   app.post("/api/admin/investors", async (req, res) => {
     try {
@@ -175,8 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = req.body;
 
       // Generate unique credentials
-      const username = firstName.toLowerCase();
-      const password = `${firstName}@${new Date().getFullYear()}`;
+      const { username, password } = generateCredentials(firstName, lastName);
       const investorId = await storage.generateInvestorId({
         firstName,
         lastName,
@@ -244,12 +250,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('New investor created in database:', investor);
 
+      // Send email notification to admin
+      const adminEmail = "viku2615@gmail.com";
+      const investorLoginUrl = `${req.protocol}://${req.get('host')}/investor-login`;
+      
+      console.log(`
+        📧 EMAIL NOTIFICATION TO: ${adminEmail}
+        ================================================
+        Subject: New Investor Account Created - ${firstName} ${lastName}
+        
+        Dear Admin,
+        
+        A new investor account has been successfully created:
+        
+        👤 INVESTOR DETAILS:
+        Name: ${firstName} ${middleName ? middleName + ' ' : ''}${lastName}
+        Email: ${email}
+        Phone: ${mobileNumber}
+        Investment: ₹${parseInt(investmentAmount).toLocaleString('en-IN')}
+        Bond Units: ${bondsCount}
+        
+        🔐 LOGIN CREDENTIALS:
+        Username: ${username}
+        Password: ${password}
+        
+        🌐 INVESTOR PORTAL ACCESS:
+        URL: ${investorLoginUrl}
+        
+        Please share these credentials securely with the investor.
+        
+        Best regards,
+        IRM System
+        ================================================
+      `);
+
       res.json({
         success: true,
         investor,
         username,
         password,
-        message: "Investor created successfully in database with login credentials"
+        investmentAmount: parseInt(investmentAmount),
+        bondsCount: parseInt(bondsCount),
+        message: "Investor created successfully with login credentials sent to admin email"
       });
 
     } catch (error) {

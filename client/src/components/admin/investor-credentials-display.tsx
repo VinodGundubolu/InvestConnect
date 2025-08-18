@@ -7,13 +7,18 @@ import { useToast } from "@/hooks/use-toast";
 
 interface InvestorCredentialsDisplayProps {
   investor: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    investmentAmount: number;
-    bondsCount: number;
-    username: string;
-    password: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    investmentAmount?: number;
+    bondsCount?: number;
+    username?: string;
+    password?: string;
+    investor?: {
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
   };
 }
 
@@ -53,8 +58,8 @@ export default function InvestorCredentialsDisplay({ investor }: InvestorCredent
           <div>
             <h3 className="font-semibold text-gray-700 mb-2">Investor Information</h3>
             <div className="space-y-2 text-sm">
-              <p><span className="font-medium">Name:</span> {investor?.firstName || 'N/A'} {investor?.lastName || ''}</p>
-              <p><span className="font-medium">Email:</span> {investor?.email || 'N/A'}</p>
+              <p><span className="font-medium">Name:</span> {investor?.investor?.firstName || investor?.firstName || 'N/A'} {investor?.investor?.lastName || investor?.lastName || ''}</p>
+              <p><span className="font-medium">Email:</span> {investor?.investor?.email || investor?.email || 'N/A'}</p>
               <p><span className="font-medium">Investment:</span> {formatCurrency(investor?.investmentAmount || 0)}</p>
               <p><span className="font-medium">Bonds:</span> {investor?.bondsCount || 0} units</p>
             </div>
