@@ -371,10 +371,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         loginTime: new Date().toISOString()
       };
 
-      res.json({
-        success: true,
-        investor,
-        message: "Login successful"
+      // Save session explicitly
+      req.session.save((err: any) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ message: "Session save failed" });
+        }
+        
+        console.log("Session saved successfully for investor:", username);
+        res.json({
+          success: true,
+          investor,
+          message: "Login successful"
+        });
       });
 
     } catch (error) {
@@ -614,9 +623,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Investor routes
   app.get('/api/investor/profile', async (req: any, res) => {
     try {
+      // Debug session
+      console.log("Session data:", req.session);
+      console.log("Investor auth:", req.session?.investorAuth);
+      
       // Check for investor authentication session first
       if (req.session?.investorAuth?.isAuthenticated) {
         const investorId = req.session.investorAuth.investorId;
+        
+        console.log("Found authenticated investor session:", investorId);
         
         // Get investor from database
         const dbInvestor = await storage.getInvestor(investorId);

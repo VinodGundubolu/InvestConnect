@@ -1,10 +1,25 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Set up session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key-for-development',
+  resave: false,
+  saveUninitialized: true, // Save uninitialized sessions
+  name: 'investor.sid', // Custom session name
+  cookie: {
+    secure: false, // Set to true in production with HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax' // Allow same-site requests
+  }
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();
