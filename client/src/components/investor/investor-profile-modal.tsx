@@ -111,9 +111,8 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Personal Information (Read-only) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Personal Information (Read-only) */}
           <Card>
             <div className="p-4 border-b">
               <h3 className="font-semibold flex items-center gap-2">
@@ -357,14 +356,12 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
               </div>
             </div>
           </CardContent>
-          </Card>
-          </div>
+        </Card>
 
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={onClose} data-testid="button-close-modal">
-              Close
-            </Button>
-          </div>
+        <div className="flex justify-end mt-6">
+          <Button variant="outline" onClick={onClose} data-testid="button-close-modal">
+            Close
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
