@@ -182,19 +182,50 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
             {/* Milestone Status */}
             <div className="pt-2 border-t border-gray-600">
               <div className="text-sm font-medium text-gray-300 mb-2">Milestone Bonuses:</div>
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {[5, 10].map(year => {
-                  const isCompleted = (investor.investments || []).some(inv => {
-                    const yearsSince = Math.floor((new Date().getTime() - new Date(inv.investmentDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-                    return yearsSince >= year;
+                  // Find investment and check completion status
+                  let isCompleted = false;
+                  let completionDate = null;
+                  
+                  (investor.investments || []).forEach(inv => {
+                    const investmentDate = new Date(inv.investmentDate);
+                    const yearsSince = Math.floor((new Date().getTime() - investmentDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+                    if (yearsSince >= year) {
+                      isCompleted = true;
+                      // Calculate the exact milestone completion date
+                      const milestoneDate = new Date(investmentDate);
+                      milestoneDate.setFullYear(milestoneDate.getFullYear() + year);
+                      completionDate = milestoneDate;
+                    }
                   });
                   
                   return (
-                    <div key={year} className="flex items-center justify-between text-sm">
-                      <span>Year {year} Completion:</span>
-                      <span className={isCompleted ? "text-green-400 font-medium" : "text-gray-400"}>
-                        {isCompleted ? "✓ Completed" : "Pending"}
-                      </span>
+                    <div key={year} className="bg-gray-700 rounded p-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">Year {year} Milestone:</span>
+                        <span className={isCompleted ? "text-green-400 font-medium" : "text-gray-400"}>
+                          {isCompleted ? "✓ Completed" : "Pending"}
+                        </span>
+                      </div>
+                      {isCompleted && completionDate && (
+                        <div className="text-xs text-green-300 mt-1">
+                          Completed on: {formatDate(completionDate.toISOString())}
+                        </div>
+                      )}
+                      {!isCompleted && (investor.investments || []).length > 0 && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          Expected: {(() => {
+                            const firstInvestment = investor.investments[0];
+                            const expectedDate = new Date(firstInvestment.investmentDate);
+                            expectedDate.setFullYear(expectedDate.getFullYear() + year);
+                            return formatDate(expectedDate.toISOString());
+                          })()}
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-300 mt-1">
+                        Bonus: ₹20,00,000 (100% of investment)
+                      </div>
                     </div>
                   );
                 })}
