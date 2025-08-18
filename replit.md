@@ -6,22 +6,27 @@ An Investment Relationship Management (IRM) Tool designed for organizations to m
 
 ## Recent Changes (August 18, 2025)
 
-### **Critical Bug Fixes Completed:**
+### **Latest Critical Fixes (Session 4):**
+- ✓ **Interest Calculation Logic** - Separated milestone bonuses from regular interest calculations
+- ✓ **Transaction Creation** - Fixed database constraint errors, proper field mapping (`type` vs `transactionType`)
+- ✓ **Year 5 Interest** - Now correctly shows ₹3,60,000 only (18% of principal), bonus disbursed separately  
+- ✓ **Transaction History** - Fixed profile endpoint to include transactions using `getInvestorWithInvestments`
+- ✓ **Early Exit Value** - Updated formula to Capital + Interest yet to be disbursed (excluding milestone bonuses)
+- ✓ **Separate Transactions** - Interest and milestone bonuses now show as distinct debit/credit entries
+
+### **Transaction System Improvements:**
+1. **6 Separate Transactions** - Year 5 creates both interest (₹3.6L) and bonus (₹20L) transactions
+2. **Database Integration** - Fixed PostgreSQL date format compatibility and enum constraints
+3. **Transaction Types** - `dividend_disbursement` for interest, `bonus_disbursement` for milestones
+4. **Profile Data Loading** - Investor profile now properly includes transaction history
+5. **Interest Calculations** - Pure interest calculations exclude milestone bonuses for accuracy
+
+### **Previous Bug Fixes Completed:**
 - ✓ **TypeScript Errors** - Fixed undefined property references in investor credentials display
 - ✓ **JSX Structure** - Corrected modal dialog closing tags and component nesting  
 - ✓ **UI Visibility** - Enhanced modal backgrounds with white overlays and proper z-index
 - ✓ **API Integration** - Fixed apiRequest method calls for investor creation
 - ✓ **Returns Calculator** - Removed from investor portal as requested
-
-### **System Functionality Verified:**
-1. **Admin Portal** - Investor creation form displays with clear white background
-2. **Database Integration** - PostgreSQL connection working, sample investors created  
-3. **Investor Profile Modals** - Both admin and investor modals have proper visibility
-4. **Server Connectivity** - Application running successfully on port 5000
-5. **Error Resolution** - All TypeScript and JSX compilation errors resolved
-6. **Credential Generation** - Username/password automatically generated for new investors
-7. **Email Notifications** - Login credentials sent to viku2615@gmail.com via console logs
-8. **Complete Integration** - Sample investors with full credentials and investment data
 
 ## User Preferences
 

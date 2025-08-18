@@ -21,9 +21,13 @@ export default function TransactionHistory({ investorProfile }: TransactionHisto
     }))
   );
 
-  // Sort by date descending
+  // Sort by date descending (handle both transactionDate and disbursementDate fields)
   const sortedTransactions = allTransactions.sort(
-    (a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime()
+    (a, b) => {
+      const dateA = new Date(a.transactionDate || a.disbursementDate);
+      const dateB = new Date(b.transactionDate || b.disbursementDate);
+      return dateB.getTime() - dateA.getTime();
+    }
   );
 
   const getTransactionTypeLabel = (type: string) => {
@@ -31,9 +35,9 @@ export default function TransactionHistory({ investorProfile }: TransactionHisto
       case "investment":
         return { label: "Investment", variant: "default" as const };
       case "dividend_disbursement":
-        return { label: "Dividend", variant: "secondary" as const };
+        return { label: "Interest Disbursement", variant: "secondary" as const };
       case "bonus_disbursement":
-        return { label: "Bonus", variant: "secondary" as const };
+        return { label: "Bonus Disbursement", variant: "destructive" as const };
       case "maturity_disbursement":
         return { label: "Maturity", variant: "outline" as const };
       default:

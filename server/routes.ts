@@ -703,18 +703,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log("Found authenticated investor session:", investorId);
         
-        // Get investor from database with investments
-        const dbInvestor = await storage.getInvestor(investorId);
-        if (dbInvestor) {
-          // Get investments for this investor
-          const investments = await storage.getInvestmentsByInvestor(investorId);
-          
-          // Return investor profile with investments array
-          const investorWithInvestments = {
-            ...dbInvestor,
-            investments: investments || []
-          };
-          
+        // Get investor from database with investments and transactions
+        const investorWithInvestments = await storage.getInvestorWithInvestments(investorId);
+        if (investorWithInvestments) {
           return res.json(investorWithInvestments);
         }
       }
