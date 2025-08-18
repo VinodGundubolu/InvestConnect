@@ -96,9 +96,20 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
       return await apiRequest("/api/admin/investors", "POST", payload);
     },
     onSuccess: (response) => {
-      setCredentialsData(response);
+      // Transform the response to match the expected format
+      const transformedData = {
+        firstName: response.investor?.firstName || form.getValues('firstName'),
+        lastName: response.investor?.lastName || form.getValues('lastName'),
+        email: response.investor?.email || form.getValues('email'),
+        investmentAmount: response.investmentAmount,
+        bondsCount: response.bondsCount,
+        username: response.username,
+        password: response.password
+      };
+      
+      setCredentialsData(transformedData);
       setShowCredentials(true);
-      queryClient.invalidateQueries({ queryKey: ["/api/investors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/investors"] });
       form.reset();
       setOpen(false);
     },
@@ -454,7 +465,7 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
             </DialogDescription>
           </DialogHeader>
           {credentialsData && (
-            <InvestorCredentialsDisplay investor={credentialsData.investor} />
+            <InvestorCredentialsDisplay investor={credentialsData} />
           )}
         </DialogContent>
       </Dialog>

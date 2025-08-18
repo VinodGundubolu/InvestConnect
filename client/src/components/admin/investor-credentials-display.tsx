@@ -45,6 +45,9 @@ export default function InvestorCredentialsDisplay({ investor }: InvestorCredent
 
   const investorLoginUrl = `${window.location.origin}/investor-login`;
 
+  // Debug: Check what data we're receiving
+  console.log("Credentials Display Data:", investor);
+
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader className="bg-green-50 border-b">
