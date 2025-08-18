@@ -154,9 +154,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Store for temporary credentials mapping (will be replaced with database)
   const credentialsMap = new Map<string, { username: string; password: string; investorId: string }>();
 
+  // Add test credentials for existing investors
+  credentialsMap.set("nd_kumar", { username: "nd_kumar", password: "ND2025", investorId: "2025-V1-B1-234E-091" });
+  credentialsMap.set("suresh_kumar", { username: "suresh_kumar", password: "SU2025", investorId: "2025-V1-B1-234E-081" });
+
   // Helper function to generate login credentials
   const generateCredentials = (firstName: string, lastName: string) => {
-    const username = `${firstName.toLowerCase()}_${lastName.toLowerCase()}`;
+    const username = `${firstName.toLowerCase().trim()}_${lastName.toLowerCase().trim()}`;
     const password = `${firstName.toUpperCase().substring(0, 2)}${new Date().getFullYear()}`;
     return { username, password };
   };
@@ -323,6 +327,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error creating investor:", error);
       res.status(500).json({ message: "Failed to create investor" });
     }
+  });
+
+  // Debug endpoint to check credentials (remove in production)
+  app.get("/api/debug/credentials", async (req, res) => {
+    const credentialsList = Array.from(credentialsMap.entries()).map(([username, data]) => ({
+      username,
+      password: data.password,
+      investorId: data.investorId
+    }));
+    res.json(credentialsList);
   });
 
   // Investor login API
