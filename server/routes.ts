@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { EmailTemplateEngine, type EmailMergeFields } from "./email-templates";
 import { insertInvestorSchema, insertInvestmentSchema, insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -320,52 +321,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('New investor created in database:', investor);
 
-      // Send email notification to admin
-      const adminEmail = "viku2615@gmail.com";
-      const investorLoginUrl = `${req.protocol}://${req.get('host')}/investor-login`;
+      // Send email notification using template system
+      const mergeFields: EmailMergeFields = {
+        investorName: `${firstName} ${middleName ? middleName + ' ' : ''}${lastName}`,
+        firstName,
+        lastName,
+        email,
+        phone: mobileNumber,
+        investorId: newInvestor.id,
+        investmentAmount: EmailTemplateEngine.formatCurrency(parseInt(investmentAmount)),
+        bondUnits: bondsCount.toString(),
+        investmentDate: new Date().toLocaleDateString('en-IN'),
+        username,
+        password,
+        investorPortalUrl: `${req.protocol}://${req.get('host')}/investor-login`
+      };
       
-      // Enhanced email notification (in production, integrate with email service like SendGrid/Nodemailer)
       const emailContent = {
-        to: adminEmail,
+        to: "viku2615@gmail.com",
         subject: `🔔 New Investor Account Created - ${firstName} ${lastName}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #1e3a8a; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">
-              📈 Investment Relationship Management System
-            </h2>
-            
-            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #374151; margin-top: 0;">New Investor Account Created</h3>
-              
-              <div style="background-color: white; padding: 15px; border-radius: 6px; margin: 15px 0;">
-                <h4 style="color: #1f2937; margin-top: 0;">👤 Investor Details:</h4>
-                <p><strong>Name:</strong> ${firstName} ${middleName ? middleName + ' ' : ''}${lastName}</p>
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Phone:</strong> ${mobileNumber}</p>
-                <p><strong>Investment Amount:</strong> ₹${parseInt(investmentAmount).toLocaleString('en-IN')}</p>
-                <p><strong>Bond Units:</strong> ${bondsCount}</p>
-              </div>
-              
-              <div style="background-color: #fef3c7; padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 4px solid #f59e0b;">
-                <h4 style="color: #92400e; margin-top: 0;">🔐 Login Credentials:</h4>
-                <p><strong>Username:</strong> <code style="background-color: #fbbf24; padding: 2px 6px; border-radius: 3px;">${username}</code></p>
-                <p><strong>Password:</strong> <code style="background-color: #fbbf24; padding: 2px 6px; border-radius: 3px;">${password}</code></p>
-              </div>
-              
-              <div style="background-color: #dbeafe; padding: 15px; border-radius: 6px; margin: 15px 0;">
-                <h4 style="color: #1e40af; margin-top: 0;">🌐 Investor Portal Access:</h4>
-                <p><a href="${investorLoginUrl}" style="color: #2563eb; text-decoration: none; font-weight: bold;">${investorLoginUrl}</a></p>
-                <p style="font-size: 14px; color: #6b7280;">Please share these credentials securely with the investor.</p>
-              </div>
-            </div>
-            
-            <p style="color: #6b7280; font-size: 14px; text-align: center; margin-top: 30px;">
-              Best regards,<br>
-              <strong>IRM System</strong><br>
-              Investment Relationship Management Platform
-            </p>
-          </div>
-        `
+        text: EmailTemplateEngine.mergeTags(
+          EmailTemplateEngine.getInvestorCreationTemplate(),
+          mergeFields
+        ),
+        // Generate welcome email for investor
+        welcomeEmail: EmailTemplateEngine.mergeTags(
+          EmailTemplateEngine.getWelcomeTemplate(),
+          mergeFields
+        )
       };
 
       // Log the email notification prominently
@@ -376,7 +359,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`TO: ${emailContent.to}`);
       console.log(`SUBJECT: ${emailContent.subject}`);
       console.log('📄 EMAIL CONTENT:');
-      console.log(emailContent.html.replace(/<[^>]*>/g, '')); // Strip HTML for console
+      console.log(emailContent.text);
+      console.log('🚨'.repeat(20));
+      console.log('\n📧 WELCOME EMAIL FOR INVESTOR:');
+      console.log('🚨'.repeat(20));
+      console.log(emailContent.welcomeEmail);
       console.log('🚨'.repeat(20));
       console.log('\n'.repeat(2));
 
@@ -595,26 +582,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         secondaryAddress: secondaryAddress || null,
       });
 
-      // Send email notification to admin (simulated)
-      const emailNotification = {
-        to: "admin@company.com", // Replace with actual admin email
-        subject: "Investor Profile Update Notification",
-        body: `
-          Investor ${updatedInvestor.firstName} ${updatedInvestor.lastName} (ID: ${updatedInvestor.id}) has updated their profile.
-          
-          Updated Fields:
-          - Email: ${email}
-          - Primary Mobile: ${primaryMobile}
-          - Secondary Mobile: ${secondaryMobile || 'Not provided'}
-          - Primary Address: ${primaryAddress}
-          - Secondary Address: ${secondaryAddress || 'Not provided'}
-          
-          Updated on: ${new Date().toLocaleString()}
-        `
+      // Send profile update notification using template system
+      const updateMergeFields: EmailMergeFields = {
+        investorName: `${updatedInvestor.firstName} ${updatedInvestor.lastName}`,
+        firstName: updatedInvestor.firstName,
+        lastName: updatedInvestor.lastName,
+        email,
+        phone: primaryMobile,
+        investorId: updatedInvestor.id,
+        adminPortalUrl: `${req.protocol}://${req.get('host')}/admin`
+      };
+      
+      const profileUpdateEmail = {
+        to: "viku2615@gmail.com",
+        subject: `📝 Profile Updated - ${updatedInvestor.firstName} ${updatedInvestor.lastName}`,
+        text: EmailTemplateEngine.mergeTags(
+          EmailTemplateEngine.getProfileUpdateTemplate(),
+          updateMergeFields
+        )
       };
 
       // Log the email notification (in production, this would be sent via email service)
-      console.log('EMAIL NOTIFICATION TO ADMIN:', emailNotification);
+      console.log('📧 PROFILE UPDATE EMAIL NOTIFICATION:', profileUpdateEmail.text);
 
       res.json({
         success: true,
