@@ -16,7 +16,7 @@ interface InvestmentSummaryProps {
 export default function InvestmentSummary({ investor }: InvestmentSummaryProps) {
   const [showProfileModal, setShowProfileModal] = useState(false);
   // Calculate combined daily returns for all investments
-  const combinedReturns = investor.investments.reduce(
+  const combinedReturns = (investor.investments || []).reduce(
     (acc, investment) => {
       const calculation = calculateReturns(
         parseFloat(investment.investedAmount),
@@ -40,8 +40,8 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
     }
   );
 
-  const totalInvestments = investor.investments.length;
-  const totalUnits = investor.investments.reduce((sum, inv) => sum + inv.bondsPurchased, 0);
+  const totalInvestments = (investor.investments || []).length;
+  const totalUnits = (investor.investments || []).reduce((sum, inv) => sum + inv.bondsPurchased, 0);
 
   return (
     <>
