@@ -20,7 +20,8 @@ export default function InvestorPortal() {
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (error && (error as any).message?.includes("Unauthorized")) {
+    if (error && (error as any).message?.includes("401: {\"message\":\"Unauthorized\"}")) {
+      console.log("Unauthorized error detected, redirecting to login");
       window.location.href = "/investor-login";
       return;
     }
@@ -38,10 +39,29 @@ export default function InvestorPortal() {
     }
   };
 
+  // Show loading state
   if (profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Show login required if no profile data
+  if (!investorProfile && !profileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md mx-auto text-center p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Login Required</h2>
+          <p className="text-gray-600 mb-6">Please login to access the investor portal.</p>
+          <Button 
+            onClick={() => window.location.href = "/investor-login"}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Go to Investor Login
+          </Button>
+        </div>
       </div>
     );
   }
