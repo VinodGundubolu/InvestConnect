@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, TrendingUp, ArrowUpRight, Clock, DollarSign } from "lucide-react";
 
 interface InterestDetails {
-  totalInterestEarnedTillDate: number;
+  totalInterestTillDate: number;
   totalInterestDisbursedTillDate: number;
   interestToBeDispursedNext: {
     amount: number;
@@ -91,11 +91,11 @@ export default function InterestSummary() {
             </Badge>
           </div>
           <div className="stats-value text-green-600">
-            {formatCurrency(interestDetails.totalInterestEarnedTillDate)}
+            {formatCurrency(interestDetails.totalInterestTillDate)}
           </div>
-          <div className="stats-label">Interest Earned Till Date</div>
+          <div className="stats-label">Interest Till Date</div>
           <p className="text-sm text-gray-500 mt-2">
-            Total interest accrued on investment
+            Total interest earned based on completed years
           </p>
         </div>
 

@@ -1070,7 +1070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const nextDisbursement = upcomingDisbursements[0] || { amount: 0, disbursementDate: "", yearCovered: 0 };
 
       res.json({
-        totalInterestEarnedTillDate: Math.round(totalInterestEarned),
+        totalInterestTillDate: Math.round(totalInterestEarned),
         totalInterestDisbursedTillDate: Math.round(totalInterestDisbursed),
         interestToBeDispursedNext: nextDisbursement,
         investmentBreakdown: investmentInterestDetails,
