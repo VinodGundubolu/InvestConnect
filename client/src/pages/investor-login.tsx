@@ -48,8 +48,8 @@ export default function InvestorLogin() {
     else if (/^[\+]?[0-9\s\-\(\)]+$/.test(value) && value.replace(/[\s\-\(\)\+]/g, "").length >= 10) {
       setIdentifierType("phone");
     }
-    // Investor ID pattern (contains hyphens and alphanumeric)
-    else if (/^[0-9]{4}-V[0-9]+-B[0-9]+-[A-Z0-9]+-[0-9]+$/.test(value)) {
+    // Investor ID pattern (simple sequential numbers: 1, 2, 3, etc.)
+    else if (/^[0-9]+$/.test(value) && parseInt(value) > 0) {
       setIdentifierType("investorId");
     }
     else {
@@ -59,10 +59,8 @@ export default function InvestorLogin() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginForm) => {
-      return await apiRequest("/api/investor/universal-login", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("/api/investor/universal-login", "POST", data);
+      return await response.json();
     },
     onSuccess: (data) => {
       toast({
