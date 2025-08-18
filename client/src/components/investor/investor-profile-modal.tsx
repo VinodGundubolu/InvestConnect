@@ -91,7 +91,16 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="investor-profile-modal">
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white border-2 border-gray-200 shadow-2xl"
+        style={{
+          backgroundColor: "#ffffff",
+          borderRadius: "12px",
+          zIndex: 50,
+          position: "fixed"
+        }}
+        data-testid="investor-profile-modal"
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -102,8 +111,9 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Personal Information (Read-only) */}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Personal Information (Read-only) */}
           <Card>
             <div className="p-4 border-b">
               <h3 className="font-semibold flex items-center gap-2">
@@ -347,12 +357,14 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
               </div>
             </div>
           </CardContent>
-        </Card>
+          </Card>
+          </div>
 
-        <div className="flex justify-end">
-          <Button variant="outline" onClick={onClose} data-testid="button-close-modal">
-            Close
-          </Button>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={onClose} data-testid="button-close-modal">
+              Close
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
