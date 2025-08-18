@@ -32,7 +32,10 @@ interface InterestDetails {
 
 export default function InterestSummary() {
   const { data: interestDetails, isLoading } = useQuery<InterestDetails>({
-    queryKey: ["/api/investor/interest-details"],
+    queryKey: ["/api/investor/interest-details", Date.now()],
+    refetchOnMount: 'always',
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   const formatCurrency = (amount: number) => {

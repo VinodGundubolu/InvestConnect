@@ -1018,6 +1018,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get comprehensive interest calculation for investor
   app.get("/api/investor/interest-details", async (req, res) => {
     try {
+      console.log("=== Interest Details API Called ===");
       const investorAuth = req.session?.investorAuth;
       
       if (!investorAuth?.isAuthenticated) {
@@ -1031,9 +1032,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get investor's investments
       const investments = await storage.getInvestorInvestments(investorAuth.investorId);
+      console.log("Found investments:", investments?.length || 0);
       
       // Get disbursed transactions (interest payments)
       const disbursedTransactions = await storage.getInvestorTransactions(investorAuth.investorId, 'dividend_disbursement');
+      console.log("Found disbursed transactions:", disbursedTransactions?.length || 0);
       
       // Calculate interest details for each investment
       const investmentInterestDetails = investments.map(investment => {
@@ -1058,8 +1061,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Aggregate totals across all investments
-      const totalInterestEarned = investmentInterestDetails.reduce((sum, inv) => sum + inv.interestEarnedTillDate, 0);
-      const totalInterestDisbursed = investmentInterestDetails.reduce((sum, inv) => sum + inv.interestDisbursedTillDate, 0);
+      const totalInterestEarned = investmentInterestDetails.reduce((sum, inv) => sum + (inv.interestEarnedTillDate || 0), 0);
+      const totalInterestDisbursed = investmentInterestDetails.reduce((sum, inv) => sum + (inv.interestDisbursedTillDate || 0), 0);
       
       // Find next disbursement (earliest upcoming)
       const upcomingDisbursements = investmentInterestDetails
@@ -1069,9 +1072,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const nextDisbursement = upcomingDisbursements[0] || { amount: 0, disbursementDate: "", yearCovered: 0 };
 
-      res.json({
-        totalInterestTillDate: Math.round(totalInterestEarned),
-        totalInterestDisbursedTillDate: Math.round(totalInterestDisbursed),
+      console.log("Final calculations:");
+      console.log("Total Interest Earned:", totalInterestEarned);
+      console.log("Total Interest Disbursed:", totalInterestDisbursed);
+      console.log("Next Disbursement:", nextDisbursement);
+
+      const response = {
+        totalInterestTillDate: Math.round(totalInterestEarned) || 0,
+        totalInterestDisbursedTillDate: Math.round(totalInterestDisbursed) || 0,
         interestToBeDispursedNext: nextDisbursement,
         investmentBreakdown: investmentInterestDetails,
         disbursementSchedule: investments.length > 0 ? 
@@ -1079,7 +1087,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             new Date(investments[0].investmentDate),
             parseFloat(investments[0].investedAmount)
           ) : []
-      });
+      };
+
+      console.log("Sending response:", JSON.stringify(response, null, 2));
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.json(response);
     } catch (error) {
       console.error("Error calculating interest details:", error);
       res.status(500).json({ message: "Failed to calculate interest details" });
