@@ -244,6 +244,34 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(investments.createdAt));
   }
 
+  // Alias for compatibility with interest calculation API
+  async getInvestorInvestments(investorId: string): Promise<Investment[]> {
+    return this.getInvestmentsByInvestor(investorId);
+  }
+
+  // Get transactions for an investor with optional filtering by type
+  async getInvestorTransactions(investorId: string, transactionType?: string): Promise<Transaction[]> {
+    try {
+      let whereConditions = [eq(investments.investorId, investorId)];
+      
+      if (transactionType) {
+        whereConditions.push(eq(transactions.type, transactionType as any));
+      }
+
+      const result = await db
+        .select()
+        .from(transactions)
+        .innerJoin(investments, eq(transactions.investmentId, investments.id))
+        .where(and(...whereConditions))
+        .orderBy(desc(transactions.transactionDate));
+
+      return result.map(row => row.transactions);
+    } catch (error) {
+      console.error("Error fetching investor transactions:", error);
+      return [];
+    }
+  }
+
   async createInvestment(investmentData: InsertInvestment): Promise<Investment> {
     const [investment] = await db
       .insert(investments)
