@@ -13,11 +13,11 @@ interface TransactionHistoryProps {
 
 export default function TransactionHistory({ investorProfile }: TransactionHistoryProps) {
   // Flatten all transactions from all investments
-  const allTransactions = investorProfile.investments.flatMap((inv) =>
-    inv.transactions.map((transaction) => ({
+  const allTransactions = (investorProfile.investments || []).flatMap((inv) =>
+    (inv.transactions || []).map((transaction) => ({
       ...transaction,
       investmentId: inv.id,
-      planName: inv.plan.name,
+      planName: inv.plan?.name || 'Investment Plan',
     }))
   );
 
