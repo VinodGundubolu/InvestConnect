@@ -3,6 +3,7 @@ import { addYears, addMonths, format, isAfter, isBefore } from 'date-fns';
 export interface InterestCalculation {
   interestEarnedTillDate: number;
   interestDisbursedTillDate: number;
+  interestShouldBeDispursed: number; // New field for what should have been disbursed by now
   interestToBeDispursedNext: {
     amount: number;
     disbursementDate: string;
@@ -101,43 +102,63 @@ export class InterestDisbursementEngine {
     // Add milestone bonuses for completed milestones
     interestEarnedTillDate += this.getMilestoneBonus(principalAmount, completedYears);
     
-    // Calculate total disbursed amount
+    // Calculate how much SHOULD have been disbursed based on completed years
+    // For each completed year, interest should have been disbursed
+    let shouldBeDisbursedbyd = 0;
+    for (let year = 1; year <= completedYears; year++) {
+      const disbursementDate = this.calculateDisbursementDate(investmentStartDate, year);
+      
+      // Only count as "should be disbursed" if the disbursement date has passed
+      if (disbursementDate <= today) {
+        shouldBeDisbursedbyd += this.calculateYearlyInterest(principalAmount, year);
+        
+        // Add milestone bonuses for years 5 and 10 if those disbursement dates have passed
+        if (year === 5 && disbursementDate <= today) {
+          shouldBeDisbursedbyd += Math.round(principalAmount * 0.05);
+        } else if (year === 10 && disbursementDate <= today) {
+          shouldBeDisbursedbyd += Math.round(principalAmount * 0.10);
+        }
+      }
+    }
+    
+    // Calculate total actually disbursed amount
     const interestDisbursedTillDate = disbursedTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
     
     // Calculate next disbursement
-    let nextDisbursementYear = completedYears + 1;
+    let nextDisbursementYear = 1;
     let nextDisbursementAmount = 0;
     let nextDisbursementDate = '';
     
     // Find the next year that needs disbursement
-    while (nextDisbursementYear <= 10) {
-      const disbursementDate = this.calculateDisbursementDate(investmentStartDate, nextDisbursementYear);
+    for (let year = 1; year <= 10; year++) {
+      const disbursementDate = this.calculateDisbursementDate(investmentStartDate, year);
       
       // Check if this disbursement has already been made
       const alreadyDisbursed = disbursedTransactions.some(transaction => 
         Math.abs(transaction.disbursementDate.getTime() - disbursementDate.getTime()) < 24 * 60 * 60 * 1000 // Within 1 day
       );
       
-      if (!alreadyDisbursed && isAfter(disbursementDate, today)) {
-        nextDisbursementAmount = this.calculateYearlyInterest(principalAmount, nextDisbursementYear);
+      // If disbursement date has passed but not disbursed, or future disbursement
+      if (!alreadyDisbursed) {
+        nextDisbursementYear = year;
+        nextDisbursementAmount = this.calculateYearlyInterest(principalAmount, year);
         
         // Add milestone bonus if applicable
-        if (nextDisbursementYear === 5) {
-          nextDisbursementAmount += this.getMilestoneBonus(principalAmount, 5);
-        } else if (nextDisbursementYear === 10) {
-          nextDisbursementAmount += this.getMilestoneBonus(principalAmount, 10);
+        if (year === 5) {
+          nextDisbursementAmount += Math.round(principalAmount * 0.05);
+        } else if (year === 10) {
+          nextDisbursementAmount += Math.round(principalAmount * 0.10);
         }
         
         nextDisbursementDate = format(disbursementDate, 'MMM dd, yyyy');
         break;
       }
-      
-      nextDisbursementYear++;
     }
     
     return {
       interestEarnedTillDate: Math.round(interestEarnedTillDate),
       interestDisbursedTillDate: Math.round(interestDisbursedTillDate),
+      interestShouldBeDispursed: Math.round(shouldBeDisbursedbyd), // New field for what should have been paid
       interestToBeDispursedNext: {
         amount: Math.round(nextDisbursementAmount),
         disbursementDate: nextDisbursementDate,

@@ -31,11 +31,10 @@ interface InterestDetails {
 }
 
 export default function InterestSummary() {
-  const { data: interestDetails, isLoading } = useQuery<InterestDetails>({
-    queryKey: ["/api/investor/interest-details", Date.now()],
-    refetchOnMount: 'always',
-    staleTime: 0,
-    cacheTime: 0,
+  const { data: interestDetails, isLoading, error } = useQuery<InterestDetails>({
+    queryKey: ["/api/investor/interest-details"],
+    staleTime: 30000, // 30 seconds
+    cacheTime: 60000, // 1 minute
   });
 
   const formatCurrency = (amount: number) => {
@@ -66,6 +65,19 @@ export default function InterestSummary() {
           </div>
         ))}
       </div>
+    );
+  }
+
+  if (error) {
+    console.error("Interest Summary Error:", error);
+    return (
+      <Card className="border-red-200 bg-red-50">
+        <CardContent className="p-6 text-center">
+          <Calendar className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Interest Data</h3>
+          <p className="text-red-600">Unable to load interest information. Please refresh the page.</p>
+        </CardContent>
+      </Card>
     );
   }
 
