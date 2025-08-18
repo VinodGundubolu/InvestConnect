@@ -390,7 +390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName,
         email,
         phone: mobileNumber,
-        investorId: newInvestor.id,
+        investorId: investorId,
         investmentAmount: EmailTemplateEngine.formatCurrency(parseInt(investmentAmount)),
         bondUnits: bondsCount.toString(),
         investmentDate: new Date().toLocaleDateString('en-IN'),
