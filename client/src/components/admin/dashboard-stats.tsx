@@ -50,10 +50,12 @@ export default function DashboardStats() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid-modern grid-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="animate-pulse">
-            <div className="bg-gray-200 rounded-lg h-32"></div>
+          <div key={i} className="stats-card-modern animate-pulse">
+            <div className="bg-gray-200 rounded h-6 mb-3"></div>
+            <div className="bg-gray-300 rounded h-8 mb-2 w-3/4"></div>
+            <div className="bg-gray-200 rounded h-4 w-1/2"></div>
           </div>
         ))}
       </div>
@@ -74,42 +76,46 @@ export default function DashboardStats() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <StatsCard
-        title="Total Investment"
-        value={formatCurrency(stats.totalInvestment)}
-        subtitle="Active Portfolio"
-        icon={TrendingUp}
-        trend="Active Portfolio"
-        trendColor="green"
-      />
+    <div className="grid-modern grid-4 fade-in">
+      <div className="stats-card-modern">
+        <div className="flex items-center justify-between mb-4">
+          <TrendingUp className="w-8 h-8 text-blue-500" />
+          <span className="badge-primary">Active</span>
+        </div>
+        <div className="stats-value">{formatCurrency(stats.totalInvestment)}</div>
+        <div className="stats-label">Total Investment</div>
+        <p className="text-sm text-gray-500 mt-2">Portfolio Value</p>
+      </div>
       
-      <StatsCard
-        title="Active Investors"
-        value={stats.activeInvestors.toString()}
-        subtitle="Verified Profiles"
-        icon={Users}
-        trend="Verified"
-        trendColor="green"
-      />
+      <div className="stats-card-modern">
+        <div className="flex items-center justify-between mb-4">
+          <Users className="w-8 h-8 text-green-500" />
+          <span className="badge-success">Verified</span>
+        </div>
+        <div className="stats-value">{stats.activeInvestors}</div>
+        <div className="stats-label">Active Investors</div>
+        <p className="text-sm text-gray-500 mt-2">Verified Profiles</p>
+      </div>
       
-      <StatsCard
-        title="Total Bonds"
-        value={stats.totalBonds.toString()}
-        subtitle="Active Bonds"
-        icon={CreditCard}
-        trend="Active Bonds"
-        trendColor="green"
-      />
+      <div className="stats-card-modern">
+        <div className="flex items-center justify-between mb-4">
+          <CreditCard className="w-8 h-8 text-purple-500" />
+          <span className="badge-primary">Units</span>
+        </div>
+        <div className="stats-value">{stats.totalBonds}</div>
+        <div className="stats-label">Investment Bonds</div>
+        <p className="text-sm text-gray-500 mt-2">₹20L Each Unit</p>
+      </div>
       
-      <StatsCard
-        title="Today's Interest"
-        value={`₹${stats.todayInterest.toLocaleString('en-IN')}`}
-        subtitle="% Daily Accrual"
-        icon={Percent}
-        trend="% Daily Accrual"
-        trendColor="green"
-      />
+      <div className="stats-card-modern">
+        <div className="flex items-center justify-between mb-4">
+          <Percent className="w-8 h-8 text-orange-500" />
+          <span className="badge-success">Daily</span>
+        </div>
+        <div className="stats-value">₹{stats.todayInterest.toLocaleString('en-IN')}</div>
+        <div className="stats-label">Today's Interest</div>
+        <p className="text-sm text-gray-500 mt-2">Interest Accrual</p>
+      </div>
     </div>
   );
 }

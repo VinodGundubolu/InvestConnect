@@ -53,33 +53,35 @@ export default function AdminPortal() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-8 py-6">
+        <header className="nav-modern px-8 py-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Investment Dashboard</h1>
-              <p className="text-gray-600">Real-time portfolio management and returns tracking</p>
+            <div className="page-header">
+              <h1 className="page-title">Investment Dashboard</h1>
+              <p className="page-subtitle">Real-time portfolio management and returns tracking</p>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
               <div className="text-right">
-                <p className="text-sm text-gray-500">Today's Date</p>
+                <p className="text-sm text-gray-500 font-medium">Today's Date</p>
                 <p className="font-semibold text-gray-900">{today}</p>
               </div>
-              <Button className="bg-blue-500 hover:bg-blue-600" data-testid="button-add-investor">
+              <button className="btn-modern-primary" data-testid="button-add-investor">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Investor
-              </Button>
+              </button>
             </div>
           </div>
         </header>
 
         {/* Dashboard Content */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 container-modern">
           <div className="space-y-8">
             {/* Stats Cards */}
-            <DashboardStats />
+            <div className="slide-up">
+              <DashboardStats />
+            </div>
 
             {/* Portfolio Overview and Interest Breakdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 fade-in">
               <div className="lg:col-span-2">
                 <InvestorPortfolioOverview />
               </div>
