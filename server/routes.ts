@@ -5,6 +5,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { EmailTemplateEngine, type EmailMergeFields } from "./email-templates";
 import { insertInvestorSchema, insertInvestmentSchema, insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
+import { InterestDisbursementEngine, type InterestCalculation } from './interest-disbursement';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -1011,6 +1012,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error calculating returns:", error);
       res.status(500).json({ message: "Failed to calculate returns" });
+    }
+  });
+
+  // Get comprehensive interest calculation for investor
+  app.get("/api/investor/interest-details", async (req, res) => {
+    try {
+      const investorAuth = req.session?.investorAuth;
+      
+      if (!investorAuth?.isAuthenticated) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const investor = await storage.getInvestor(investorAuth.investorId);
+      if (!investor) {
+        return res.status(404).json({ message: "Investor not found" });
+      }
+
+      // Get investor's investments
+      const investments = await storage.getInvestorInvestments(investorAuth.investorId);
+      
+      // Get disbursed transactions (interest payments)
+      const disbursedTransactions = await storage.getInvestorTransactions(investorAuth.investorId, 'dividend_disbursement');
+      
+      // Calculate interest details for each investment
+      const investmentInterestDetails = investments.map(investment => {
+        const investmentTransactions = disbursedTransactions.filter(t => t.investmentId === investment.id);
+        
+        const interestCalc = InterestDisbursementEngine.calculateInterestDetails(
+          new Date(investment.investmentDate),
+          parseFloat(investment.investedAmount),
+          investmentTransactions.map(t => ({
+            amount: parseFloat(t.amount),
+            disbursementDate: new Date(t.disbursementDate || t.transactionDate)
+          }))
+        );
+
+        return {
+          investmentId: investment.id,
+          investmentDate: investment.investmentDate,
+          principalAmount: parseFloat(investment.investedAmount),
+          bondsPurchased: investment.bondsPurchased,
+          ...interestCalc
+        };
+      });
+
+      // Aggregate totals across all investments
+      const totalInterestEarned = investmentInterestDetails.reduce((sum, inv) => sum + inv.interestEarnedTillDate, 0);
+      const totalInterestDisbursed = investmentInterestDetails.reduce((sum, inv) => sum + inv.interestDisbursedTillDate, 0);
+      
+      // Find next disbursement (earliest upcoming)
+      const upcomingDisbursements = investmentInterestDetails
+        .map(inv => inv.interestToBeDispursedNext)
+        .filter(next => next.amount > 0)
+        .sort((a, b) => new Date(a.disbursementDate).getTime() - new Date(b.disbursementDate).getTime());
+
+      const nextDisbursement = upcomingDisbursements[0] || { amount: 0, disbursementDate: "", yearCovered: 0 };
+
+      res.json({
+        totalInterestEarnedTillDate: Math.round(totalInterestEarned),
+        totalInterestDisbursedTillDate: Math.round(totalInterestDisbursed),
+        interestToBeDispursedNext: nextDisbursement,
+        investmentBreakdown: investmentInterestDetails,
+        disbursementSchedule: investments.length > 0 ? 
+          InterestDisbursementEngine.getScheduledDisbursements(
+            new Date(investments[0].investmentDate),
+            parseFloat(investments[0].investedAmount)
+          ) : []
+      });
+    } catch (error) {
+      console.error("Error calculating interest details:", error);
+      res.status(500).json({ message: "Failed to calculate interest details" });
     }
   });
 

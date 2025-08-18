@@ -127,6 +127,9 @@ export const transactions = pgTable("transactions", {
   type: transactionTypeEnum("type").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   transactionDate: date("transaction_date").notNull(),
+  disbursementDate: timestamp("disbursement_date"), // Actual disbursement date for interest payments
+  yearCovered: integer("year_covered"), // Which year this interest payment covers (1-10)
+  interestRate: decimal("interest_rate", { precision: 5, scale: 2 }), // Interest rate used for calculation
   mode: transactionModeEnum("mode").notNull(),
   transactionId: varchar("transaction_id").notNull(),
   proofDocument: varchar("proof_document"), // File path or URL

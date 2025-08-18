@@ -6,7 +6,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { Button } from "@/components/ui/button";
 import { Bell, LogOut } from "lucide-react";
 import InvestmentSummary from "@/components/investor/investment-summary";
-
+import InterestSummary from "@/components/investor/interest-summary";
 import TransactionHistory from "@/components/investor/transaction-history";
 import { InvestorWithInvestments } from "@shared/schema";
 
@@ -109,9 +109,15 @@ export default function InvestorPortal() {
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-6 py-8 space-y-8">
         {/* Investment Summary */}
         <InvestmentSummary investor={investorProfile} />
+
+        {/* Interest Summary - New Interest Disbursement System */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Interest & Disbursements</h2>
+          <InterestSummary />
+        </div>
 
         {/* Transaction History */}
         <TransactionHistory investorProfile={investorProfile} />
