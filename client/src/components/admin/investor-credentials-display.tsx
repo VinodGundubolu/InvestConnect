@@ -43,7 +43,7 @@ export default function InvestorCredentialsDisplay({ investor }: InvestorCredent
     }).format(amount);
   };
 
-  const investorLoginUrl = `${window.location.origin}/investor-login`;
+  const investorLoginUrl = `${window.location.origin}/login`;
 
   // Debug: Check what data we're receiving
   console.log("Credentials Display Data:", investor);
@@ -84,87 +84,120 @@ export default function InvestorCredentialsDisplay({ investor }: InvestorCredent
           </div>
         </div>
 
-        {/* Login Credentials */}
+        {/* Universal Login Credentials */}
         <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
           <h3 className="font-semibold text-blue-800 mb-3 flex items-center">
-            🔐 Investor Portal Login Credentials
+            🔐 Universal Login Credentials
           </h3>
           
-          <div className="space-y-3">
-            <div className="flex items-center justify-between bg-white rounded p-3 border">
-              <div className="flex-1">
-                <label className="text-sm font-medium text-gray-600">Username</label>
-                <p className="font-mono text-lg">{investor?.username || 'N/A'}</p>
+          {/* Login Methods */}
+          <div className="mb-4 p-3 bg-white rounded border">
+            <h4 className="font-medium text-gray-700 mb-2">Investor can login using any of these:</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="text-green-600 border-green-300">Email</Badge>
+                <span className="font-mono">{investor?.investor?.email || investor?.email || 'N/A'}</span>
               </div>
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="text-blue-600 border-blue-300">Phone</Badge>
+                <span className="font-mono">{investor?.investor?.primaryMobile || investor?.phone || 'N/A'}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="text-purple-600 border-purple-300">Investor ID</Badge>
+                <span className="font-mono">{investor?.investor?.id || investor?.investorId || 'N/A'}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="text-orange-600 border-orange-300">Username</Badge>
+                <span className="font-mono">{investor?.username || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Password */}
+          <div className="flex items-center justify-between bg-white rounded p-3 border">
+            <div className="flex-1">
+              <label className="text-sm font-medium text-gray-600">Password (Same for all login methods)</label>
+              <p className="font-mono text-lg">
+                {showPassword ? (investor?.password || 'N/A') : "••••••••"}
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => copyToClipboard(investor?.username || '', "Username")}
-                data-testid="copy-username"
+                onClick={() => setShowPassword(!showPassword)}
+                data-testid="toggle-password"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => copyToClipboard(investor?.password || '', "Password")}
+                data-testid="copy-password"
               >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
-
-            <div className="flex items-center justify-between bg-white rounded p-3 border">
-              <div className="flex-1">
-                <label className="text-sm font-medium text-gray-600">Password</label>
-                <p className="font-mono text-lg">
-                  {showPassword ? (investor?.password || 'N/A') : "••••••••"}
-                </p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowPassword(!showPassword)}
-                  data-testid="toggle-password"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => copyToClipboard(investor?.password || '', "Password")}
-                  data-testid="copy-password"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Portal Access */}
+        {/* Universal Portal Access */}
         <div className="bg-gray-50 rounded-lg p-4 border">
-          <h3 className="font-semibold text-gray-800 mb-3">🌐 Investor Portal Access</h3>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Login URL</p>
-              <p className="font-mono text-sm bg-white px-2 py-1 rounded border">
-                {investorLoginUrl}
-              </p>
+          <h3 className="font-semibold text-gray-800 mb-3">🌐 Universal Investor Portal Access</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Universal Login URL</p>
+                <p className="font-mono text-sm bg-white px-2 py-1 rounded border">
+                  {investorLoginUrl}
+                </p>
+              </div>
+              <Button
+                onClick={() => window.open(investorLoginUrl, '_blank')}
+                className="bg-blue-500 hover:bg-blue-600"
+                data-testid="open-investor-portal"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open Portal
+              </Button>
             </div>
+            
+            {/* Copy URL Button */}
             <Button
-              onClick={() => window.open(investorLoginUrl, '_blank')}
-              className="bg-blue-500 hover:bg-blue-600"
-              data-testid="open-investor-portal"
+              variant="outline"
+              size="sm"
+              onClick={() => copyToClipboard(investorLoginUrl, "Portal URL")}
+              className="w-full"
+              data-testid="copy-portal-url"
             >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Open Portal
+              <Copy className="h-4 w-4 mr-2" />
+              Copy Login URL
             </Button>
           </div>
         </div>
 
-        {/* Instructions */}
+        {/* Enhanced Instructions */}
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <h4 className="font-medium text-amber-800 mb-2">📋 Next Steps</h4>
-          <ul className="text-sm text-amber-700 space-y-1">
-            <li>• Share the login credentials securely with the investor</li>
-            <li>• The investor can now access their dedicated portal using the provided URL</li>
-            <li>• They will see only their investment data and returns calculator</li>
-            <li>• All dividend calculations are automatically updated</li>
-          </ul>
+          <h4 className="font-medium text-amber-800 mb-2">📋 Universal Login Instructions</h4>
+          <div className="text-sm text-amber-700 space-y-2">
+            <p><strong>Share these details with the investor:</strong></p>
+            <ul className="space-y-1 ml-4">
+              <li>• <strong>Login URL:</strong> {investorLoginUrl}</li>
+              <li>• <strong>Login Options:</strong> Email, Phone, Investor ID, or Username</li>
+              <li>• <strong>Password:</strong> {investor?.password || 'N/A'} (can be changed after first login)</li>
+            </ul>
+            
+            <p className="mt-3"><strong>Investor Portal Features:</strong></p>
+            <ul className="space-y-1 ml-4">
+              <li>• Complete investment portfolio overview</li>
+              <li>• Real-time interest calculations and disbursement tracking</li>
+              <li>• Transaction history with export options (PDF/Excel)</li>
+              <li>• Early exit value calculator (after 3-year lock-in)</li>
+              <li>• Secure password change functionality</li>
+              <li>• Milestone bonus tracking for Year 5 and 10 completions</li>
+            </ul>
+          </div>
         </div>
       </CardContent>
     </Card>

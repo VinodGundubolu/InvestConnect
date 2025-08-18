@@ -396,7 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         investmentDate: new Date().toLocaleDateString('en-IN'),
         username,
         password,
-        investorPortalUrl: `${req.protocol}://${req.get('host')}/investor-login`
+        investorPortalUrl: `${req.protocol}://${req.get('host')}/login`
       };
       
       const emailContent = {
