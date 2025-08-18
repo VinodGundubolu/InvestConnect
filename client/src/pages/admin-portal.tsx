@@ -7,6 +7,7 @@ import AdminSidebar from "@/components/admin/admin-sidebar";
 import DashboardStats from "@/components/admin/dashboard-stats";
 import InvestorPortfolioOverview from "@/components/admin/investor-portfolio-overview";
 import TodayInterestBreakdown from "@/components/admin/interest-breakdown";
+import EmailManagement from "@/components/admin/email-management";
 
 export default function AdminPortal() {
   const { toast } = useToast();
@@ -88,6 +89,11 @@ export default function AdminPortal() {
               <div className="lg:col-span-1">
                 <TodayInterestBreakdown />
               </div>
+            </div>
+
+            {/* Email Management Section */}
+            <div className="slide-up">
+              <EmailManagement investors={[]} />
             </div>
           </div>
         </main>

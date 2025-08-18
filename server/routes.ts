@@ -6,6 +6,7 @@ import { EmailTemplateEngine, type EmailMergeFields } from "./email-templates";
 import { insertInvestorSchema, insertInvestmentSchema, insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 import { InterestDisbursementEngine, type InterestCalculation } from './interest-disbursement';
+import { initializeEmailScheduler, emailScheduler } from './scheduler';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -13,6 +14,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Initialize dividend rates
   await storage.initializeDividendRates();
+
+  // Initialize email scheduler for automated monthly reports
+  initializeEmailScheduler();
 
   // Test login route for demo credentials
   app.post('/api/test-login', async (req, res) => {
@@ -1323,6 +1327,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error calculating interest details:", error);
       res.status(500).json({ message: "Failed to calculate interest details" });
+    }
+  });
+
+  // Email notification routes
+  app.post('/api/email/welcome/:investorId', isAuthenticated, async (req, res) => {
+    try {
+      const { investorId } = req.params;
+      const investor = await storage.getInvestor(investorId);
+      
+      if (!investor) {
+        return res.status(404).json({ message: 'Investor not found' });
+      }
+
+      const { sendWelcomeEmail } = await import('./emailService');
+      const success = await sendWelcomeEmail(investor);
+      
+      if (success) {
+        res.json({ success: true, message: 'Welcome email sent successfully' });
+      } else {
+        res.status(500).json({ success: false, message: 'Failed to send welcome email' });
+      }
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+      res.status(500).json({ message: 'Failed to send welcome email' });
+    }
+  });
+
+  app.post('/api/email/monthly-report/:investorId', isAuthenticated, async (req, res) => {
+    try {
+      const { investorId } = req.params;
+      const investor = await storage.getInvestor(investorId);
+      
+      if (!investor) {
+        return res.status(404).json({ message: 'Investor not found' });
+      }
+
+      const { sendMonthlyProgressReport } = await import('./emailService');
+      const success = await sendMonthlyProgressReport(investor);
+      
+      if (success) {
+        res.json({ success: true, message: 'Monthly report sent successfully' });
+      } else {
+        res.status(500).json({ success: false, message: 'Failed to send monthly report' });
+      }
+    } catch (error) {
+      console.error('Error sending monthly report:', error);
+      res.status(500).json({ message: 'Failed to send monthly report' });
+    }
+  });
+
+  app.post('/api/email/monthly-reports-all', isAuthenticated, async (req, res) => {
+    try {
+      const { sendMonthlyReportsToAllInvestors } = await import('./emailService');
+      const results = await sendMonthlyReportsToAllInvestors();
+      
+      res.json({
+        success: true,
+        message: `Monthly reports completed: ${results.sent} sent, ${results.failed} failed`,
+        results
+      });
+    } catch (error) {
+      console.error('Error sending monthly reports to all investors:', error);
+      res.status(500).json({ message: 'Failed to send monthly reports' });
+    }
+  });
+
+  // Test email scheduler endpoint
+  app.post('/api/email/test-scheduler', isAuthenticated, async (req, res) => {
+    try {
+      const results = await emailScheduler.testMonthlyReports();
+      res.json({
+        success: true,
+        message: 'Scheduler test completed successfully',
+        results
+      });
+    } catch (error) {
+      console.error('Error testing email scheduler:', error);
+      res.status(500).json({ message: 'Failed to test email scheduler' });
+    }
+  });
+
+  // Auto-trigger welcome email when new investor is created
+  app.post('/api/admin/investors', isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertInvestorSchema.parse(req.body);
+      const investor = await storage.createInvestor(validatedData);
+      
+      // Auto-send welcome email
+      try {
+        const { sendWelcomeEmail } = await import('./emailService');
+        await sendWelcomeEmail(investor);
+        console.log(`Welcome email sent to new investor: ${investor.id}`);
+      } catch (emailError) {
+        console.error('Failed to send welcome email to new investor:', emailError);
+        // Don't fail the investor creation if email fails
+      }
+      
+      res.json(investor);
+    } catch (error) {
+      console.error('Error creating investor:', error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: 'Validation error', errors: error.errors });
+      } else {
+        res.status(500).json({ message: 'Failed to create investor' });
+      }
     }
   });
 

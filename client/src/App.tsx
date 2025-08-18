@@ -12,6 +12,7 @@ import AdminBonds from "@/pages/admin-bonds";
 import AdminTransactions from "@/pages/admin-transactions";
 import AdminCalculator from "@/pages/admin-calculator";
 import AdminReports from "@/pages/admin-reports";
+import EmailManagementPage from "@/pages/email-management";
 import InvestorLogin from "@/pages/investor-login";
 import AdminLogin from "@/pages/admin-login";
 import NotFound from "@/pages/not-found";
@@ -105,6 +106,18 @@ function Router() {
       <Route path="/admin/reports">
         {isAuthenticated && (user as any)?.role === 'admin' ? (
           <AdminReports />
+        ) : (
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <button onClick={() => window.location.href = '/admin-login'}>Go to Admin Login</button>
+            </div>
+          </div>
+        )}
+      </Route>
+
+      <Route path="/admin/emails">
+        {isAuthenticated && (user as any)?.role === 'admin' ? (
+          <EmailManagementPage />
         ) : (
           <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
