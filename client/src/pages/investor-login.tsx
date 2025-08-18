@@ -223,7 +223,8 @@ export default function InvestorLogin() {
               <strong>Demo Account:</strong><br />
               Email: suri.kumar@example.com<br />
               Phone: +91 98765 43210<br />
-              Investor ID: 2025-V1-B1-234E-141<br />
+              Investor ID: 3<br />
+              Username: suri_kumar<br />
               Password: SU2025
             </AlertDescription>
           </Alert>

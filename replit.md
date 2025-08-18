@@ -6,7 +6,15 @@ An Investment Relationship Management (IRM) Tool designed for organizations to m
 
 ## Recent Changes (August 18, 2025)
 
-### **Latest Critical Fixes (Session 4):**
+### **Latest Critical Fixes (Session 5):**
+- ✓ **Simple Sequential Investor IDs** - Changed from complex format (`2025-V1-B1-234E-141`) to simple numbers (`1`, `2`, `3`, `4`...)
+- ✓ **Phone Number Login Bug Fixed** - Corrected API request method parameters in frontend login logic
+- ✓ **Frontend Pattern Recognition** - Updated identifier detection to work with simple sequential IDs
+- ✓ **Demo Account Information** - Updated login page to show correct simple Investor ID format
+- ✓ **Database Synchronization** - Created test investors with simple IDs (1, 2, 3) for authentication testing
+- ✓ **Universal Login Verification** - All four authentication methods working (ID, Phone, Email, Username)
+
+### **Previous Critical Fixes (Session 4):**
 - ✓ **Interest Calculation Logic** - Separated milestone bonuses from regular interest calculations
 - ✓ **Transaction Creation** - Fixed database constraint errors, proper field mapping (`type` vs `transactionType`)
 - ✓ **Year 5 Interest** - Now correctly shows ₹3,60,000 only (18% of principal), bonus disbursed separately  
