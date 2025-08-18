@@ -93,10 +93,7 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
         investmentAmount: parseInt(data.investmentAmount),
         bondsCount: parseInt(data.bondsCount),
       };
-      return await apiRequest("/api/admin/investors", {
-        method: "POST",
-        body: payload,
-      });
+      return await apiRequest("/api/admin/investors", "POST", payload);
     },
     onSuccess: (response) => {
       setCredentialsData(response);
@@ -128,15 +125,25 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Add New Investor</DialogTitle>
-          <DialogDescription>
-            Create a new investor profile with login credentials and investment details.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white border-2 border-gray-200 shadow-2xl"
+        style={{
+          backgroundColor: "#ffffff",
+          borderRadius: "12px",
+          zIndex: 50,
+          position: "fixed"
+        }}
+      >
+        <div className="bg-white p-1 rounded-lg">
+          <DialogHeader className="bg-gray-50 p-4 rounded-t-lg border-b">
+            <DialogTitle className="text-xl font-bold text-gray-800">Add New Investor</DialogTitle>
+            <DialogDescription className="text-gray-600">
+              Create a new investor profile with login credentials and investment details.
+            </DialogDescription>
+          </DialogHeader>
 
-        <Form {...form}>
+          <div className="p-4 bg-white">
+            <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Personal Information */}
             <Card>
@@ -433,6 +440,8 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
             </div>
           </form>
         </Form>
+          </div>
+        </div>
       </DialogContent>
 
       {/* Credentials Display Dialog */}

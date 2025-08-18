@@ -261,27 +261,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all investors for admin portal
   app.get("/api/admin/investors", async (req, res) => {
     try {
-      const investors = Array.from(investorDatabase.values()).map(data => ({
-        ...data.investor,
-        totalInvestment: data.investments.reduce((sum: number, inv: any) => sum + parseInt(inv.investedAmount), 0),
-        bondsCount: data.investments.reduce((sum: number, inv: any) => sum + parseInt(inv.bondsPurchased), 0),
-        joinDate: data.investor.createdAt.split('T')[0],
-        currentYear: Math.min(Math.floor((new Date().getTime() - new Date(data.investments[0].investmentDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) + 1, 10),
-        currentRate: [0, 6, 9, 12, 18, 18, 18, 18, 18, 0][Math.min(Math.floor((new Date().getTime() - new Date(data.investments[0].investmentDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000)), 9)],
-        totalReturns: data.investments.reduce((sum: number, inv: any) => {
-          const investmentDate = new Date(inv.investmentDate);
-          const yearsSince = Math.floor((new Date().getTime() - investmentDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-          const currentYear = Math.min(yearsSince + 1, 10);
-          const rates = [0, 6, 9, 12, 18, 18, 18, 18, 18, 0];
+      const investors = await storage.getAllInvestors();
+      
+      const investorsWithDetails = await Promise.all(
+        investors.map(async (investor) => {
+          const investments = await storage.getInvestmentsByInvestor(investor.id);
+          const totalInvestment = investments.reduce((sum, inv) => sum + parseFloat(inv.investedAmount), 0);
+          const bondsCount = investments.reduce((sum, inv) => sum + inv.bondsPurchased, 0);
+          
+          // Calculate current year and rate based on first investment
+          let currentYear = 1;
+          let currentRate = 0;
           let totalReturns = 0;
-          for (let year = 1; year <= Math.min(currentYear - 1, 9); year++) {
-            totalReturns += parseInt(inv.investedAmount) * (rates[year] / 100);
+          
+          if (investments.length > 0) {
+            const firstInvestment = investments[0];
+            const investmentDate = new Date(firstInvestment.investmentDate);
+            const yearsSince = Math.floor((new Date().getTime() - investmentDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+            currentYear = Math.min(yearsSince + 1, 10);
+            
+            const rates = [0, 6, 9, 12, 18, 18, 18, 18, 18, 0];
+            currentRate = rates[Math.min(currentYear - 1, 9)];
+            
+            // Calculate total returns for all completed years
+            for (let year = 1; year <= Math.min(currentYear - 1, 9); year++) {
+              totalReturns += totalInvestment * (rates[year] / 100);
+            }
           }
-          return sum + totalReturns;
-        }, 0)
-      }));
+          
+          return {
+            id: investor.id,
+            name: `${investor.firstName} ${investor.middleName || ''} ${investor.lastName}`.trim(),
+            email: investor.email,
+            phone: investor.primaryMobile,
+            totalInvestment,
+            bondsCount,
+            joinDate: investor.createdAt ? new Date(investor.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            status: "Active",
+            currentYear,
+            currentRate,
+            totalReturns
+          };
+        })
+      );
 
-      res.json(investors);
+      res.json(investorsWithDetails);
     } catch (error) {
       console.error("Error fetching investors:", error);
       res.status(500).json({ message: "Failed to fetch investors" });
