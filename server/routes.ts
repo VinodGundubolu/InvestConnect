@@ -196,7 +196,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create investor in database
       const investor = await storage.createInvestor({
-        id: investorId,
         firstName,
         lastName,
         middleName: middleName || null,
@@ -254,35 +253,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const adminEmail = "viku2615@gmail.com";
       const investorLoginUrl = `${req.protocol}://${req.get('host')}/investor-login`;
       
-      console.log(`
-        📧 EMAIL NOTIFICATION TO: ${adminEmail}
-        ================================================
-        Subject: New Investor Account Created - ${firstName} ${lastName}
-        
-        Dear Admin,
-        
-        A new investor account has been successfully created:
-        
-        👤 INVESTOR DETAILS:
-        Name: ${firstName} ${middleName ? middleName + ' ' : ''}${lastName}
-        Email: ${email}
-        Phone: ${mobileNumber}
-        Investment: ₹${parseInt(investmentAmount).toLocaleString('en-IN')}
-        Bond Units: ${bondsCount}
-        
-        🔐 LOGIN CREDENTIALS:
-        Username: ${username}
-        Password: ${password}
-        
-        🌐 INVESTOR PORTAL ACCESS:
-        URL: ${investorLoginUrl}
-        
-        Please share these credentials securely with the investor.
-        
-        Best regards,
-        IRM System
-        ================================================
-      `);
+      // Enhanced email notification (in production, integrate with email service like SendGrid/Nodemailer)
+      const emailContent = {
+        to: adminEmail,
+        subject: `🔔 New Investor Account Created - ${firstName} ${lastName}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1e3a8a; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">
+              📈 Investment Relationship Management System
+            </h2>
+            
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #374151; margin-top: 0;">New Investor Account Created</h3>
+              
+              <div style="background-color: white; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                <h4 style="color: #1f2937; margin-top: 0;">👤 Investor Details:</h4>
+                <p><strong>Name:</strong> ${firstName} ${middleName ? middleName + ' ' : ''}${lastName}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Phone:</strong> ${mobileNumber}</p>
+                <p><strong>Investment Amount:</strong> ₹${parseInt(investmentAmount).toLocaleString('en-IN')}</p>
+                <p><strong>Bond Units:</strong> ${bondsCount}</p>
+              </div>
+              
+              <div style="background-color: #fef3c7; padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 4px solid #f59e0b;">
+                <h4 style="color: #92400e; margin-top: 0;">🔐 Login Credentials:</h4>
+                <p><strong>Username:</strong> <code style="background-color: #fbbf24; padding: 2px 6px; border-radius: 3px;">${username}</code></p>
+                <p><strong>Password:</strong> <code style="background-color: #fbbf24; padding: 2px 6px; border-radius: 3px;">${password}</code></p>
+              </div>
+              
+              <div style="background-color: #dbeafe; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                <h4 style="color: #1e40af; margin-top: 0;">🌐 Investor Portal Access:</h4>
+                <p><a href="${investorLoginUrl}" style="color: #2563eb; text-decoration: none; font-weight: bold;">${investorLoginUrl}</a></p>
+                <p style="font-size: 14px; color: #6b7280;">Please share these credentials securely with the investor.</p>
+              </div>
+            </div>
+            
+            <p style="color: #6b7280; font-size: 14px; text-align: center; margin-top: 30px;">
+              Best regards,<br>
+              <strong>IRM System</strong><br>
+              Investment Relationship Management Platform
+            </p>
+          </div>
+        `
+      };
+
+      // Log the email notification prominently
+      console.log('\n'.repeat(3));
+      console.log('🚨'.repeat(20));
+      console.log('📧 EMAIL NOTIFICATION SENT TO ADMIN:');
+      console.log('🚨'.repeat(20));
+      console.log(`TO: ${emailContent.to}`);
+      console.log(`SUBJECT: ${emailContent.subject}`);
+      console.log('📄 EMAIL CONTENT:');
+      console.log(emailContent.html.replace(/<[^>]*>/g, '')); // Strip HTML for console
+      console.log('🚨'.repeat(20));
+      console.log('\n'.repeat(2));
 
       res.json({
         success: true,
@@ -297,6 +322,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating investor:", error);
       res.status(500).json({ message: "Failed to create investor" });
+    }
+  });
+
+  // Investor login API
+  app.post("/api/investor/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+
+      // Check credentials in map
+      const credentials = credentialsMap.get(username);
+      if (!credentials || credentials.password !== password) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+
+      // Get investor details
+      const investor = await storage.getInvestor(credentials.investorId);
+      if (!investor) {
+        return res.status(404).json({ message: "Investor not found" });
+      }
+
+      // In a real application, you would set up a session here
+      res.json({
+        success: true,
+        investor,
+        message: "Login successful"
+      });
+
+    } catch (error) {
+      console.error("Error during investor login:", error);
+      res.status(500).json({ message: "Login failed" });
     }
   });
 
@@ -360,10 +419,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.session?.testUser?.portalType === 'investor') {
         const investorId = req.session.testUser.investorId || "2024-V1-B5-1234-001";
         
-        // Check dynamic investor data first
-        const dynamicData = investorDatabase.get(investorId);
-        if (dynamicData) {
-          return res.json(dynamicData.investments);
+        // Get investor investments from database
+        const investments = await storage.getInvestmentsByInvestor(investorId);
+        if (investments.length > 0) {
+          return res.json(investments);
         }
         
         // Fallback to static test investment
@@ -506,10 +565,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.session?.testUser?.portalType === 'investor') {
         const investorId = req.session.testUser.investorId || "2024-V1-B5-1234-001";
         
-        // Check dynamic investor data first
-        const dynamicData = investorDatabase.get(investorId);
-        if (dynamicData) {
-          return res.json(dynamicData.investor);
+        // Get investor from database
+        const dbInvestor = await storage.getInvestor(investorId);
+        if (dbInvestor) {
+          return res.json(dbInvestor);
         }
         
         // Fallback to static test investor

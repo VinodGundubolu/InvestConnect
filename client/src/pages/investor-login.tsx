@@ -1,22 +1,58 @@
-import { useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, User, Shield } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { TrendingUp, User, Shield, Eye, EyeOff } from "lucide-react";
+
+const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function InvestorLogin() {
-  const { isAuthenticated, user } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const { toast } = useToast();
 
-  // Redirect authenticated users to investor portal
-  useEffect(() => {
-    if (isAuthenticated) {
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+    },
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: async (data: LoginFormData) => {
+      return await apiRequest("/api/investor/login", "POST", data);
+    },
+    onSuccess: (response) => {
+      toast({
+        title: "Login Successful",
+        description: "Welcome to your investor portal!",
+      });
+      // Redirect to investor portal
       window.location.href = '/investor';
-    }
-  }, [isAuthenticated]);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid username or password",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const handleLogin = () => {
-    // Add portal type to login URL for backend tracking
-    window.location.href = '/api/login?portal=investor';
+  const onSubmit = (data: LoginFormData) => {
+    loginMutation.mutate(data);
   };
 
   return (
@@ -50,23 +86,79 @@ export default function InvestorLogin() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <Button 
-                    onClick={handleLogin}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
-                    size="lg"
-                    data-testid="button-investor-login"
-                  >
-                    Login with Replit Account
-                  </Button>
-                  
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                      <p className="font-medium text-yellow-800 mb-1">Test Demo Account:</p>
-                      <p><strong>Username:</strong> Suresh</p>
-                      <p><strong>Password:</strong> Test@1234</p>
-                      <p className="text-xs text-yellow-700 mt-1">Use these credentials to test the investor portal</p>
-                    </div>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Enter your username" 
+                              {...field} 
+                              data-testid="input-username"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input 
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Enter your password" 
+                                {...field} 
+                                data-testid="input-password"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowPassword(!showPassword)}
+                                data-testid="button-toggle-password"
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <Button 
+                      type="submit"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
+                      size="lg"
+                      disabled={loginMutation.isPending}
+                      data-testid="button-investor-login"
+                    >
+                      {loginMutation.isPending ? "Logging in..." : "Login to Investor Portal"}
+                    </Button>
+                  </form>
+                </Form>
+                
+                <div className="text-center">
+                  <div className="text-sm text-gray-600 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p className="font-medium text-yellow-800 mb-1">Sample Credentials:</p>
+                    <p><strong>Username:</strong> nd _kumar</p>
+                    <p><strong>Password:</strong> ND2025</p>
+                    <p className="text-xs text-yellow-700 mt-1">Use these credentials to test the investor portal</p>
                   </div>
                 </div>
 
