@@ -248,11 +248,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
-  // Add test credentials
+  // Add test credentials with simple sequential investor IDs
   addInvestorCredentials({
     username: "nd_kumar",
     password: "ND2025", 
-    investorId: "2025-V1-B1-234E-091",
+    investorId: "1",
     email: "nd.kumar@example.com",
     phone: "+91 98765 43209"
   });
@@ -260,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   addInvestorCredentials({
     username: "suresh_kumar",
     password: "SU2025",
-    investorId: "2025-V1-B1-234E-081", 
+    investorId: "2", 
     email: "suresh.kumar@example.com",
     phone: "+91 98765 43208"
   });
@@ -268,15 +268,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   addInvestorCredentials({
     username: "suri_kumar",
     password: "SU2025",
-    investorId: "2025-V1-B1-234E-141",
+    investorId: "3",
     email: "suri.kumar@example.com", 
     phone: "+91 98765 43210"
   });
 
   // Legacy credentials map for backward compatibility
-  credentialsMap.set("nd_kumar", { username: "nd_kumar", password: "ND2025", investorId: "2025-V1-B1-234E-091" });
-  credentialsMap.set("suresh_kumar", { username: "suresh_kumar", password: "SU2025", investorId: "2025-V1-B1-234E-081" });
-  credentialsMap.set("suri_kumar", { username: "suri_kumar", password: "SU2025", investorId: "2025-V1-B1-234E-141" });
+  credentialsMap.set("nd_kumar", { username: "nd_kumar", password: "ND2025", investorId: "1" });
+  credentialsMap.set("suresh_kumar", { username: "suresh_kumar", password: "SU2025", investorId: "2" });
+  credentialsMap.set("suri_kumar", { username: "suri_kumar", password: "SU2025", investorId: "3" });
 
   // Helper function to generate login credentials
   const generateCredentials = (firstName: string, lastName: string) => {

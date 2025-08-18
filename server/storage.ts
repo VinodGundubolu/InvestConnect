@@ -190,24 +190,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generateInvestorId(investorData: InsertInvestor): Promise<string> {
-    const currentYear = new Date().getFullYear();
-    const version = 1; // For now, hardcoded to V1
-    
-    // Get count of bonds purchased (simplified for now)
-    const bondCount = 1; // This would be calculated based on investment
-    
-    // Extract last 4 digits of Aadhaar (from identity proof number)
-    const aadhaarDigits = investorData.identityProofNumber.slice(-4);
-    
-    // Get serial number (count of investors this year + 1)
-    const investorsThisYear = await db
+    // Get total count of investors + 1 to get the next sequential number
+    const totalInvestors = await db
       .select({ count: sql<number>`count(*)` })
-      .from(investors)
-      .where(sql`extract(year from created_at) = ${currentYear}`);
+      .from(investors);
     
-    const serialNumber = (investorsThisYear[0]?.count || 0) + 1;
+    const nextId = (totalInvestors[0]?.count || 0) + 1;
     
-    return `${currentYear}-V${version}-B${bondCount}-${aadhaarDigits}-${serialNumber.toString().padStart(3, '0')}`;
+    return nextId.toString();
   }
 
   // Investment operations
