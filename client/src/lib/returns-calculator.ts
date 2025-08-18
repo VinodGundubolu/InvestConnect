@@ -113,8 +113,8 @@ export function calculateReturns(
   const isAfterLockIn = yearsSinceInvestment >= LOCK_IN_PERIOD_YEARS;
   let exitValue = "N/A";
   if (isAfterLockIn) {
-    // Early exit value is principal + interest till date (no bonuses)
-    const exitAmount = principalAmount + totalInterest;
+    // Early exit value is principal + interest till date + earned milestone bonuses
+    const exitAmount = principalAmount + totalInterest + totalBonuses;
     exitValue = formatCurrency(exitAmount);
   }
   

@@ -1057,9 +1057,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const yearlyInterest = InterestDisbursementEngine.calculateYearlyInterest(parseFloat(investment.investedAmount), year);
             let amount = yearlyInterest;
             
-            // Add milestone bonus for year 5
+            // Add milestone bonus for year 5 (100% bonus)
             if (year === 5) {
-              amount += Math.round(parseFloat(investment.investedAmount) * 0.05);
+              amount += Math.round(parseFloat(investment.investedAmount) * 1.0);
             }
             
             sampleDisbursements.push({
@@ -1153,12 +1153,17 @@ function calculateReturns(
   
   for (let year = 1; year <= 10; year++) {
     const rateData = rates.find(r => r.year === year);
-    const rate = rateData ? parseFloat(rateData.rate) : 0;
+    let rate = rateData ? parseFloat(rateData.rate) : 0;
     
-    const dividend = year === 10 ? 0 : (principal * rate) / 100;
+    // Year 10 has 0% interest rate
+    if (year === 10) {
+      rate = 0;
+    }
+    
+    const dividend = (principal * rate) / 100;
     let bonus = 0;
     
-    // Apply bonus rules
+    // Apply milestone bonus rules (100% bonuses)
     if (year === 5 || year === 10) {
       bonus = principal; // 100% bonus
     }

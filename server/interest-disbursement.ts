@@ -36,14 +36,16 @@ export class InterestDisbursementEngine {
 
   /**
    * Get interest rate for a specific year
-   * Year 1: 0%, Year 2: 6%, Year 3: 9%, Year 4: 12%, Year 5+: 18%
+   * Year 1: 0%, Year 2: 6%, Year 3: 9%, Year 4: 12%, Year 5-9: 18%, Year 10: 0%
    */
   static getInterestRateForYear(year: number): number {
     if (year === 1) return 0;
     if (year === 2) return 6;
     if (year === 3) return 9;
     if (year === 4) return 12;
-    return 18; // Year 5 and beyond
+    if (year >= 5 && year <= 9) return 18;
+    if (year === 10) return 0; // Year 10 has 0% interest
+    return 0; // Beyond year 10
   }
 
   /**
@@ -56,14 +58,15 @@ export class InterestDisbursementEngine {
 
   /**
    * Get milestone bonus for completed years
-   * 5 years: 5% bonus, 10 years: 10% bonus
+   * 5 years: 100% bonus, 10 years: additional 100% bonus
    */
   static getMilestoneBonus(principalAmount: number, completedYears: number): number {
     let bonus = 0;
+    if (completedYears >= 5) {
+      bonus += principalAmount * 1.0; // 100% bonus for 5 years
+    }
     if (completedYears >= 10) {
-      bonus += principalAmount * 0.10; // 10% bonus for 10 years
-    } else if (completedYears >= 5) {
-      bonus += principalAmount * 0.05; // 5% bonus for 5 years
+      bonus += principalAmount * 1.0; // Additional 100% bonus for 10 years
     }
     return Math.round(bonus);
   }
@@ -114,9 +117,9 @@ export class InterestDisbursementEngine {
         
         // Add milestone bonuses for years 5 and 10 if those disbursement dates have passed
         if (year === 5 && disbursementDate <= today) {
-          shouldBeDisbursedbyd += Math.round(principalAmount * 0.05);
+          shouldBeDisbursedbyd += Math.round(principalAmount * 1.0); // 100% bonus
         } else if (year === 10 && disbursementDate <= today) {
-          shouldBeDisbursedbyd += Math.round(principalAmount * 0.10);
+          shouldBeDisbursedbyd += Math.round(principalAmount * 1.0); // 100% bonus
         }
       }
     }
@@ -145,9 +148,9 @@ export class InterestDisbursementEngine {
         
         // Add milestone bonus if applicable
         if (year === 5) {
-          nextDisbursementAmount += Math.round(principalAmount * 0.05);
+          nextDisbursementAmount += Math.round(principalAmount * 1.0); // 100% bonus
         } else if (year === 10) {
-          nextDisbursementAmount += Math.round(principalAmount * 0.10);
+          nextDisbursementAmount += Math.round(principalAmount * 1.0); // 100% bonus
         }
         
         nextDisbursementDate = format(disbursementDate, 'MMM dd, yyyy');
@@ -189,9 +192,9 @@ export class InterestDisbursementEngine {
       
       let milestoneBonus = 0;
       if (year === 5) {
-        milestoneBonus = Math.round(principalAmount * 0.05);
+        milestoneBonus = Math.round(principalAmount * 1.0); // 100% bonus
       } else if (year === 10) {
-        milestoneBonus = Math.round(principalAmount * 0.10);
+        milestoneBonus = Math.round(principalAmount * 1.0); // 100% bonus
       }
       
       disbursements.push({
