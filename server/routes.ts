@@ -85,12 +85,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin dashboard stats
   app.get("/api/admin/dashboard-stats", async (req, res) => {
     try {
-      // Return sample stats based on actual database data
+      // Calculate real stats from database
+      const investors = await storage.getAllInvestors();
+      const investments = await storage.getAllInvestments();
+      
+      // Calculate total investment amount
+      const totalInvestment = investments.reduce((sum, inv) => {
+        return sum + parseFloat(inv.investedAmount);
+      }, 0);
+      
+      // Calculate total bonds
+      const totalBonds = investments.reduce((sum, inv) => {
+        return sum + inv.bondsPurchased;
+      }, 0);
+      
+      // Calculate today's interest (approximate daily interest rate)
+      const todayInterest = Math.round(totalInvestment * 0.06 / 365); // 6% annual rate
+      
       res.json({
-        totalInvestment: 10000000, // ₹1 crore total
-        activeInvestors: 2,
-        totalBonds: 5,
-        todayInterest: 1644 // Approximate daily interest
+        totalInvestment,
+        activeInvestors: investors.length,
+        totalBonds,
+        todayInterest
       });
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
@@ -101,27 +117,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin API routes
   app.get("/api/admin/investor-portfolio", async (req, res) => {
     try {
-      // Sample portfolio data
-      res.json([
-        {
-          id: "1",
-          name: "Vinod Sharma",
-          investment: 2000000,
-          bonds: 1,
-          currentYear: 2,
-          rate: 6,
-          todayInterest: 329
-        },
-        {
-          id: "2", 
-          name: "Suresh Kumar",
-          investment: 6000000,
-          bonds: 3,
-          currentYear: 2,
-          rate: 6,
-          todayInterest: 986
+      // Get real investor and investment data from database
+      const investors = await storage.getAllInvestors();
+      const investments = await storage.getAllInvestments();
+      
+      // Create portfolio data with real information
+      const portfolioData = investors.map(investor => {
+        // Find all investments for this investor
+        const investorInvestments = investments.filter(inv => inv.investorId === investor.id);
+        
+        // Calculate totals
+        const totalInvestment = investorInvestments.reduce((sum, inv) => sum + parseFloat(inv.investedAmount), 0);
+        const totalBonds = investorInvestments.reduce((sum, inv) => sum + inv.bondsPurchased, 0);
+        
+        // Calculate current year (based on first investment date)
+        let currentYear = 1;
+        if (investorInvestments.length > 0) {
+          const firstInvestment = investorInvestments[0];
+          const yearsSince = Math.floor((new Date().getTime() - new Date(firstInvestment.investmentDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+          currentYear = Math.max(1, yearsSince + 1);
         }
-      ]);
+        
+        // Calculate current rate based on year
+        let rate = 0;
+        if (currentYear === 1) rate = 0;
+        else if (currentYear === 2) rate = 6;
+        else if (currentYear === 3) rate = 9;
+        else if (currentYear === 4) rate = 12;
+        else rate = 18;
+        
+        // Calculate today's interest
+        const todayInterest = Math.round(totalInvestment * (rate / 100) / 365);
+        
+        return {
+          id: investor.id,
+          name: `${investor.firstName} ${investor.lastName}`,
+          investment: totalInvestment,
+          bonds: totalBonds,
+          currentYear,
+          rate,
+          todayInterest
+        };
+      });
+      
+      res.json(portfolioData);
     } catch (error) {
       console.error("Error fetching portfolio:", error);
       res.status(500).json({ message: "Failed to fetch portfolio" });
@@ -130,21 +169,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/interest-breakdown", async (req, res) => {
     try {
-      // Sample interest breakdown
-      res.json([
-        {
-          name: "Vinod Sharma",
-          bonds: 1,
-          rate: 6,
-          dailyInterest: 329
-        },
-        {
-          name: "Suresh Kumar", 
-          bonds: 3,
-          rate: 6,
-          dailyInterest: 986
+      // Get real investor and investment data from database
+      const investors = await storage.getAllInvestors();
+      const investments = await storage.getAllInvestments();
+      
+      // Create interest breakdown with real data
+      const interestBreakdown = investors.map(investor => {
+        // Find all investments for this investor
+        const investorInvestments = investments.filter(inv => inv.investorId === investor.id);
+        
+        // Calculate totals
+        const totalInvestment = investorInvestments.reduce((sum, inv) => sum + parseFloat(inv.investedAmount), 0);
+        const totalBonds = investorInvestments.reduce((sum, inv) => sum + inv.bondsPurchased, 0);
+        
+        // Calculate current year and rate
+        let currentYear = 1;
+        if (investorInvestments.length > 0) {
+          const firstInvestment = investorInvestments[0];
+          const yearsSince = Math.floor((new Date().getTime() - new Date(firstInvestment.investmentDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+          currentYear = Math.max(1, yearsSince + 1);
         }
-      ]);
+        
+        let rate = 0;
+        if (currentYear === 1) rate = 0;
+        else if (currentYear === 2) rate = 6;
+        else if (currentYear === 3) rate = 9;
+        else if (currentYear === 4) rate = 12;
+        else rate = 18;
+        
+        // Calculate daily interest
+        const dailyInterest = Math.round(totalInvestment * (rate / 100) / 365);
+        
+        return {
+          name: `${investor.firstName} ${investor.lastName}`,
+          bonds: totalBonds,
+          rate,
+          dailyInterest
+        };
+      });
+      
+      res.json(interestBreakdown);
     } catch (error) {
       console.error("Error fetching interest breakdown:", error);
       res.status(500).json({ message: "Failed to fetch interest breakdown" });
