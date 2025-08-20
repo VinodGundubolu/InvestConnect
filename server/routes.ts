@@ -1414,13 +1414,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertInvestorSchema.parse(req.body);
       const investor = await storage.createInvestor(validatedData);
       
-      // Auto-send welcome email
+      // Auto-send welcome email and agreement
       try {
         const { sendWelcomeEmail } = await import('./emailService');
         await sendWelcomeEmail(investor);
         console.log(`Welcome email sent to new investor: ${investor.id}`);
+        
+        // Auto-generate and send investment agreement
+        const { agreementService } = await import('./agreementService');
+        const agreementId = await agreementService.createAndSendAgreement(investor.id);
+        console.log(`Investment agreement sent to investor ${investor.id}: ${agreementId}`);
       } catch (emailError) {
-        console.error('Failed to send welcome email to new investor:', emailError);
+        console.error('Failed to send welcome email/agreement to new investor:', emailError);
         // Don't fail the investor creation if email fails
       }
       
@@ -1432,6 +1437,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ message: 'Failed to create investor' });
       }
+    }
+  });
+
+  // Agreement API routes
+  app.get('/agreement/sign/:agreementId', async (req, res) => {
+    try {
+      const { agreementId } = req.params;
+      const { agreementService } = await import('./agreementService');
+      const agreement = await agreementService.getAgreementForSigning(agreementId);
+      
+      // Render the agreement signing page (you can serve an HTML template here)
+      const signingPageHTML = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sign Investment Agreement</title>
+        <script>window.agreementData = ${JSON.stringify(agreement)};</script>
+        <script src="/static/js/agreement-signing.js" defer></script>
+        <link rel="stylesheet" href="/static/css/agreement-signing.css">
+      </head>
+      <body>
+        <div id="agreement-signing-root"></div>
+        <script>
+          // Redirect to main app for signing
+          window.location.href = '/agreement-sign/${agreementId}';
+        </script>
+      </body>
+      </html>`;
+      
+      res.send(signingPageHTML);
+    } catch (error) {
+      console.error('Error loading agreement for signing:', error);
+      res.status(404).send('Agreement not found or expired');
+    }
+  });
+
+  // API endpoints for agreement management
+  app.get('/api/agreement/:agreementId', async (req, res) => {
+    try {
+      const { agreementId } = req.params;
+      const { agreementService } = await import('./agreementService');
+      const agreement = await agreementService.getAgreementForSigning(agreementId);
+      res.json(agreement);
+    } catch (error) {
+      console.error('Error fetching agreement:', error);
+      res.status(404).json({ message: 'Agreement not found' });
+    }
+  });
+
+  app.post('/api/agreement/:agreementId/sign', async (req, res) => {
+    try {
+      const { agreementId } = req.params;
+      const { signature, signatoryName, signatoryEmail } = req.body;
+      
+      const ipAddress = req.ip || req.connection.remoteAddress;
+      const userAgent = req.get('User-Agent');
+      
+      const { agreementService } = await import('./agreementService');
+      await agreementService.signAgreement(
+        agreementId, 
+        signature, 
+        signatoryName, 
+        signatoryEmail,
+        ipAddress,
+        userAgent
+      );
+      
+      res.json({ success: true, message: 'Agreement signed successfully' });
+    } catch (error) {
+      console.error('Error signing agreement:', error);
+      res.status(400).json({ message: error.message || 'Failed to sign agreement' });
+    }
+  });
+
+  // Get investor agreements
+  app.get('/api/investor/agreements', async (req: any, res) => {
+    try {
+      let investorId = null;
+      
+      // Check investor authentication session
+      if (req.session?.investorAuth?.isAuthenticated) {
+        investorId = req.session.investorAuth.investorId;
+      } else if (req.session?.testUser?.portalType === 'investor') {
+        investorId = req.session.testUser.investorId || "1";
+      }
+      
+      if (!investorId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+      
+      const { agreementService } = await import('./agreementService');
+      const agreements = await agreementService.getInvestorAgreements(investorId);
+      res.json(agreements);
+    } catch (error) {
+      console.error('Error fetching investor agreements:', error);
+      res.status(500).json({ message: 'Failed to fetch agreements' });
+    }
+  });
+
+  // Admin - Get all agreements
+  app.get('/api/admin/agreements', isAuthenticated, async (req, res) => {
+    try {
+      const { agreementService } = await import('./agreementService');
+      const agreements = await agreementService.getAllAgreements();
+      res.json(agreements);
+    } catch (error) {
+      console.error('Error fetching all agreements:', error);
+      res.status(500).json({ message: 'Failed to fetch agreements' });
+    }
+  });
+
+  // Admin - Send agreement to investor
+  app.post('/api/admin/agreements/send', isAuthenticated, async (req, res) => {
+    try {
+      const { investorId, templateId, expiresInDays } = req.body;
+      const { agreementService } = await import('./agreementService');
+      const agreementId = await agreementService.createAndSendAgreement(investorId, templateId, expiresInDays);
+      res.json({ success: true, agreementId });
+    } catch (error) {
+      console.error('Error sending agreement:', error);
+      res.status(500).json({ message: 'Failed to send agreement' });
+    }
+  });
+
+  // Admin - Resend agreement
+  app.post('/api/admin/agreements/:agreementId/resend', isAuthenticated, async (req, res) => {
+    try {
+      const { agreementId } = req.params;
+      const { agreementService } = await import('./agreementService');
+      await agreementService.resendAgreement(agreementId);
+      res.json({ success: true, message: 'Agreement resent successfully' });
+    } catch (error) {
+      console.error('Error resending agreement:', error);
+      res.status(500).json({ message: 'Failed to resend agreement' });
     }
   });
 

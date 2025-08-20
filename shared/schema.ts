@@ -222,6 +222,9 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+// Import agreement schemas
+export * from './agreement-schema';
 export type Investor = typeof investors.$inferSelect;
 export type InsertInvestor = z.infer<typeof insertInvestorSchema>;
 export type Investment = typeof investments.$inferSelect;

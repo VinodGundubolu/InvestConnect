@@ -71,6 +71,16 @@ export interface IStorage {
   // Dividend rates
   getDividendRates(): Promise<{ year: number; rate: string }[]>;
   initializeDividendRates(): Promise<void>;
+
+  // Agreement operations
+  getAgreementTemplate(id: string): Promise<any | undefined>;
+  createAgreementTemplate(template: any): Promise<any>;
+  getInvestorAgreement(id: string): Promise<any | undefined>;
+  createInvestorAgreement(agreement: any): Promise<any>;
+  updateInvestorAgreement(id: string, updates: any): Promise<any>;
+  getInvestorAgreements(investorId: string): Promise<any[]>;
+  getAllInvestorAgreements(): Promise<any[]>;
+  createAgreementAction(action: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -414,6 +424,64 @@ export class DatabaseStorage implements IStorage {
         .values(rate)
         .onConflictDoNothing();
     }
+  }
+
+  // Agreement operations
+  async getAgreementTemplate(id: string): Promise<any | undefined> {
+    const { agreementTemplates } = await import('@shared/agreement-schema');
+    const [template] = await db.select().from(agreementTemplates).where(eq(agreementTemplates.id, id));
+    return template;
+  }
+
+  async createAgreementTemplate(template: any): Promise<any> {
+    const { agreementTemplates } = await import('@shared/agreement-schema');
+    const [created] = await db.insert(agreementTemplates).values(template).returning();
+    return created;
+  }
+
+  async getInvestorAgreement(id: string): Promise<any | undefined> {
+    const { investorAgreements } = await import('@shared/agreement-schema');
+    const [agreement] = await db.select().from(investorAgreements).where(eq(investorAgreements.id, id));
+    return agreement;
+  }
+
+  async createInvestorAgreement(agreement: any): Promise<any> {
+    const { investorAgreements } = await import('@shared/agreement-schema');
+    const [created] = await db.insert(investorAgreements).values(agreement).returning();
+    return created;
+  }
+
+  async updateInvestorAgreement(id: string, updates: any): Promise<any> {
+    const { investorAgreements } = await import('@shared/agreement-schema');
+    const [updated] = await db
+      .update(investorAgreements)
+      .set(updates)
+      .where(eq(investorAgreements.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getInvestorAgreements(investorId: string): Promise<any[]> {
+    const { investorAgreements } = await import('@shared/agreement-schema');
+    return await db
+      .select()
+      .from(investorAgreements)
+      .where(eq(investorAgreements.investorId, investorId))
+      .orderBy(desc(investorAgreements.createdAt));
+  }
+
+  async getAllInvestorAgreements(): Promise<any[]> {
+    const { investorAgreements } = await import('@shared/agreement-schema');
+    return await db
+      .select()
+      .from(investorAgreements)
+      .orderBy(desc(investorAgreements.createdAt));
+  }
+
+  async createAgreementAction(action: any): Promise<any> {
+    const { agreementActions } = await import('@shared/agreement-schema');
+    const [created] = await db.insert(agreementActions).values(action).returning();
+    return created;
   }
 }
 

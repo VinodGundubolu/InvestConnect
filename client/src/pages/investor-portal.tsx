@@ -10,6 +10,7 @@ import InvestmentSummary from "@/components/investor/investment-summary";
 import InterestSummary from "@/components/investor/interest-summary";
 import TransactionHistory from "@/components/investor/transaction-history";
 import PasswordChange from "@/components/investor/password-change";
+import AgreementsTab from "@/components/investor/agreements-tab";
 import { InvestorWithInvestments } from "@shared/schema";
 
 export default function InvestorPortal() {
@@ -139,6 +140,9 @@ export default function InvestorPortal() {
 
         {/* Transaction History */}
         <TransactionHistory investorProfile={investorProfile} />
+
+        {/* Investment Agreements */}
+        <AgreementsTab />
       </div>
     </div>
   );
