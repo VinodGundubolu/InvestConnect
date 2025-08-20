@@ -30,8 +30,8 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
       to: params.to,
       from: params.from,
       subject: params.subject,
-      text: params.text,
-      html: params.html,
+      text: params.text || '',
+      html: params.html || '',
     });
     console.log(`Email sent successfully to ${params.to}: ${params.subject}`);
     return true;
@@ -211,6 +211,64 @@ IRM Investment Platform Team
   });
 }
 
+// Generate merge fields for monthly progress reports  
+function generateEmailMergeFields(investor: Investor, investorWithInvestments: any, 
+  totalInterestEarned: number, totalInterestDisbursed: number, nextDisbursement: any): any {
+  const now = new Date();
+  const totalPrincipal = investorWithInvestments.investments.reduce((sum: number, inv: any) => sum + parseFloat(inv.investedAmount), 0);
+  const totalCurrentValue = totalPrincipal + totalInterestEarned;
+  const totalUnits = investorWithInvestments.investments.length;
+  
+  return {
+    // Investor Information
+    investorName: `${investor.firstName} ${investor.lastName}`,
+    investorFirstName: investor.firstName || '',
+    investorId: investor.id?.toString() || '',
+    investorEmail: investor.email || '',
+    investorPhone: investor.primaryMobile || '',
+    
+    // Company Information  
+    companyName: "IRM Investment Management",
+    companyAddress: "Investment House, Business District, Mumbai - 400001",
+    companyPhone: "+91-22-1234-5678",
+    companyEmail: "investments@irmgroup.com",
+    companyWebsite: "www.irmgroup.com",
+    
+    // Report Information
+    reportMonth: now.toLocaleString('en-US', { month: 'long' }),
+    reportYear: now.getFullYear().toString(),
+    reportDate: now.toLocaleDateString('en-IN'),
+    generatedDate: now.toISOString(),
+    
+    // Investment Totals
+    totalInvestmentAmount: `₹${(totalPrincipal / 100000).toFixed(1)} lakhs`,
+    totalUnits: totalUnits.toString(),
+    totalCurrentValue: `₹${(totalCurrentValue / 100000).toFixed(2)} lakhs`,
+    totalInterestEarned: `₹${(totalInterestEarned / 100000).toFixed(2)} lakhs`,
+    totalInterestDisbursed: `₹${(totalInterestDisbursed / 100000).toFixed(2)} lakhs`,
+    pendingInterest: `₹${((totalInterestEarned - totalInterestDisbursed) / 100000).toFixed(2)} lakhs`,
+    
+    // Next Disbursement
+    nextDisbursementAmount: nextDisbursement.amount ? `₹${(nextDisbursement.amount / 100000).toFixed(2)} lakhs` : 'N/A',
+    nextDisbursementDate: nextDisbursement.date || 'N/A',
+    nextDisbursementYear: nextDisbursement.year?.toString() || 'N/A',
+    
+    // Performance Metrics
+    averageReturn: totalPrincipal > 0 ? `${((totalInterestEarned / totalPrincipal) * 100).toFixed(2)}%` : '0%',
+    portfolioGrowth: totalPrincipal > 0 ? `${(((totalCurrentValue - totalPrincipal) / totalPrincipal) * 100).toFixed(2)}%` : '0%',
+  };
+}
+
+// Template replacement helper
+function applyEmailMergeFields(template: string, mergeFields: any): string {
+  let result = template;
+  for (const [key, value] of Object.entries(mergeFields)) {
+    const placeholder = `{{${key}}}`;
+    result = result.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value as string);
+  }
+  return result;
+}
+
 export async function sendMonthlyProgressReport(investor: Investor): Promise<boolean> {
   try {
     // Get investor's investment data
@@ -219,16 +277,6 @@ export async function sendMonthlyProgressReport(investor: Investor): Promise<boo
       console.log(`No investments found for investor ${investor.id}, skipping monthly report`);
       return false;
     }
-
-    const investments = investorWithInvestments.investments;
-    const totalPrincipal = investments.reduce((sum, inv) => sum + parseFloat(inv.investedAmount), 0);
-    
-    // Calculate current month and year
-    const now = new Date();
-    const monthName = now.toLocaleString('en-US', { month: 'long' });
-    const year = now.getFullYear();
-
-    const subject = `Monthly Investment Report - ${monthName} ${year} | Investor ID: ${investor.id}`;
 
     // Calculate total interest and disbursed amounts
     let totalInterestEarned = 0;
@@ -244,215 +292,241 @@ export async function sendMonthlyProgressReport(investor: Investor): Promise<boo
       nextDisbursement = interestData.interestToBeDispursedNext || { amount: 0, date: '', year: 0 };
     }
 
-    const htmlContent = `
+    // Generate merge fields
+    const mergeFields = generateEmailMergeFields(investor, investorWithInvestments, 
+      totalInterestEarned, totalInterestDisbursed, nextDisbursement);
+
+    const subject = `Monthly Investment Report - {{reportMonth}} {{reportYear}} | {{investorName}}`;
+
+    const htmlContentTemplate = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Monthly Investment Report</title>
+        <title>Monthly Investment Report - {{reportMonth}} {{reportYear}}</title>
         <style>
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f8f9fa; }
-          .container { max-width: 650px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-          .header { background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%); color: white; padding: 25px; text-align: center; }
-          .header h1 { margin: 0; font-size: 26px; font-weight: 600; }
-          .report-date { font-size: 14px; opacity: 0.9; margin-top: 5px; }
-          .content { padding: 25px; }
-          .investor-info { background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
-          .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
-          .stat-card { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 18px; border-radius: 8px; text-align: center; }
-          .stat-value { font-size: 22px; font-weight: 700; color: #1565c0; margin-bottom: 5px; }
-          .stat-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-          .investment-card { background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 15px 0; }
-          .investment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-          .investment-id { font-weight: 600; color: #2e7d32; }
-          .investment-date { color: #666; font-size: 14px; }
-          .investment-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
-          .detail-item { text-align: center; padding: 10px; background-color: #f8f9fa; border-radius: 4px; }
-          .detail-value { font-weight: 600; color: #333; font-size: 16px; }
-          .detail-label { font-size: 11px; color: #666; text-transform: uppercase; }
-          .next-disbursement { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 20px; border-radius: 8px; margin: 20px 0; }
-          .milestone-section { background-color: #f3e5f5; padding: 20px; border-radius: 8px; margin: 20px 0; }
-          .progress-bar { background-color: #e0e0e0; border-radius: 10px; height: 8px; margin: 10px 0; }
-          .progress-fill { background: linear-gradient(90deg, #4caf50 0%, #2e7d32 100%); height: 100%; border-radius: 10px; }
-          .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px; }
-          .highlight { color: #2e7d32; font-weight: 600; }
-          @media (max-width: 600px) {
-            .stats-grid { grid-template-columns: 1fr 1fr; }
-            .investment-details { grid-template-columns: 1fr 1fr; }
-            .content { padding: 15px; }
-          }
+          .container { max-width: 680px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+          .header { background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%); color: white; padding: 30px; text-align: center; }
+          .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+          .report-date { font-size: 15px; opacity: 0.9; margin-top: 8px; }
+          .content { padding: 30px; }
+          .investor-info { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 25px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #dee2e6; }
+          .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 18px; margin: 25px 0; }
+          .stat-card { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1); }
+          .stat-value { font-size: 24px; font-weight: 700; color: #1565c0; margin-bottom: 8px; }
+          .stat-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+          .performance-section { background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%); padding: 25px; border-radius: 12px; margin: 25px 0; border: 1px solid #a5d6a7; }
+          .next-disbursement { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 25px; border-radius: 12px; margin: 25px 0; border: 1px solid #ffcc02; }
+          .milestone-section { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); padding: 25px; border-radius: 12px; margin: 25px 0; border: 1px solid #ce93d8; }
+          .footer { background: #2e7d32; color: white; padding: 25px 30px; text-align: center; }
+          .section-title { color: #2e7d32; font-size: 18px; font-weight: 600; margin-bottom: 15px; border-bottom: 2px solid #4caf50; padding-bottom: 8px; }
         </style>
       </head>
       <body>
         <div class="container">
+          <!-- Header -->
           <div class="header">
             <h1>📊 Monthly Investment Report</h1>
-            <div class="report-date">${monthName} ${year} Report</div>
+            <div class="report-date">{{reportMonth}} {{reportYear}} Report | {{companyName}}</div>
+            <div style="font-size: 13px; margin-top: 8px; opacity: 0.8;">Generated on {{reportDate}} for {{investorName}}</div>
           </div>
-          
+
+          <!-- Content -->
           <div class="content">
+            <!-- Investor Information -->
             <div class="investor-info">
-              <h2 style="margin-top: 0; color: #333;">Hello ${investor.firstName} ${investor.lastName}</h2>
-              <p style="margin-bottom: 0;"><strong>Investor ID:</strong> ${investor.id} | <strong>Report Date:</strong> ${now.toLocaleDateString('en-IN')}</p>
+              <div class="section-title">👤 Investor Profile</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                  <p style="margin: 5px 0; font-size: 14px;"><strong>Name:</strong> {{investorName}}</p>
+                  <p style="margin: 5px 0; font-size: 14px;"><strong>Investor ID:</strong> {{investorId}}</p>
+                  <p style="margin: 5px 0; font-size: 14px;"><strong>Email:</strong> {{investorEmail}}</p>
+                </div>
+                <div>
+                  <p style="margin: 5px 0; font-size: 14px;"><strong>Phone:</strong> {{investorPhone}}</p>
+                  <p style="margin: 5px 0; font-size: 14px;"><strong>Report Period:</strong> {{reportMonth}} {{reportYear}}</p>
+                  <p style="margin: 5px 0; font-size: 14px;"><strong>Total Units:</strong> {{totalUnits}}</p>
+                </div>
+              </div>
             </div>
 
-            <h3 style="color: #2e7d32; border-bottom: 2px solid #eee; padding-bottom: 8px;">💰 Portfolio Summary</h3>
+            <!-- Portfolio Overview -->
+            <div class="section-title">💼 Portfolio Overview</div>
             <div class="stats-grid">
               <div class="stat-card">
-                <div class="stat-value">₹${(totalPrincipal / 100000).toFixed(1)}L</div>
-                <div class="stat-label">Total Principal</div>
+                <div class="stat-value">{{totalInvestmentAmount}}</div>
+                <div class="stat-label">Total Investment</div>
               </div>
-              <div class="stat-card">
-                <div class="stat-value">₹${(totalInterestEarned / 100000).toFixed(1)}L</div>
-                <div class="stat-label">Interest Earned</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">₹${(totalInterestDisbursed / 100000).toFixed(1)}L</div>
-                <div class="stat-label">Interest Received</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${investments.length}</div>
-                <div class="stat-label">Active Investments</div>
-              </div>
-            </div>
-
-            ${nextDisbursement.amount > 0 ? `
-            <div class="next-disbursement">
-              <h3 style="margin-top: 0; color: #ef6c00;">🎯 Next Interest Disbursement</h3>
-              <p style="font-size: 18px; margin: 10px 0;"><strong>Amount:</strong> <span class="highlight">₹${(nextDisbursement.amount / 100000).toFixed(1)} Lakhs</span></p>
-              <p style="margin: 5px 0;"><strong>Expected Date:</strong> ${nextDisbursement.date}</p>
-              <p style="margin: 5px 0;"><strong>Coverage:</strong> Year ${nextDisbursement.year} Interest</p>
-            </div>
-            ` : ''}
-
-            <h3 style="color: #2e7d32; border-bottom: 2px solid #eee; padding-bottom: 8px;">📈 Investment Breakdown</h3>
-            ${investments.map((investment, index) => {
-              const investmentDate = new Date(investment.investmentDate);
-              const yearsElapsed = Math.floor((now.getTime() - investmentDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-              const monthsElapsed = Math.floor((now.getTime() - investmentDate.getTime()) / (30 * 24 * 60 * 60 * 1000));
-              const progressPercent = Math.min((monthsElapsed / 120) * 100, 100); // 10 years = 120 months
               
-              return `
-              <div class="investment-card">
-                <div class="investment-header">
-                  <div class="investment-id">Investment #${index + 1}</div>
-                  <div class="investment-date">Started: ${investmentDate.toLocaleDateString('en-IN')}</div>
-                </div>
-                <div class="investment-details">
-                  <div class="detail-item">
-                    <div class="detail-value">₹${(parseFloat(investment.investedAmount) / 100000).toFixed(1)}L</div>
-                    <div class="detail-label">Principal</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-value">${investment.bondsPurchased}</div>
-                    <div class="detail-label">Bonds</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-value">${yearsElapsed + 1}</div>
-                    <div class="detail-label">Current Year</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-value">${monthsElapsed} months</div>
-                    <div class="detail-label">Total Duration</div>
-                  </div>
-                </div>
-                <div style="margin-top: 15px;">
-                  <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Investment Progress</div>
-                  <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${progressPercent}%;"></div>
-                  </div>
-                  <div style="font-size: 12px; color: #666; text-align: right;">${progressPercent.toFixed(1)}% Complete</div>
-                </div>
+              <div class="stat-card">
+                <div class="stat-value">{{totalCurrentValue}}</div>
+                <div class="stat-label">Current Value</div>
               </div>
-              `;
-            }).join('')}
-
-            <div class="milestone-section">
-              <h3 style="margin-top: 0; color: #7b1fa2;">🏆 Milestone Bonuses</h3>
-              <p><strong>Year 5 Completion:</strong> ₹20,00,000 bonus (100% of investment)</p>
-              <p><strong>Year 10 Completion:</strong> ₹20,00,000 additional bonus (100% of investment)</p>
-              <p style="font-size: 14px; color: #666; margin-top: 15px;">
-                These milestone bonuses are paid separately from regular interest disbursements upon completion of the respective years.
-              </p>
+              
+              <div class="stat-card">
+                <div class="stat-value">{{totalInterestEarned}}</div>
+                <div class="stat-label">Total Interest Earned</div>
+              </div>
+              
+              <div class="stat-card">
+                <div class="stat-value">{{totalInterestDisbursed}}</div>
+                <div class="stat-label">Interest Disbursed</div>
+              </div>
+              
+              <div class="stat-card">
+                <div class="stat-value">{{pendingInterest}}</div>
+                <div class="stat-label">Pending Interest</div>
+              </div>
+              
+              <div class="stat-card">
+                <div class="stat-value">{{portfolioGrowth}}</div>
+                <div class="stat-label">Portfolio Growth</div>
+              </div>
             </div>
 
-            <div style="background-color: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="margin-top: 0; color: #2e7d32;">📞 Need Assistance?</h3>
-              <p style="margin-bottom: 0;">
-                Access your complete investment dashboard at: 
-                <a href="https://your-domain.replit.app/login" style="color: #2e7d32; font-weight: 600;">Investor Portal</a>
-              </p>
-              <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">
-                Login with your Investor ID, Email, Phone, or Username.
+            <!-- Performance Summary -->
+            <div class="performance-section">
+              <div class="section-title">📈 Performance Summary</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div style="background: white; padding: 15px; border-radius: 8px;">
+                  <h4 style="margin: 0 0 10px 0; color: #2e7d32;">Average Return Rate</h4>
+                  <p style="margin: 0; font-size: 18px; font-weight: 600; color: #2e7d32;">{{averageReturn}}</p>
+                  <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Based on total interest earned vs principal</p>
+                </div>
+                
+                <div style="background: white; padding: 15px; border-radius: 8px;">
+                  <h4 style="margin: 0 0 10px 0; color: #2e7d32;">Investment Duration</h4>
+                  <p style="margin: 0; font-size: 18px; font-weight: 600; color: #2e7d32;">Active</p>
+                  <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Long-term growth strategy</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Next Disbursement -->
+            <div class="next-disbursement">
+              <div class="section-title">💰 Upcoming Disbursement</div>
+              <div style="text-align: center; margin: 15px 0;">
+                <div style="font-size: 20px; font-weight: 700; color: #f57c00; margin-bottom: 10px;">{{nextDisbursementAmount}}</div>
+                <div style="font-size: 14px; color: #666; margin-bottom: 5px;">Expected disbursement date: <strong>{{nextDisbursementDate}}</strong></div>
+                <div style="font-size: 13px; color: #666;">Investment Year: {{nextDisbursementYear}}</div>
+              </div>
+              <div style="background: rgba(255, 255, 255, 0.7); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <p style="margin: 0; font-size: 13px; color: #e65100; text-align: center;">
+                  Interest disbursements are processed automatically on the 24th of your investment anniversary month.
+                </p>
+              </div>
+            </div>
+
+            <!-- Investment Milestone Information -->
+            <div class="milestone-section">
+              <div class="section-title">🎯 Investment Milestones</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="background: white; padding: 15px; border-radius: 8px;">
+                  <h4 style="margin: 0 0 10px 0; color: #7b1fa2;">5-Year Milestone</h4>
+                  <p style="margin: 0; font-size: 16px; font-weight: 600; color: #7b1fa2;">₹20 lakhs bonus</p>
+                  <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Upon completion of 5 years</p>
+                </div>
+                
+                <div style="background: white; padding: 15px; border-radius: 8px;">
+                  <h4 style="margin: 0 0 10px 0; color: #7b1fa2;">10-Year Milestone</h4>
+                  <p style="margin: 0; font-size: 16px; font-weight: 600; color: #7b1fa2;">₹20 lakhs bonus</p>
+                  <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Upon full term completion</p>
+                </div>
+              </div>
+              <div style="background: rgba(255, 255, 255, 0.7); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <p style="margin: 0; font-size: 13px; color: #4a148c; text-align: center;">
+                  Milestone bonuses are in addition to regular interest payments and significantly enhance your total returns.
+                </p>
+              </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0;">
+              <div class="section-title">📞 Need Assistance?</div>
+              <p style="margin: 0; font-size: 14px; line-height: 1.6;">
+                For questions about your investment or this report, contact our team:<br>
+                <strong>Phone:</strong> {{companyPhone}} | <strong>Email:</strong> {{companyEmail}}<br>
+                <strong>Website:</strong> {{companyWebsite}} | <strong>Address:</strong> {{companyAddress}}
               </p>
             </div>
           </div>
 
+          <!-- Footer -->
           <div class="footer">
-            <p><strong>IRM Investment Platform</strong></p>
-            <p>Monthly Report Generated on ${now.toLocaleDateString('en-IN')} at ${now.toLocaleTimeString('en-IN')}</p>
-            <p style="margin-top: 15px; font-size: 12px;">
-              This is an automated monthly report. For queries, access your investor portal.<br>
-              Next report will be sent on ${new Date(now.getFullYear(), now.getMonth() + 1, now.getDate()).toLocaleDateString('en-IN')}
-            </p>
+            <h4 style="margin: 0 0 10px 0; font-size: 18px;">{{companyName}}</h4>
+            <p style="margin: 0; font-size: 13px; opacity: 0.9;">Your Trusted Investment Partner Since {{reportYear}}</p>
+            <div style="border-top: 1px solid rgba(255, 255, 255, 0.3); margin: 15px 0; padding-top: 15px;">
+              <p style="margin: 0; font-size: 11px; opacity: 0.8; line-height: 1.4;">
+                This report was generated automatically on {{generatedDate}}. Please keep this email for your records.<br>
+                Monthly Investment Report System • {{reportYear}} • Confidential Information
+              </p>
+            </div>
           </div>
         </div>
       </body>
-      </html>
-    `;
+      </html>`;
 
+    // Apply merge fields to templates
+    const finalHtmlContent = applyEmailMergeFields(htmlContentTemplate, mergeFields);
+    const finalSubject = applyEmailMergeFields(subject, mergeFields);
+
+    // Create text version
     const textContent = `
-Monthly Investment Report - ${monthName} ${year}
-Investor: ${investor.firstName} ${investor.lastName} (ID: ${investor.id})
-Report Date: ${now.toLocaleDateString('en-IN')}
+Monthly Investment Report - ${mergeFields.reportMonth} ${mergeFields.reportYear}
 
-PORTFOLIO SUMMARY:
-- Total Principal: ₹${(totalPrincipal / 100000).toFixed(1)} Lakhs
-- Interest Earned: ₹${(totalInterestEarned / 100000).toFixed(1)} Lakhs  
-- Interest Received: ₹${(totalInterestDisbursed / 100000).toFixed(1)} Lakhs
-- Active Investments: ${investments.length}
+Dear ${mergeFields.investorName},
 
-${nextDisbursement.amount > 0 ? `
+This is your comprehensive monthly investment report for ${mergeFields.reportMonth} ${mergeFields.reportYear}.
+
+PORTFOLIO OVERVIEW:
+- Total Investment: ${mergeFields.totalInvestmentAmount}
+- Current Portfolio Value: ${mergeFields.totalCurrentValue}
+- Total Interest Earned: ${mergeFields.totalInterestEarned}
+- Interest Disbursed: ${mergeFields.totalInterestDisbursed}
+- Pending Interest: ${mergeFields.pendingInterest}
+- Portfolio Growth: ${mergeFields.portfolioGrowth}
+
+PERFORMANCE SUMMARY:
+- Average Return Rate: ${mergeFields.averageReturn}
+- Total Investment Units: ${mergeFields.totalUnits}
+
 NEXT DISBURSEMENT:
-- Amount: ₹${(nextDisbursement.amount / 100000).toFixed(1)} Lakhs
-- Date: ${nextDisbursement.date}
-- Coverage: Year ${nextDisbursement.year} Interest
-` : ''}
-
-INVESTMENT BREAKDOWN:
-${investments.map((investment, index) => {
-  const investmentDate = new Date(investment.investmentDate);
-  const monthsElapsed = Math.floor((now.getTime() - investmentDate.getTime()) / (30 * 24 * 60 * 60 * 1000));
-  return `
-Investment #${index + 1}:
-- Principal: ₹${(parseFloat(investment.investedAmount) / 100000).toFixed(1)} Lakhs
-- Bonds: ${investment.bondsPurchased}
-- Started: ${investmentDate.toLocaleDateString('en-IN')}
-- Duration: ${monthsElapsed} months
-`;
-}).join('')}
+- Amount: ${mergeFields.nextDisbursementAmount}
+- Expected Date: ${mergeFields.nextDisbursementDate}
+- Investment Year: ${mergeFields.nextDisbursementYear}
 
 MILESTONE BONUSES:
-- Year 5: ₹20,00,000 bonus (100% of investment)
-- Year 10: ₹20,00,000 bonus (100% of investment)
+- 5-Year Completion: ₹20 lakhs bonus
+- 10-Year Completion: ₹20 lakhs bonus
 
-Access your portal: https://your-domain.replit.app/login
+For any questions, contact us:
+Phone: ${mergeFields.companyPhone}
+Email: ${mergeFields.companyEmail}
+Website: ${mergeFields.companyWebsite}
 
 Best regards,
-IRM Investment Platform Team
+${mergeFields.companyName} Team
+
+Generated on ${mergeFields.generatedDate}
     `;
+
+    if (!investor.email) {
+      console.log(`No email address for investor ${investor.id}, skipping monthly report`);
+      return false;
+    }
 
     return await sendEmail({
       to: investor.email,
-      from: 'reports@irm-platform.com', // Replace with your verified sender
-      subject,
+      from: 'noreply@irm-platform.com',
+      subject: finalSubject,
       text: textContent,
-      html: htmlContent
+      html: finalHtmlContent
     });
 
   } catch (error) {
-    console.error(`Error sending monthly report to investor ${investor.id}:`, error);
+    console.error(`Error sending monthly report for investor ${investor.id}:`, error);
     return false;
   }
 }

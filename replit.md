@@ -6,7 +6,18 @@ An Investment Relationship Management (IRM) Tool designed for organizations to m
 
 ## Recent Changes (August 20, 2025)
 
-### **Latest Architectural Upgrade (Session 9):**
+### **Latest Merge Fields Enhancement (Session 10):**
+- ✓ **Comprehensive Merge Fields System** - Created extensive merge field library with 30+ placeholders for dynamic content
+- ✓ **Investment Agreement Personalization** - Enhanced agreement templates with detailed investor, company, and investment data
+- ✓ **Email Template Enhancement** - Upgraded both welcome and agreement notification emails with rich merge field support
+- ✓ **Professional Email Design** - Modern HTML email templates with responsive design and professional styling
+- ✓ **Dynamic Data Population** - Automatic replacement of placeholders like {{investorName}}, {{investmentAmount}}, {{companyInfo}}
+- ✓ **Agreement Template Overhaul** - Comprehensive legal agreement template with detailed terms, conditions, and compliance information
+- ✓ **Enhanced Signature Confirmation** - Rich confirmation emails with investment summary and next steps
+- ✓ **Company Branding Integration** - Professional company information display across all communications
+- ✓ **Legal Compliance Fields** - Comprehensive legal terms, jurisdiction, and regulatory compliance information
+
+### **Previous Architectural Upgrade (Session 9):**
 - ✓ **Database-Backed Authentication System** - Migrated from in-memory credential maps to persistent PostgreSQL storage
 - ✓ **Credential Service Implementation** - Built comprehensive credentialsService for database credential management
 - ✓ **Permanent Credential Storage** - All login credentials now persist in `investor_credentials` table

@@ -4,20 +4,148 @@ import { sendEmail } from "./emailService";
 import crypto from "crypto";
 
 export interface AgreementMergeFields {
+  // Investor Information
   investorName: string;
+  investorFirstName: string;
+  investorLastName: string;
   investorEmail: string;
+  investorPhone: string;
+  investorId: string;
+  investorAddress: string;
+  
+  // Company Information
   companyName: string;
+  companyAddress: string;
+  companyPhone: string;
+  companyEmail: string;
+  companyWebsite: string;
+  
+  // Investment Details
   investmentAmount: string;
+  investmentAmountWords: string;
+  totalInvestmentLimit: string;
+  maximumUnits: string;
   investmentDate: string;
   maturityDate: string;
+  lockInPeriod: string;
+  investmentTerm: string;
+  
+  // Interest & Returns
   interestRate: string;
+  year1Interest: string;
+  year2Interest: string;
+  year3Interest: string;
+  year4Interest: string;
+  year5PlusInterest: string;
+  milestone5YearBonus: string;
+  milestone10YearBonus: string;
+  interestDisbursementDate: string;
+  
+  // Agreement Details
   agreementDate: string;
   agreementId: string;
+  agreementVersion: string;
+  documentHash: string;
+  expiryDate: string;
   signatureUrl: string;
+  
+  // Legal & Compliance
+  governingLaw: string;
+  jurisdiction: string;
+  regulatoryCompliance: string;
+  
+  // System Information
+  generatedDate: string;
+  currentYear: string;
+  currentMonth: string;
+  currentDay: string;
 }
 
 export class AgreementService {
   
+  // Helper function to convert number to words (Indian format)
+  private numberToWords(amount: number): string {
+    const crores = Math.floor(amount / 10000000);
+    const lakhs = Math.floor((amount % 10000000) / 100000);
+    const thousands = Math.floor((amount % 100000) / 1000);
+    const hundreds = Math.floor((amount % 1000) / 100);
+    const tens = amount % 100;
+    
+    let words = [];
+    if (crores > 0) words.push(`${crores} crore${crores > 1 ? 's' : ''}`);
+    if (lakhs > 0) words.push(`${lakhs} lakh${lakhs > 1 ? 's' : ''}`);
+    if (thousands > 0) words.push(`${thousands} thousand`);
+    if (hundreds > 0) words.push(`${hundreds} hundred`);
+    if (tens > 0) words.push(`${tens}`);
+    
+    return words.join(' ') + ' rupees';
+  }
+
+  // Generate comprehensive merge fields
+  private generateMergeFields(investor: any, agreementId: string, expiresAt: Date): AgreementMergeFields {
+    const today = new Date();
+    const maturityDate = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000);
+    const investmentAmount = 2000000; // ₹20,00,000
+    
+    return {
+      // Investor Information
+      investorName: `${investor.firstName} ${investor.lastName}`,
+      investorFirstName: investor.firstName || '',
+      investorLastName: investor.lastName || '',
+      investorEmail: investor.email || '',
+      investorPhone: investor.phoneNumber || '',
+      investorId: investor.id?.toString() || '',
+      investorAddress: investor.address || 'Address on file',
+      
+      // Company Information
+      companyName: "IRM Investment Management",
+      companyAddress: "Investment House, Business District, Mumbai - 400001",
+      companyPhone: "+91-22-1234-5678",
+      companyEmail: "investments@irmgroup.com",
+      companyWebsite: "www.irmgroup.com",
+      
+      // Investment Details
+      investmentAmount: `₹${(investmentAmount / 100000).toFixed(0)} lakhs`,
+      investmentAmountWords: this.numberToWords(investmentAmount),
+      totalInvestmentLimit: "₹60 lakhs (3 units maximum)",
+      maximumUnits: "3",
+      investmentDate: today.toLocaleDateString('en-IN'),
+      maturityDate: maturityDate.toLocaleDateString('en-IN'),
+      lockInPeriod: "3 years",
+      investmentTerm: "10 years",
+      
+      // Interest & Returns
+      interestRate: "0% to 18% per annum (progressive)",
+      year1Interest: "0% (No interest)",
+      year2Interest: "6% per annum",
+      year3Interest: "9% per annum", 
+      year4Interest: "12% per annum",
+      year5PlusInterest: "18% per annum",
+      milestone5YearBonus: "₹20 lakhs per unit",
+      milestone10YearBonus: "₹20 lakhs per unit",
+      interestDisbursementDate: "24th of investment anniversary month",
+      
+      // Agreement Details
+      agreementDate: today.toLocaleDateString('en-IN'),
+      agreementId: agreementId,
+      agreementVersion: "2.1",
+      documentHash: "Generated upon finalization",
+      expiryDate: expiresAt.toLocaleDateString('en-IN'),
+      signatureUrl: `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/agreement/sign/${agreementId}`,
+      
+      // Legal & Compliance
+      governingLaw: "Laws of India",
+      jurisdiction: "Mumbai High Court",
+      regulatoryCompliance: "SEBI & RBI Guidelines",
+      
+      // System Information
+      generatedDate: today.toISOString(),
+      currentYear: today.getFullYear().toString(),
+      currentMonth: today.toLocaleDateString('en-IN', { month: 'long' }),
+      currentDay: today.getDate().toString(),
+    };
+  }
+
   // Create and send agreement to investor
   async createAndSendAgreement(investorId: string, templateId: string = "default", expiresInDays: number = 30): Promise<string> {
     try {
@@ -29,24 +157,18 @@ export class AgreementService {
       // Get the default agreement template
       const template = await this.getDefaultTemplate();
       
+      // Generate agreement ID
+      const agreementId = randomUUID();
+      const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
+      
+      // Generate comprehensive merge fields
+      const mergeFields = this.generateMergeFields(investor, agreementId, expiresAt);
+      
       // Generate agreement content with investor data
-      const agreementContent = this.mergeTemplate(template.content, {
-        investorName: `${investor.firstName} ${investor.lastName}`,
-        investorEmail: investor.email || '',
-        companyName: "Your Investment Company",
-        investmentAmount: "₹20,00,000", // Default amount per unit
-        investmentDate: new Date().toLocaleDateString('en-IN'),
-        maturityDate: new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN'), // 10 years from now
-        interestRate: "6-18% per annum",
-        agreementDate: new Date().toLocaleDateString('en-IN'),
-        agreementId: randomUUID(),
-        signatureUrl: `${process.env.REPLIT_DOMAINS}/agreement/sign/`
-      });
+      const agreementContent = this.mergeTemplate(template.content, mergeFields);
 
       // Create agreement record
-      const agreementId = randomUUID();
       const documentHash = this.generateDocumentHash(agreementContent);
-      const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
 
       const agreement = await storage.createInvestorAgreement({
         id: agreementId,
@@ -60,10 +182,10 @@ export class AgreementService {
       });
 
       // Log the action
-      await this.logAgreementAction(agreementId, "sent", "system", null, "Agreement sent to investor");
+      await this.logAgreementAction(agreementId, "sent", "system", undefined, "Agreement sent to investor");
 
-      // Send email with agreement
-      await this.sendAgreementEmail(investor, agreement);
+      // Send email with agreement using merge fields
+      await this.sendAgreementEmail(investor, agreement, mergeFields);
 
       return agreementId;
     } catch (error) {
@@ -101,7 +223,7 @@ export class AgreementService {
       });
 
       // Log the action
-      await this.logAgreementAction(agreementId, "signed", agreement.investorId, ipAddress, `Agreement signed by ${signatoryName}`);
+      await this.logAgreementAction(agreementId, "signed", agreement.investorId, ipAddress || undefined, `Agreement signed by ${signatoryName}`);
 
       // Send confirmation email to admin and investor
       await this.sendSignatureConfirmationEmails(agreement);
@@ -121,7 +243,7 @@ export class AgreementService {
     }
 
     // Log the view action
-    await this.logAgreementAction(agreementId, "viewed", agreement.investorId, null, "Agreement viewed");
+    await this.logAgreementAction(agreementId, "viewed", agreement.investorId, undefined, "Agreement viewed");
 
     return {
       ...agreement,
@@ -218,98 +340,254 @@ export class AgreementService {
     });
   }
 
-  private async sendAgreementEmail(investor: any, agreement: any): Promise<void> {
+  private async sendAgreementEmail(investor: any, agreement: any, mergeFields: AgreementMergeFields): Promise<void> {
     if (!investor.email) {
       console.log(`Skipping agreement email for investor ${investor.id} - no email address`);
       return;
     }
 
-    const subject = "Investment Agreement - Signature Required";
-    const signatureUrl = `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/agreement/sign/${agreement.id}`;
+    const subject = `Investment Agreement Ready - ${mergeFields.investorName}`;
     
     const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-        <h1 style="margin: 0; font-size: 24px;">Investment Agreement Ready</h1>
-        <p style="margin: 10px 0 0 0; opacity: 0.9;">Please review and sign your investment partnership agreement</p>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; padding: 0; background-color: #f8f9fa;">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 25px; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px; font-weight: 600;">Investment Agreement Ready</h1>
+        <p style="margin: 15px 0 0 0; opacity: 0.95; font-size: 16px;">{{companyName}} Partnership Agreement</p>
+        <p style="margin: 8px 0 0 0; opacity: 0.8; font-size: 14px;">Agreement ID: {{agreementId}}</p>
       </div>
       
-      <div style="background: white; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
-        <p>Dear ${investor.firstName} ${investor.lastName},</p>
-        
-        <p>Your investment agreement is ready for review and signature. This legal document outlines the terms and conditions of your investment partnership with our organization.</p>
-        
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0;">
-          <h3 style="margin: 0 0 10px 0; color: #333;">Agreement Details:</h3>
-          <p style="margin: 5px 0;"><strong>Investment Amount:</strong> ₹20,00,000 per unit</p>
-          <p style="margin: 5px 0;"><strong>Interest Rate:</strong> 6-18% per annum</p>
-          <p style="margin: 5px 0;"><strong>Investment Period:</strong> 10 years</p>
-          <p style="margin: 5px 0;"><strong>Agreement ID:</strong> ${agreement.id}</p>
+      <!-- Main Content -->
+      <div style="background: white; padding: 35px 25px;">
+        <div style="border-left: 4px solid #667eea; padding-left: 20px; margin-bottom: 25px;">
+          <h2 style="margin: 0; color: #333; font-size: 20px;">Dear {{investorFirstName}} {{investorLastName}},</h2>
+          <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">Investor ID: {{investorId}}</p>
         </div>
         
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${signatureUrl}" 
-             style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-            Review & Sign Agreement
+        <p style="font-size: 16px; line-height: 1.6; color: #444; margin: 20px 0;">
+          Your personalized investment agreement is ready for review and digital signature. This comprehensive legal document outlines all terms and conditions of your investment partnership with {{companyName}}.
+        </p>
+        
+        <!-- Investment Summary -->
+        <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 25px; border-radius: 12px; margin: 25px 0; border: 1px solid #dee2e6;">
+          <h3 style="margin: 0 0 20px 0; color: #495057; font-size: 18px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📋 Investment Summary</h3>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+              <p style="margin: 0; font-size: 12px; color: #6c757d; text-transform: uppercase; font-weight: 600;">Investment Amount</p>
+              <p style="margin: 5px 0 0 0; font-size: 18px; font-weight: 600; color: #28a745;">{{investmentAmount}}</p>
+              <p style="margin: 3px 0 0 0; font-size: 11px; color: #6c757d;">({{investmentAmountWords}})</p>
+            </div>
+            
+            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+              <p style="margin: 0; font-size: 12px; color: #6c757d; text-transform: uppercase; font-weight: 600;">Investment Term</p>
+              <p style="margin: 5px 0 0 0; font-size: 18px; font-weight: 600; color: #007bff;">{{investmentTerm}}</p>
+              <p style="margin: 3px 0 0 0; font-size: 11px; color: #6c757d;">Lock-in: {{lockInPeriod}}</p>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #fd7e14;">
+              <p style="margin: 0; font-size: 12px; color: #6c757d; text-transform: uppercase; font-weight: 600;">Interest Rate</p>
+              <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: 600; color: #fd7e14;">{{interestRate}}</p>
+              <p style="margin: 3px 0 0 0; font-size: 11px; color: #6c757d;">Progressive scale</p>
+            </div>
+            
+            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545;">
+              <p style="margin: 0; font-size: 12px; color: #6c757d; text-transform: uppercase; font-weight: 600;">Maturity Date</p>
+              <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: 600; color: #dc3545;">{{maturityDate}}</p>
+              <p style="margin: 3px 0 0 0; font-size: 11px; color: #6c757d;">Full term completion</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Interest Structure -->
+        <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; margin: 25px 0; border: 1px solid #bbdefb;">
+          <h4 style="margin: 0 0 15px 0; color: #1565c0; font-size: 16px;">💰 Interest & Bonus Structure</h4>
+          <div style="font-size: 14px; line-height: 1.8; color: #1565c0;">
+            <p style="margin: 8px 0;">• Year 1: {{year1Interest}} | Year 2: {{year2Interest}}</p>
+            <p style="margin: 8px 0;">• Year 3: {{year3Interest}} | Year 4: {{year4Interest}}</p>
+            <p style="margin: 8px 0;">• Years 5-10: {{year5PlusInterest}}</p>
+            <p style="margin: 8px 0; font-weight: 600;">• 5-Year Bonus: {{milestone5YearBonus}} | 10-Year Bonus: {{milestone10YearBonus}}</p>
+            <p style="margin: 8px 0; font-size: 13px;">• Interest disbursed: {{interestDisbursementDate}}</p>
+          </div>
+        </div>
+        
+        <!-- Action Button -->
+        <div style="text-align: center; margin: 35px 0;">
+          <a href="{{signatureUrl}}" 
+             style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+                    color: white; 
+                    padding: 16px 32px; 
+                    text-decoration: none; 
+                    border-radius: 8px; 
+                    font-weight: 600; 
+                    font-size: 16px;
+                    display: inline-block;
+                    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                    transition: all 0.3s ease;">
+            📝 Review & Sign Agreement
           </a>
         </div>
         
-        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 6px; margin: 20px 0;">
-          <p style="margin: 0; color: #856404;">
-            <strong>Important:</strong> This agreement expires on ${agreement.expiresAt ? new Date(agreement.expiresAt).toLocaleDateString('en-IN') : 'N/A'}. 
-            Please review and sign at your earliest convenience.
-          </p>
+        <!-- Important Notice -->
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 10px; margin: 25px 0;">
+          <div style="display: flex; align-items: flex-start;">
+            <span style="font-size: 20px; margin-right: 10px;">⚠️</span>
+            <div>
+              <h4 style="margin: 0 0 8px 0; color: #856404; font-size: 16px;">Important Notice</h4>
+              <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
+                This agreement expires on <strong>{{expiryDate}}</strong>. Please review and sign at your earliest convenience. 
+                For any questions, contact our investment team at {{companyPhone}} or {{companyEmail}}.
+              </p>
+            </div>
+          </div>
         </div>
         
-        <p>If you have any questions about this agreement, please contact our investment team immediately.</p>
-        
-        <p>Best regards,<br>
-        <strong>Investment Team</strong><br>
-        Your Investment Company</p>
+        <!-- Agreement Details -->
+        <div style="border-top: 2px solid #e9ecef; padding-top: 20px; margin-top: 30px;">
+          <div style="font-size: 13px; color: #6c757d; line-height: 1.6;">
+            <p style="margin: 5px 0;"><strong>Agreement Version:</strong> {{agreementVersion}}</p>
+            <p style="margin: 5px 0;"><strong>Generated:</strong> {{generatedDate}}</p>
+            <p style="margin: 5px 0;"><strong>Governing Law:</strong> {{governingLaw}}</p>
+            <p style="margin: 5px 0;"><strong>Jurisdiction:</strong> {{jurisdiction}}</p>
+          </div>
+        </div>
       </div>
       
-      <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
-        <p>This is an automated message. Please do not reply to this email.</p>
-        <p>Investment Agreement System • ${new Date().getFullYear()}</p>
+      <!-- Footer -->
+      <div style="background: #343a40; color: #ffffff; padding: 25px; text-align: center;">
+        <h4 style="margin: 0 0 10px 0; font-size: 18px;">{{companyName}}</h4>
+        <p style="margin: 0; font-size: 13px; opacity: 0.8;">{{companyAddress}}</p>
+        <p style="margin: 8px 0; font-size: 13px; opacity: 0.8;">{{companyPhone}} | {{companyEmail}} | {{companyWebsite}}</p>
+        <div style="border-top: 1px solid #495057; margin: 15px 0; padding-top: 15px;">
+          <p style="margin: 0; font-size: 11px; opacity: 0.6;">
+            This is an automated message. Please do not reply to this email.<br>
+            Investment Agreement System • {{currentYear}} • Regulated by {{regulatoryCompliance}}
+          </p>
+        </div>
       </div>
     </div>`;
 
-    await sendEmail(subject, htmlContent, investor.email);
+    // Apply merge fields to email template
+    const personalizedEmailContent = this.mergeTemplate(htmlContent, mergeFields);
+    
+    await sendEmail({
+      to: investor.email,
+      from: 'noreply@yourinvestmentcompany.com',
+      subject,
+      html: personalizedEmailContent
+    });
   }
 
   private async sendSignatureConfirmationEmails(agreement: any): Promise<void> {
     const investor = await storage.getInvestor(agreement.investorId);
     if (!investor) return;
 
+    // Generate merge fields for confirmation email
+    const mergeFields = this.generateMergeFields(investor, agreement.id, agreement.expiresAt);
+    
     // Email to investor
     if (investor.email) {
-      const investorSubject = "Agreement Signed Successfully";
+      const investorSubject = `Agreement Signed Successfully - ${mergeFields.investorName}`;
       const investorContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-          <h1 style="margin: 0; font-size: 24px;">Agreement Signed ✓</h1>
-          <p style="margin: 10px 0 0 0; opacity: 0.9;">Your investment agreement has been successfully executed</p>
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; padding: 0; background-color: #f8f9fa;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px 25px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px; font-weight: 600;">✅ Agreement Signed Successfully</h1>
+          <p style="margin: 15px 0 0 0; opacity: 0.95; font-size: 16px;">{{companyName}} Partnership Confirmed</p>
+          <p style="margin: 8px 0 0 0; opacity: 0.8; font-size: 14px;">Agreement ID: {{agreementId}}</p>
         </div>
         
-        <div style="background: white; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
-          <p>Dear ${investor.firstName} ${investor.lastName},</p>
-          
-          <p>Thank you for signing your investment agreement. Your partnership with us is now officially confirmed.</p>
-          
-          <div style="background: #d1ecf1; padding: 20px; border-radius: 6px; margin: 20px 0;">
-            <h3 style="margin: 0 0 10px 0; color: #0c5460;">Signature Details:</h3>
-            <p style="margin: 5px 0;"><strong>Signed By:</strong> ${agreement.signatoryName}</p>
-            <p style="margin: 5px 0;"><strong>Signed On:</strong> ${new Date(agreement.signedAt).toLocaleDateString('en-IN')}</p>
-            <p style="margin: 5px 0;"><strong>Agreement ID:</strong> ${agreement.id}</p>
+        <!-- Main Content -->
+        <div style="background: white; padding: 35px 25px;">
+          <div style="border-left: 4px solid #28a745; padding-left: 20px; margin-bottom: 25px;">
+            <h2 style="margin: 0; color: #333; font-size: 20px;">Congratulations {{investorFirstName}} {{investorLastName}}!</h2>
+            <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">Your investment partnership is now officially active</p>
           </div>
           
-          <p>You can now proceed with your investment. Our team will contact you shortly with next steps.</p>
+          <p style="font-size: 16px; line-height: 1.6; color: #444; margin: 20px 0;">
+            Thank you for digitally signing your investment agreement with {{companyName}}. Your partnership is now legally binding and officially confirmed.
+          </p>
           
-          <p>Welcome aboard!</p>
+          <!-- Signature Details -->
+          <div style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); padding: 25px; border-radius: 12px; margin: 25px 0; border: 1px solid #b8daff;">
+            <h3 style="margin: 0 0 20px 0; color: #0c5460; font-size: 18px; border-bottom: 2px solid #28a745; padding-bottom: 10px;">📋 Signature Confirmation</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                <p style="margin: 0; font-size: 12px; color: #6c757d; text-transform: uppercase; font-weight: 600;">Signed By</p>
+                <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: 600; color: #28a745;">{{investorName}}</p>
+                <p style="margin: 3px 0 0 0; font-size: 11px; color: #6c757d;">Legal Signatory</p>
+              </div>
+              
+              <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+                <p style="margin: 0; font-size: 12px; color: #6c757d; text-transform: uppercase; font-weight: 600;">Signature Date</p>
+                <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: 600; color: #007bff;">{{agreementDate}}</p>
+                <p style="margin: 3px 0 0 0; font-size: 11px; color: #6c757d;">Digitally executed</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Next Steps -->
+          <div style="background: #e8f5e8; padding: 20px; border-radius: 10px; margin: 25px 0; border: 1px solid #c3e6c3;">
+            <h4 style="margin: 0 0 15px 0; color: #155724; font-size: 16px;">🚀 Next Steps</h4>
+            <div style="font-size: 14px; line-height: 1.8; color: #155724;">
+              <p style="margin: 8px 0;">• Our investment team will contact you within 2 business days</p>
+              <p style="margin: 8px 0;">• You'll receive investment account setup instructions</p>
+              <p style="margin: 8px 0;">• Investment disbursement will begin as per agreement terms</p>
+              <p style="margin: 8px 0;">• Track your investment progress through the investor portal</p>
+            </div>
+          </div>
+          
+          <!-- Investment Summary -->
+          <div style="border: 2px solid #28a745; border-radius: 10px; padding: 20px; margin: 25px 0; background: #f8fff9;">
+            <h4 style="margin: 0 0 15px 0; color: #155724; font-size: 16px;">📊 Your Investment Summary</h4>
+            <div style="font-size: 14px; color: #155724;">
+              <p style="margin: 8px 0;"><strong>Investment Amount:</strong> {{investmentAmount}} ({{investmentAmountWords}})</p>
+              <p style="margin: 8px 0;"><strong>Investment Term:</strong> {{investmentTerm}} with {{lockInPeriod}} lock-in</p>
+              <p style="margin: 8px 0;"><strong>Expected Returns:</strong> {{interestRate}}</p>
+              <p style="margin: 8px 0;"><strong>Maturity Date:</strong> {{maturityDate}}</p>
+            </div>
+          </div>
+          
+          <!-- Contact Information -->
+          <div style="border-top: 2px solid #e9ecef; padding-top: 20px; margin-top: 30px;">
+            <h4 style="margin: 0 0 15px 0; color: #495057;">Need Assistance?</h4>
+            <p style="margin: 0; font-size: 14px; color: #6c757d; line-height: 1.6;">
+              If you have any questions about your investment or need assistance, please contact us:<br>
+              📞 {{companyPhone}} | ✉️ {{companyEmail}} | 🌐 {{companyWebsite}}
+            </p>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background: #28a745; color: #ffffff; padding: 25px; text-align: center;">
+          <h4 style="margin: 0 0 10px 0; font-size: 18px;">Welcome to {{companyName}}</h4>
+          <p style="margin: 0; font-size: 13px; opacity: 0.9;">Your trusted investment partner since {{currentYear}}</p>
+          <p style="margin: 8px 0; font-size: 13px; opacity: 0.8;">{{companyAddress}}</p>
+          <div style="border-top: 1px solid #20c997; margin: 15px 0; padding-top: 15px;">
+            <p style="margin: 0; font-size: 11px; opacity: 0.7;">
+              This confirmation is automatically generated. Please keep this email for your records.<br>
+              Investment Confirmation System • {{currentYear}} • Regulated by {{regulatoryCompliance}}
+            </p>
+          </div>
         </div>
       </div>`;
       
-      await sendEmail(investorSubject, investorContent, investor.email);
+      // Apply merge fields to email template
+      const personalizedConfirmationContent = this.mergeTemplate(investorContent, {
+        ...mergeFields,
+        signatoryName: agreement.signatoryName,
+        signedDate: new Date(agreement.signedAt).toLocaleDateString('en-IN')
+      });
+      
+      await sendEmail({
+        to: investor.email,
+        from: 'noreply@yourinvestmentcompany.com',
+        subject: investorSubject,
+        html: personalizedConfirmationContent
+      });
     }
 
     // Email to admin (could be configurable)
@@ -333,85 +611,189 @@ export class AgreementService {
 
   private getDefaultAgreementContent(): string {
     return `
-    <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; line-height: 1.6; color: #333;">
-      <div style="text-align: center; margin-bottom: 40px; border-bottom: 2px solid #667eea; padding-bottom: 20px;">
-        <h1 style="color: #667eea; margin: 0; font-size: 28px;">{{title}}</h1>
-        <p style="margin: 10px 0 0 0; color: #666; font-size: 16px;">Investment Partnership Agreement</p>
-        <p style="margin: 5px 0 0 0; color: #888; font-size: 14px;">Agreement ID: {{agreementId}}</p>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 850px; margin: 0 auto; padding: 0; background-color: #ffffff; border: 1px solid #e0e0e0;">
+      <!-- Header Section -->
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 30px; text-align: center;">
+        <h1 style="margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -0.5px;">Investment Partnership Agreement</h1>
+        <p style="margin: 15px 0 0 0; opacity: 0.9; font-size: 18px;">{{companyName}}</p>
+        <div style="background: rgba(255, 255, 255, 0.2); padding: 10px 20px; border-radius: 20px; display: inline-block; margin-top: 15px;">
+          <p style="margin: 0; font-size: 14px; font-weight: 500;">Agreement ID: {{agreementId}} | Version {{agreementVersion}}</p>
+        </div>
       </div>
 
-      <div style="margin-bottom: 30px; background: #f8f9fa; padding: 20px; border-radius: 8px;">
-        <h3 style="color: #667eea; margin: 0 0 15px 0;">Parties to This Agreement</h3>
-        <p><strong>Investor:</strong> {{investorName}}</p>
-        <p><strong>Email:</strong> {{investorEmail}}</p>
-        <p><strong>Company:</strong> {{companyName}}</p>
-        <p><strong>Agreement Date:</strong> {{agreementDate}}</p>
+      <!-- Document Info Bar -->
+      <div style="background: #f8f9fa; padding: 15px 30px; border-bottom: 1px solid #dee2e6;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #6c757d;">
+          <span><strong>Generated:</strong> {{generatedDate}}</span>
+          <span><strong>Expires:</strong> {{expiryDate}}</span>
+          <span><strong>Governing Law:</strong> {{governingLaw}}</span>
+        </div>
       </div>
 
-      <div style="margin-bottom: 30px;">
-        <h3 style="color: #667eea; margin: 0 0 15px 0;">Investment Terms</h3>
-        <ul style="padding-left: 20px;">
-          <li><strong>Investment Amount:</strong> {{investmentAmount}} per unit</li>
-          <li><strong>Maximum Investment:</strong> Up to 3 units (₹60,00,000 total)</li>
-          <li><strong>Investment Period:</strong> 10 years from {{investmentDate}}</li>
-          <li><strong>Maturity Date:</strong> {{maturityDate}}</li>
-          <li><strong>Interest Rate:</strong> {{interestRate}} (progressive scale)</li>
-        </ul>
-      </div>
+      <!-- Main Content -->
+      <div style="padding: 40px 30px;">
+        <!-- Parties Section -->
+        <div style="margin-bottom: 40px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 25px; border-radius: 12px; border: 1px solid #dee2e6;">
+          <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📋 Parties to This Agreement</h3>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+              <h4 style="margin: 0 0 15px 0; color: #667eea; font-size: 16px;">👤 Investor Information</h4>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Full Name:</strong> {{investorName}}</p>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Investor ID:</strong> {{investorId}}</p>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Email:</strong> {{investorEmail}}</p>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Phone:</strong> {{investorPhone}}</p>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Address:</strong> {{investorAddress}}</p>
+            </div>
+            
+            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745;">
+              <h4 style="margin: 0 0 15px 0; color: #28a745; font-size: 16px;">🏢 Company Information</h4>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Company:</strong> {{companyName}}</p>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Address:</strong> {{companyAddress}}</p>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Phone:</strong> {{companyPhone}}</p>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Email:</strong> {{companyEmail}}</p>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Website:</strong> {{companyWebsite}}</p>
+            </div>
+          </div>
+          
+          <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 15px;">
+            <p style="margin: 0; font-size: 14px; color: #1565c0;"><strong>Agreement Date:</strong> {{agreementDate}} | <strong>Jurisdiction:</strong> {{jurisdiction}}</p>
+          </div>
+        </div>
 
-      <div style="margin-bottom: 30px;">
-        <h3 style="color: #667eea; margin: 0 0 15px 0;">Interest Structure</h3>
-        <div style="background: #e8f4f8; padding: 15px; border-radius: 6px;">
-          <ul style="margin: 0; padding-left: 20px;">
-            <li>Year 1: 0% interest</li>
-            <li>Year 2: 6% per annum</li>
-            <li>Year 3: 9% per annum</li>
-            <li>Year 4: 12% per annum</li>
-            <li>Years 5-10: 18% per annum</li>
+        <!-- Investment Terms -->
+        <div style="margin-bottom: 40px;">
+          <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px; border-bottom: 2px solid #28a745; padding-bottom: 10px;">💰 Investment Terms & Conditions</h3>
+          
+          <div style="background: #e8f5e8; padding: 25px; border-radius: 12px; border: 1px solid #c3e6c3; margin: 20px 0;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+              <div style="text-align: center;">
+                <div style="background: white; padding: 15px; border-radius: 8px; border-bottom: 3px solid #28a745;">
+                  <h4 style="margin: 0; color: #28a745; font-size: 18px;">{{investmentAmount}}</h4>
+                  <p style="margin: 5px 0 0 0; font-size: 12px; color: #6c757d;">Per Unit Investment</p>
+                  <p style="margin: 5px 0 0 0; font-size: 11px; color: #6c757d;">({{investmentAmountWords}})</p>
+                </div>
+              </div>
+              
+              <div style="text-align: center;">
+                <div style="background: white; padding: 15px; border-radius: 8px; border-bottom: 3px solid #007bff;">
+                  <h4 style="margin: 0; color: #007bff; font-size: 18px;">{{maximumUnits}} Units Max</h4>
+                  <p style="margin: 5px 0 0 0; font-size: 12px; color: #6c757d;">{{totalInvestmentLimit}}</p>
+                  <p style="margin: 5px 0 0 0; font-size: 11px; color: #6c757d;">Maximum Limit</p>
+                </div>
+              </div>
+              
+              <div style="text-align: center;">
+                <div style="background: white; padding: 15px; border-radius: 8px; border-bottom: 3px solid #fd7e14;">
+                  <h4 style="margin: 0; color: #fd7e14; font-size: 18px;">{{investmentTerm}}</h4>
+                  <p style="margin: 5px 0 0 0; font-size: 12px; color: #6c757d;">Investment Period</p>
+                  <p style="margin: 5px 0 0 0; font-size: 11px; color: #6c757d;">Lock-in: {{lockInPeriod}}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <ul style="padding-left: 20px; font-size: 15px; line-height: 1.8;">
+            <li><strong>Investment Date:</strong> {{investmentDate}}</li>
+            <li><strong>Maturity Date:</strong> {{maturityDate}}</li>
+            <li><strong>Interest Disbursement:</strong> {{interestDisbursementDate}}</li>
+            <li><strong>Early Exit:</strong> Available after {{lockInPeriod}} with calculated present value</li>
           </ul>
         </div>
-      </div>
 
-      <div style="margin-bottom: 30px;">
-        <h3 style="color: #667eea; margin: 0 0 15px 0;">Milestone Bonuses</h3>
-        <ul style="padding-left: 20px;">
-          <li><strong>5-Year Completion Bonus:</strong> ₹20,00,000 per unit</li>
-          <li><strong>10-Year Completion Bonus:</strong> ₹20,00,000 per unit</li>
-        </ul>
-      </div>
+        <!-- Interest Structure -->
+        <div style="margin-bottom: 40px;">
+          <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px; border-bottom: 2px solid #fd7e14; padding-bottom: 10px;">📈 Progressive Interest Structure</h3>
+          <div style="background: #fff3cd; padding: 25px; border-radius: 12px; border: 1px solid #ffeaa7;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <div>
+                <h4 style="margin: 0 0 15px 0; color: #856404; font-size: 16px;">Annual Interest Rates</h4>
+                <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 2;">
+                  <li><strong>Year 1:</strong> {{year1Interest}}</li>
+                  <li><strong>Year 2:</strong> {{year2Interest}}</li>
+                  <li><strong>Year 3:</strong> {{year3Interest}}</li>
+                  <li><strong>Year 4:</strong> {{year4Interest}}</li>
+                  <li><strong>Years 5-10:</strong> {{year5PlusInterest}}</li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 style="margin: 0 0 15px 0; color: #856404; font-size: 16px;">Milestone Bonuses</h4>
+                <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                  <p style="margin: 5px 0; font-size: 14px;"><strong>5-Year Bonus:</strong> {{milestone5YearBonus}}</p>
+                  <p style="margin: 5px 0; font-size: 14px;"><strong>10-Year Bonus:</strong> {{milestone10YearBonus}}</p>
+                  <p style="margin: 10px 0 0 0; font-size: 12px; color: #6c757d; font-style: italic;">Bonuses are additional to regular interest and paid upon completion of milestone years.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      <div style="margin-bottom: 30px;">
-        <h3 style="color: #667eea; margin: 0 0 15px 0;">Key Conditions</h3>
-        <ul style="padding-left: 20px;">
-          <li><strong>Lock-in Period:</strong> 3 years from investment date</li>
-          <li><strong>Early Exit:</strong> Available after 3 years with calculated value</li>
-          <li><strong>Interest Disbursement:</strong> Annually on 24th of investment anniversary month</li>
-          <li><strong>Investment Units:</strong> Minimum 1 unit, Maximum 3 units per investor</li>
-        </ul>
-      </div>
+        <!-- Legal Terms -->
+        <div style="margin-bottom: 40px;">
+          <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px; border-bottom: 2px solid #dc3545; padding-bottom: 10px;">⚖️ Legal Terms & Compliance</h3>
+          
+          <div style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 20px; border-radius: 10px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
+              <div>
+                <p style="margin: 5px 0; font-size: 14px;"><strong>Governing Law:</strong> {{governingLaw}}</p>
+                <p style="margin: 5px 0; font-size: 14px;"><strong>Jurisdiction:</strong> {{jurisdiction}}</p>
+              </div>
+              <div>
+                <p style="margin: 5px 0; font-size: 14px;"><strong>Regulatory Compliance:</strong> {{regulatoryCompliance}}</p>
+                <p style="margin: 5px 0; font-size: 14px;"><strong>Document Hash:</strong> {{documentHash}}</p>
+              </div>
+            </div>
+            
+            <div style="border-top: 1px solid #f5c6cb; padding-top: 15px;">
+              <h4 style="color: #721c24; margin: 0 0 10px 0; font-size: 16px;">Important Disclaimers</h4>
+              <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #721c24; line-height: 1.6;">
+                <li>All investments are subject to market risks. Past performance does not guarantee future returns.</li>
+                <li>Interest rates and bonus payments are as per the terms agreed and may be subject to applicable taxes.</li>
+                <li>Early withdrawal after lock-in period may result in adjusted returns based on present value calculations.</li>
+                <li>This agreement is governed by {{governingLaw}} and disputes shall be resolved through {{jurisdiction}}.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
 
-      <div style="margin-bottom: 30px; background: #fff3cd; padding: 15px; border-radius: 6px; border-left: 4px solid #ffc107;">
-        <h4 style="color: #856404; margin: 0 0 10px 0;">Important Legal Information</h4>
-        <p style="margin: 0; color: #856404; font-size: 14px;">
-          By signing this agreement, you acknowledge that you have read, understood, and agree to all terms and conditions outlined above. 
-          This investment carries financial risks and you should consult with a financial advisor if needed.
-        </p>
-      </div>
-
-      <div style="margin-top: 50px; text-align: center;">
-        <div style="border: 2px dashed #ccc; padding: 30px; margin: 20px 0; background: #fafafa;">
-          <p style="color: #666; margin: 0; font-size: 16px;">Digital Signature Required</p>
-          <p style="color: #888; margin: 5px 0 0 0; font-size: 14px;">Please click the signature button to electronically sign this agreement</p>
+        <!-- Signature Section -->
+        <div style="margin-bottom: 30px; background: #e3f2fd; padding: 25px; border-radius: 12px; border: 1px solid #bbdefb;">
+          <h3 style="color: #1565c0; margin: 0 0 20px 0; font-size: 20px; text-align: center;">✍️ Digital Signature Required</h3>
+          
+          <div style="background: white; border: 2px dashed #1565c0; padding: 30px; margin: 20px 0; text-align: center; border-radius: 10px;">
+            <p style="color: #1565c0; margin: 0; font-size: 18px; font-weight: 600;">Electronic Signature Area</p>
+            <p style="color: #1976d2; margin: 10px 0; font-size: 14px;">Please click the signature button below to digitally sign this agreement</p>
+            <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+              <p style="margin: 0; font-size: 13px; color: #7b1fa2; line-height: 1.5;">
+                By signing this agreement, I, {{investorName}}, acknowledge that I have read, understood, and agree to all terms and conditions outlined in this Investment Partnership Agreement. I confirm that this digital signature is legally binding and represents my informed consent to enter into this investment partnership with {{companyName}}.
+              </p>
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin-top: 20px;">
+            <p style="margin: 0; font-size: 12px; color: #666;">
+              This digital signature will be timestamped and legally binding upon execution.<br>
+              Signature URL: {{signatureUrl}}
+            </p>
+          </div>
         </div>
       </div>
 
-      <div style="margin-top: 30px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
-        <p style="color: #666; margin: 0; font-size: 12px;">
-          This document was generated electronically and is valid without physical signature when signed digitally.
-        </p>
-        <p style="color: #888; margin: 5px 0 0 0; font-size: 12px;">
-          Generated on {{agreementDate}} | Agreement ID: {{agreementId}}
-        </p>
+      <!-- Footer -->
+      <div style="background: #343a40; color: #ffffff; padding: 25px 30px; text-align: center;">
+        <div style="margin-bottom: 15px;">
+          <h4 style="margin: 0; font-size: 18px;">{{companyName}}</h4>
+          <p style="margin: 5px 0; font-size: 13px; opacity: 0.8;">Your Trusted Investment Partner</p>
+        </div>
+        
+        <div style="border-top: 1px solid #495057; padding-top: 15px;">
+          <p style="margin: 0; font-size: 11px; opacity: 0.7; line-height: 1.4;">
+            This agreement was generated electronically on {{generatedDate}} and is valid without physical signature when digitally executed.<br>
+            Document ID: {{agreementId}} | Version: {{agreementVersion}} | Generated: {{currentMonth}} {{currentDay}}, {{currentYear}}<br>
+            Regulated by {{regulatoryCompliance}} | Subject to {{governingLaw}}
+          </p>
+        </div>
       </div>
     </div>`;
   }
