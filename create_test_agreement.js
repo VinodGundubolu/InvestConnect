@@ -11,7 +11,7 @@ console.log(`🔗 Direct Signing URL: ${signUrl}`);
 console.log("=".repeat(50));
 console.log("");
 console.log("📝 To test the agreement signing:");
-console.log(`1. Open: http://localhost:5000${signUrl}`);
+console.log(`1. Open: https://${process.env.REPL_SLUG}--${process.env.REPL_OWNER}.replit.app${signUrl}`);
 console.log("2. You'll see the agreement signing interface");
 console.log("3. Draw your signature and click 'Sign Agreement'");
 console.log("4. Check the investor portal for the signed agreement");
