@@ -38,6 +38,7 @@ export default function DigitalSignature({ agreementData, onSign, onClose }: Dig
   const [signatoryName, setSignatoryName] = useState('');
   const [signatoryEmail, setSignatoryEmail] = useState('');
   const [isSigning, setIsSigning] = useState(false);
+  const [hasStartedDrawing, setHasStartedDrawing] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -91,17 +92,63 @@ export default function DigitalSignature({ agreementData, onSign, onClose }: Dig
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Clear placeholder text on first draw
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#e5e7eb';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    // Only clear placeholder text on the very first stroke
+    if (!hasStartedDrawing) {
+      // Clear placeholder text only once
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+      setHasStartedDrawing(true);
+    }
+
+    // Set drawing styles and start path
     ctx.strokeStyle = '#2563eb';
     ctx.lineWidth = 2;
-
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.beginPath();
     ctx.moveTo(x, y);
+  };
+
+  // Touch event handlers for mobile devices
+  const startTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (!agreementData.canSign) return;
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const canvas = canvasRef.current;
+    if (!canvas || !touch) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseEvent = new MouseEvent('mousedown', {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    });
+    
+    startDrawing(mouseEvent as any);
+  };
+
+  const drawTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !agreementData.canSign) return;
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const canvas = canvasRef.current;
+    if (!canvas || !touch) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseEvent = new MouseEvent('mousemove', {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    });
+    
+    draw(mouseEvent as any);
+  };
+
+  const endTouch = () => {
+    stopDrawing();
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -148,6 +195,9 @@ export default function DigitalSignature({ agreementData, onSign, onClose }: Dig
     ctx.fillText('Sign here', canvas.width / 2, canvas.height / 2);
     ctx.strokeStyle = '#2563eb';
     ctx.lineWidth = 2;
+    
+    // Reset drawing flag so placeholder gets cleared on next draw
+    setHasStartedDrawing(false);
   };
 
   const handleSign = async () => {
@@ -381,6 +431,9 @@ export default function DigitalSignature({ agreementData, onSign, onClose }: Dig
                   onMouseMove={draw}
                   onMouseUp={stopDrawing}
                   onMouseLeave={stopDrawing}
+                  onTouchStart={startTouch}
+                  onTouchMove={drawTouch}
+                  onTouchEnd={endTouch}
                   data-testid="signature-canvas"
                 />
 
