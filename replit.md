@@ -6,7 +6,17 @@ An Investment Relationship Management (IRM) Tool designed for organizations to m
 
 ## Recent Changes (August 20, 2025)
 
-### **Latest Fixes (Session 8):**
+### **Latest Architectural Upgrade (Session 9):**
+- ✓ **Database-Backed Authentication System** - Migrated from in-memory credential maps to persistent PostgreSQL storage
+- ✓ **Credential Service Implementation** - Built comprehensive credentialsService for database credential management
+- ✓ **Permanent Credential Storage** - All login credentials now persist in `investor_credentials` table
+- ✓ **Universal Login Database Integration** - Updated all authentication endpoints to use database instead of memory
+- ✓ **Password Change Persistence** - Password updates now save permanently to database
+- ✓ **Credential Migration Complete** - Successfully migrated all 5 test credentials (nd_kumar, suresh_kumar, suri_kumar, sid_vid, vinodh_durga)
+- ✓ **Auto-Initialization System** - Database credentials automatically initialized on server startup
+- ✓ **Code Cleanup** - Removed obsolete in-memory credential maps and legacy authentication code
+
+### **Previous Fixes (Session 8):**
 - ✓ **Agreement Auto-Generation Fixed** - Investment agreements now automatically created when new investors are added
 - ✓ **Sequential Investor ID System** - Fixed ID generation to use proper sequential numbering (222, 223, 224...)
 - ✓ **Authentication Mapping** - Fixed credential mapping for new investor logins

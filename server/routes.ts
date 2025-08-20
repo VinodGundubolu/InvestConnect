@@ -7,6 +7,7 @@ import { insertInvestorSchema, insertInvestmentSchema, insertTransactionSchema }
 import { z } from "zod";
 import { InterestDisbursementEngine, type InterestCalculation } from './interest-disbursement';
 import { initializeEmailScheduler, emailScheduler } from './scheduler';
+import { credentialsService } from './credentials-service';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -17,6 +18,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Initialize email scheduler for automated monthly reports
   initializeEmailScheduler();
+
+  // Initialize database credentials from existing test data
+  await credentialsService.initializeTestCredentials();
 
   // Test login route for demo credentials
   app.post('/api/test-login', async (req, res) => {
@@ -221,86 +225,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Store for temporary credentials mapping (will be replaced with database)
-  const credentialsMap = new Map<string, { username: string; password: string; investorId: string }>();
-
-  // Enhanced credentials mapping with multiple identifier support
-  interface InvestorCredentials {
-    username: string;
-    password: string;
-    investorId: string;
-    email?: string;
-    phone?: string;
-  }
-
-  // Store for enhanced credentials mapping
-  const enhancedCredentialsMap = new Map<string, InvestorCredentials>();
-
-  // Add test credentials for existing investors with multiple identifiers
-  const addInvestorCredentials = (creds: InvestorCredentials) => {
-    // Store by username
-    enhancedCredentialsMap.set(creds.username, creds);
-    // Store by investor ID
-    enhancedCredentialsMap.set(creds.investorId, creds);
-    // Store by email if provided
-    if (creds.email) {
-      enhancedCredentialsMap.set(creds.email, creds);
-    }
-    // Store by phone if provided  
-    if (creds.phone) {
-      enhancedCredentialsMap.set(creds.phone, creds);
-    }
-  };
-
-  // Add test credentials with simple sequential investor IDs
-  addInvestorCredentials({
-    username: "nd_kumar",
-    password: "ND2025", 
-    investorId: "1",
-    email: "nd.kumar@example.com",
-    phone: "+91 98765 43209"
-  });
-  
-  addInvestorCredentials({
-    username: "suresh_kumar",
-    password: "SU2025",
-    investorId: "2", 
-    email: "suresh.kumar@example.com",
-    phone: "+91 98765 43208"
-  });
-  
-  addInvestorCredentials({
-    username: "suri_kumar",
-    password: "SU2025",
-    investorId: "3",
-    email: "suri.kumar@example.com", 
-    phone: "+91 98765 43210"
-  });
-
-  // Add credentials for newly created investor 211 (Vinodh)
-  addInvestorCredentials({
-    username: "vinodh_durga",
-    password: "VI2025",
-    investorId: "211",
-    email: "test1@gmail.com",
-    phone: ""
-  });
-
-  // Add back the missing sid_vid credentials that the user was using
-  addInvestorCredentials({
-    username: "sid_vid",
-    password: "SI2025",
-    investorId: "4",
-    email: "sid@test.com",
-    phone: "9876543210"
-  });
-
-  // Legacy credentials map for backward compatibility
-  credentialsMap.set("nd_kumar", { username: "nd_kumar", password: "ND2025", investorId: "1" });
-  credentialsMap.set("suresh_kumar", { username: "suresh_kumar", password: "SU2025", investorId: "2" });
-  credentialsMap.set("suri_kumar", { username: "suri_kumar", password: "SU2025", investorId: "3" });
-  credentialsMap.set("vinodh_durga", { username: "vinodh_durga", password: "VI2025", investorId: "211" });
-  credentialsMap.set("sid_vid", { username: "sid_vid", password: "SI2025", investorId: "4" });
+  // All credentials are now managed by the database-backed credentialsService
+  // The credentialsService automatically initializes existing test credentials on startup
 
   // Helper function to generate login credentials
   const generateCredentials = (firstName: string, lastName: string) => {
@@ -342,9 +268,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         identityProofNumber: proofNumber
       });
 
-      // Store credentials in map for login (both maps for compatibility)
-      credentialsMap.set(username, { username, password, investorId });
-      addInvestorCredentials({
+      // Store credentials in database for persistent login
+      await credentialsService.upsertCredentials({
         username,
         password,
         investorId,
@@ -483,12 +408,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Debug endpoint to check credentials (remove in production)
   app.get("/api/debug/credentials", async (req, res) => {
-    const credentialsList = Array.from(credentialsMap.entries()).map(([username, data]) => ({
-      username,
-      password: data.password,
-      investorId: data.investorId
-    }));
-    res.json(credentialsList);
+    try {
+      const credentials = await credentialsService.getAllCredentials();
+      const credentialsList = credentials.map((cred) => ({
+        username: cred.username,
+        password: cred.password,
+        investorId: cred.investorId
+      }));
+      res.json(credentialsList);
+    } catch (error) {
+      console.error("Error fetching credentials:", error);
+      res.status(500).json({ message: "Failed to fetch credentials" });
+    }
   });
 
   // Investor login API
@@ -501,10 +432,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Identifier and password are required" });
       }
 
-      // Check enhanced credentials map for any identifier type
-      const credentials = enhancedCredentialsMap.get(identifier);
+      // Validate credentials using database-backed service
+      const credentials = await credentialsService.validateCredentials(identifier, password);
       
-      if (!credentials || credentials.password !== password) {
+      if (!credentials) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
@@ -556,44 +487,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
-      // Find current credentials
-      let currentCredentials: InvestorCredentials | undefined;
-      for (const [key, creds] of enhancedCredentialsMap.entries()) {
-        if (creds.investorId === investorId) {
-          currentCredentials = creds;
-          break;
-        }
-      }
+      // Get current credentials from database
+      const currentCredentials = await credentialsService.getCredentialsByInvestorId(investorId);
 
       if (!currentCredentials || currentCredentials.password !== currentPassword) {
         return res.status(401).json({ message: "Current password is incorrect" });
       }
 
-      // Update password in all credential maps
-      const updatedCredentials: InvestorCredentials = {
-        ...currentCredentials,
-        password: newPassword
-      };
-
-      // Remove old entries
-      enhancedCredentialsMap.delete(currentCredentials.username);
-      enhancedCredentialsMap.delete(currentCredentials.investorId);
-      if (currentCredentials.email) {
-        enhancedCredentialsMap.delete(currentCredentials.email);
+      // Update password in database
+      const success = await credentialsService.updatePassword(investorId, newPassword);
+      
+      if (!success) {
+        return res.status(500).json({ message: "Failed to update password" });
       }
-      if (currentCredentials.phone) {
-        enhancedCredentialsMap.delete(currentCredentials.phone);
-      }
-
-      // Add updated entries
-      addInvestorCredentials(updatedCredentials);
-
-      // Update legacy map
-      credentialsMap.set(currentCredentials.username, {
-        username: currentCredentials.username,
-        password: newPassword,
-        investorId: currentCredentials.investorId
-      });
 
       res.json({ success: true, message: "Password updated successfully" });
     } catch (error) {
