@@ -277,6 +277,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     phone: "+91 98765 43210"
   });
 
+  // Add credentials for newly created investor 211 (Vinodh)
+  addInvestorCredentials({
+    username: "vinodh_durga",
+    password: "VI2025",
+    investorId: "211",
+    email: "test1@gmail.com",
+    phone: ""
+  });
+
   // Legacy credentials map for backward compatibility
   credentialsMap.set("nd_kumar", { username: "nd_kumar", password: "ND2025", investorId: "1" });
   credentialsMap.set("suresh_kumar", { username: "suresh_kumar", password: "SU2025", investorId: "2" });
