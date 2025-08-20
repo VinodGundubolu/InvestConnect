@@ -290,6 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   credentialsMap.set("nd_kumar", { username: "nd_kumar", password: "ND2025", investorId: "1" });
   credentialsMap.set("suresh_kumar", { username: "suresh_kumar", password: "SU2025", investorId: "2" });
   credentialsMap.set("suri_kumar", { username: "suri_kumar", password: "SU2025", investorId: "3" });
+  credentialsMap.set("vinodh_durga", { username: "vinodh_durga", password: "VI2025", investorId: "211" });
 
   // Helper function to generate login credentials
   const generateCredentials = (firstName: string, lastName: string) => {
