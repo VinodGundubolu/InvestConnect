@@ -418,3 +418,8 @@ export class AgreementService {
 }
 
 export const agreementService = new AgreementService();
+
+// Standalone function for generating investment agreements
+export async function generateInvestmentAgreement(investorId: string): Promise<string> {
+  return await agreementService.createAndSendAgreement(investorId);
+}

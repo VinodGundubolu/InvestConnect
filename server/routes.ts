@@ -443,6 +443,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🚨'.repeat(20));
       console.log('\n'.repeat(2));
 
+      // Generate investment agreement automatically
+      try {
+        const agreementService = await import('./agreementService');
+        await agreementService.generateInvestmentAgreement(investorId);
+        console.log(`✅ Investment agreement generated for investor ${investorId}`);
+      } catch (agreementError) {
+        console.error('❌ Failed to generate investment agreement:', agreementError);
+        // Don't fail the investor creation if agreement generation fails
+      }
+
       res.json({
         success: true,
         investor,
