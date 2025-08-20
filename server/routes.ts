@@ -458,8 +458,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         investor,
         username,
         password,
+        investorId,
         investmentAmount: parseInt(investmentAmount),
         bondsCount: parseInt(bondsCount),
+        phone: mobileNumber,
         message: "Investor created successfully with login credentials sent to admin email"
       });
 

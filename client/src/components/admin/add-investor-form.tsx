@@ -106,7 +106,16 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
         investmentAmount: response.investmentAmount,
         bondsCount: response.bondsCount,
         username: response.username,
-        password: response.password
+        password: response.password,
+        investorId: response.investorId,
+        phone: response.phone || form.getValues('mobileNumber'),
+        investor: {
+          id: response.investorId,
+          firstName: response.investor?.firstName || form.getValues('firstName'),
+          lastName: response.investor?.lastName || form.getValues('lastName'),
+          email: response.investor?.email || form.getValues('email'),
+          primaryMobile: response.phone || form.getValues('mobileNumber')
+        }
       };
       
       console.log("Transformed Credentials Data:", transformedData);
