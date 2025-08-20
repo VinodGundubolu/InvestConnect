@@ -200,12 +200,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generateInvestorId(investorData: InsertInvestor): Promise<string> {
-    // Get total count of investors + 1 to get the next sequential number
-    const totalInvestors = await db
-      .select({ count: sql<number>`count(*)` })
+    // Get the highest numeric ID from existing investors
+    const existingInvestors = await db
+      .select({ id: investors.id })
       .from(investors);
     
-    const nextId = (totalInvestors[0]?.count || 0) + 1;
+    // Filter and find the highest numeric ID
+    const numericIds = existingInvestors
+      .map(inv => inv.id)
+      .filter(id => /^\d+$/.test(id)) // Only pure numeric IDs
+      .map(id => parseInt(id))
+      .filter(id => !isNaN(id)); // Remove any NaN values
+    
+    // Get the next sequential number (start from 1 if no numeric IDs exist)
+    const highestId = numericIds.length > 0 ? Math.max(...numericIds) : 0;
+    const nextId = highestId + 1;
     
     return nextId.toString();
   }

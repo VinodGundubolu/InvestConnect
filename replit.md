@@ -6,7 +6,14 @@ An Investment Relationship Management (IRM) Tool designed for organizations to m
 
 ## Recent Changes (August 20, 2025)
 
-### **Latest Digital Agreement System Implementation (Session 7):**
+### **Latest Fixes (Session 8):**
+- ✓ **Agreement Auto-Generation Fixed** - Investment agreements now automatically created when new investors are added
+- ✓ **Sequential Investor ID System** - Fixed ID generation to use proper sequential numbering (222, 223, 224...)
+- ✓ **Authentication Mapping** - Fixed credential mapping for new investor logins
+- ✓ **Agreement Service Integration** - Proper function exports and error handling for agreement generation
+- ✓ **Database ID Consistency** - Only considers numeric IDs for sequential numbering, ignoring legacy UUID formats
+
+### **Previous Digital Agreement System Implementation (Session 7):**
 - ✓ **Digital Agreement Generation** - Comprehensive agreement templates with investor-specific personalization
 - ✓ **E-signature Functionality** - HTML5 canvas-based digital signature capture with legal compliance
 - ✓ **Automated Agreement Delivery** - Investment agreements automatically sent when new investors are created
