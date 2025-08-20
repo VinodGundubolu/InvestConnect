@@ -212,7 +212,7 @@ IRM Investment Platform Team
 }
 
 // Generate merge fields for monthly progress reports  
-function generateEmailMergeFields(investor: Investor, investorWithInvestments: any, 
+export function generateEmailMergeFields(investor: Investor, investorWithInvestments: any, 
   totalInterestEarned: number, totalInterestDisbursed: number, nextDisbursement: any): any {
   const now = new Date();
   const totalPrincipal = investorWithInvestments.investments.reduce((sum: number, inv: any) => sum + parseFloat(inv.investedAmount), 0);
@@ -260,7 +260,7 @@ function generateEmailMergeFields(investor: Investor, investorWithInvestments: a
 }
 
 // Template replacement helper
-function applyEmailMergeFields(template: string, mergeFields: any): string {
+export function applyEmailMergeFields(template: string, mergeFields: any): string {
   let result = template;
   for (const [key, value] of Object.entries(mergeFields)) {
     const placeholder = `{{${key}}}`;

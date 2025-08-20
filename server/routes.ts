@@ -1514,6 +1514,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint for merge fields
+  app.post('/api/test/merge-fields', async (req, res) => {
+    try {
+      const { type = 'welcome' } = req.body;
+      
+      // Get a test investor to use for merge field testing
+      const testInvestorId = "1"; // Use first investor for testing
+      const investor = await storage.getInvestor(testInvestorId);
+      
+      if (!investor) {
+        return res.status(404).json({ message: 'Test investor not found. Please ensure investor ID 1 exists.' });
+      }
+
+      if (type === 'welcome') {
+        // Test welcome email with merge fields
+        const { sendWelcomeEmail } = await import('./emailService');
+        const success = await sendWelcomeEmail(investor);
+        
+        return res.json({ 
+          success,
+          message: success ? 'Welcome email sent successfully with merge fields' : 'Failed to send welcome email',
+          testData: {
+            investorId: investor.id,
+            investorName: `${investor.firstName} ${investor.lastName}`,
+            email: investor.email
+          }
+        });
+      }
+      
+      if (type === 'monthly-report') {
+        // Test monthly progress report with merge fields
+        const { sendMonthlyProgressReport } = await import('./emailService');
+        const success = await sendMonthlyProgressReport(investor);
+        
+        return res.json({ 
+          success,
+          message: success ? 'Monthly report sent successfully with merge fields' : 'Failed to send monthly report',
+          testData: {
+            investorId: investor.id,
+            investorName: `${investor.firstName} ${investor.lastName}`,
+            email: investor.email
+          }
+        });
+      }
+      
+      if (type === 'agreement') {
+        // Test agreement email with merge fields
+        const { agreementService } = await import('./agreementService');
+        const agreementId = await agreementService.createAndSendAgreement(investor.id);
+        
+        return res.json({ 
+          success: true,
+          message: 'Investment agreement sent successfully with merge fields',
+          testData: {
+            investorId: investor.id,
+            investorName: `${investor.firstName} ${investor.lastName}`,
+            email: investor.email,
+            agreementId
+          }
+        });
+      }
+      
+      return res.status(400).json({ 
+        message: 'Invalid test type. Use: welcome, monthly-report, or agreement' 
+      });
+      
+    } catch (error) {
+      console.error('Error testing merge fields:', error);
+      res.status(500).json({ message: 'Failed to test merge fields', error: (error as Error).message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
