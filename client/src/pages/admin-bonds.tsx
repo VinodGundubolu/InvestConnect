@@ -43,30 +43,19 @@ export default function AdminBonds() {
     return null;
   }
 
-  const sampleInvestments = investments || [
-    {
-      id: "INV-001",
-      investorName: "Vinod Sharma",
-      bondType: "Fixed Income Bond",
-      amount: 2000000,
-      purchaseDate: "2024-01-15",
-      maturityDate: "2029-01-15",
-      currentRate: 6,
-      status: "Active",
-      year: 2
-    },
-    {
-      id: "INV-002", 
-      investorName: "Suresh Kumar",
-      bondType: "Fixed Income Bond",
-      amount: 6000000,
-      purchaseDate: "2024-03-01", 
-      maturityDate: "2029-03-01",
-      currentRate: 6,
-      status: "Active",
-      year: 2
-    }
-  ];
+  const investmentsList = Array.isArray(investments) ? investments : [];
+  
+  const displayInvestments = investmentsList.map(inv => ({
+    id: inv.id || `INV-${Math.random().toString(36).substr(2, 9)}`,
+    investorName: inv.investorName || inv.investor_name || 'Unknown Investor',
+    bondType: inv.bondType || inv.bond_type || 'Fixed Income Bond',
+    amount: inv.amount || inv.total_amount || inv.principal_amount || 0,
+    purchaseDate: inv.purchaseDate || inv.purchase_date || inv.created_at || new Date().toISOString().split('T')[0],
+    maturityDate: inv.maturityDate || inv.maturity_date || new Date(new Date().setFullYear(new Date().getFullYear() + 10)).toISOString().split('T')[0],
+    currentRate: inv.currentRate || inv.current_rate || inv.interest_rate || 6,
+    status: inv.status || 'Active',
+    year: inv.year || inv.current_year || 1
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -95,7 +84,7 @@ export default function AdminBonds() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">Total Bonds</p>
-                      <p className="text-2xl font-bold">{sampleInvestments.length}</p>
+                      <p className="text-2xl font-bold">{displayInvestments.length}</p>
                     </div>
                     <TrendingUp className="h-8 w-8 text-blue-500" />
                   </div>
@@ -108,7 +97,7 @@ export default function AdminBonds() {
                     <div>
                       <p className="text-sm text-gray-600">Total Value</p>
                       <p className="text-2xl font-bold">
-                        {formatCurrency(sampleInvestments.reduce((sum, inv) => sum + inv.amount, 0))}
+                        {formatCurrency(displayInvestments.reduce((sum, inv) => sum + inv.amount, 0))}
                       </p>
                     </div>
                     <DollarSign className="h-8 w-8 text-green-500" />
@@ -122,7 +111,7 @@ export default function AdminBonds() {
                     <div>
                       <p className="text-sm text-gray-600">Active Bonds</p>
                       <p className="text-2xl font-bold">
-                        {sampleInvestments.filter(inv => inv.status === 'Active').length}
+                        {displayInvestments.filter(inv => inv.status === 'Active').length}
                       </p>
                     </div>
                     <Calendar className="h-8 w-8 text-purple-500" />
@@ -135,7 +124,10 @@ export default function AdminBonds() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">Avg. Rate</p>
-                      <p className="text-2xl font-bold">6%</p>
+                      <p className="text-2xl font-bold">
+                        {displayInvestments.length > 0 ? 
+                          (displayInvestments.reduce((sum, inv) => sum + inv.currentRate, 0) / displayInvestments.length).toFixed(1) : 0}%
+                      </p>
                     </div>
                     <TrendingUp className="h-8 w-8 text-orange-500" />
                   </div>
@@ -165,7 +157,7 @@ export default function AdminBonds() {
                       </tr>
                     </thead>
                     <tbody>
-                      {sampleInvestments.map((investment) => (
+                      {displayInvestments.map((investment) => (
                         <tr key={investment.id} className="border-b hover:bg-gray-50">
                           <td className="p-4 font-mono text-sm">{investment.id}</td>
                           <td className="p-4">{investment.investorName}</td>

@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 import AdminSidebar from "@/components/admin/admin-sidebar";
 import DashboardStats from "@/components/admin/dashboard-stats";
 import InvestorPortfolioOverview from "@/components/admin/investor-portfolio-overview";
-import TodayInterestBreakdown from "@/components/admin/interest-breakdown";
+
 
 export default function AdminPortal() {
   const { toast } = useToast();
@@ -77,14 +77,9 @@ export default function AdminPortal() {
               <DashboardStats />
             </div>
 
-            {/* Portfolio Overview and Interest Breakdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 fade-in">
-              <div className="lg:col-span-2">
-                <InvestorPortfolioOverview />
-              </div>
-              <div className="lg:col-span-1">
-                <TodayInterestBreakdown />
-              </div>
+            {/* Portfolio Overview */}
+            <div className="fade-in">
+              <InvestorPortfolioOverview />
             </div>
           </div>
         </main>

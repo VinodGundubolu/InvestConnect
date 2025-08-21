@@ -6,8 +6,14 @@ import { formatCurrency } from "@/lib/utils";
 import { Plus, Edit, Eye, Trash2 } from "lucide-react";
 import AddInvestorForm from "./add-investor-form";
 import DeleteInvestorDialog from "./delete-investor-dialog";
+import { useState } from "react";
+import InvestorProfileModal from "../investor/investor-profile-modal";
 
 export default function InvestorsTable() {
+  const [selectedInvestor, setSelectedInvestor] = useState<any>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  
   const { data: investors, isLoading } = useQuery({
     queryKey: ["/api/admin/investors"],
   });
@@ -155,10 +161,28 @@ export default function InvestorsTable() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm" data-testid={`button-view-investor-${investor.id}`}>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          data-testid={`button-view-investor-${investor.id}`}
+                          onClick={() => {
+                            setSelectedInvestor(investor);
+                            setIsEditMode(false);
+                            setShowEditDialog(true);
+                          }}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" data-testid={`button-edit-investor-${investor.id}`}>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          data-testid={`button-edit-investor-${investor.id}`}
+                          onClick={() => {
+                            setSelectedInvestor(investor);
+                            setIsEditMode(true);
+                            setShowEditDialog(true);
+                          }}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <DeleteInvestorDialog 
@@ -179,6 +203,20 @@ export default function InvestorsTable() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Edit/View Modal */}
+      {showEditDialog && selectedInvestor && (
+        <InvestorProfileModal
+          isOpen={showEditDialog}
+          onClose={() => {
+            setShowEditDialog(false);
+            setSelectedInvestor(null);
+            setIsEditMode(false);
+          }}
+          investorId={selectedInvestor.id}
+          editMode={isEditMode}
+        />
+      )}
     </div>
   );
 }

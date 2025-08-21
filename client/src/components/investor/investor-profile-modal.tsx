@@ -22,27 +22,29 @@ import type { Investor } from "@shared/schema";
 interface InvestorProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  investor: Investor;
+  investorId?: string;
+  investor?: Investor;
+  editMode?: boolean;
 }
 
-export default function InvestorProfileModal({ isOpen, onClose, investor }: InvestorProfileModalProps) {
+export default function InvestorProfileModal({ isOpen, onClose, investorId, investor, editMode = false }: InvestorProfileModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
   // Editable fields state
-  const [editMode, setEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(editMode);
   const [formData, setFormData] = useState({
-    email: investor.email || "",
-    primaryMobile: investor.primaryMobile || "",
-    secondaryMobile: investor.secondaryMobile || "",
-    primaryAddress: investor.primaryAddress || "",
-    secondaryAddress: investor.secondaryAddress || "",
+    email: investor?.email || "",
+    primaryMobile: investor?.primaryMobile || "",
+    secondaryMobile: investor?.secondaryMobile || "",
+    primaryAddress: investor?.primaryAddress || "",
+    secondaryAddress: investor?.secondaryAddress || "",
   });
 
   const updateProfileMutation = useMutation({
     mutationFn: async (updateData: typeof formData) => {
       return await apiRequest(`/api/investor/profile/update`, "PATCH", {
-        investorId: investor.id,
+        investorId: investor?.id || investorId,
         ...updateData
       });
     },
@@ -51,7 +53,7 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
         title: "Profile Updated",
         description: "Your profile has been updated successfully. Admin has been notified.",
       });
-      setEditMode(false);
+      setIsEditMode(false);
       queryClient.invalidateQueries({ queryKey: ["/api/investor/profile"] });
       onClose();
     },
@@ -80,13 +82,13 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
 
   const handleCancel = () => {
     setFormData({
-      email: investor.email || "",
-      primaryMobile: investor.primaryMobile || "",
-      secondaryMobile: investor.secondaryMobile || "",
-      primaryAddress: investor.primaryAddress || "",
-      secondaryAddress: investor.secondaryAddress || "",
+      email: investor?.email || "",
+      primaryMobile: investor?.primaryMobile || "",
+      secondaryMobile: investor?.secondaryMobile || "",
+      primaryAddress: investor?.primaryAddress || "",
+      secondaryAddress: investor?.secondaryAddress || "",
     });
-    setEditMode(false);
+    setIsEditMode(false);
   };
 
   return (
@@ -125,14 +127,14 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
               <div>
                 <Label className="text-sm font-medium text-gray-700">Full Name</Label>
                 <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
-                  {`${investor.firstName} ${investor.middleName || ''} ${investor.lastName}`.trim()}
+                  {`${investor?.firstName || ''} ${investor?.middleName || ''} ${investor?.lastName || ''}`.trim()}
                 </div>
               </div>
               
               <div>
                 <Label className="text-sm font-medium text-gray-700">Investor ID</Label>
                 <div className="mt-1 p-2 bg-gray-50 rounded border text-sm font-mono">
-                  {investor.id}
+                  {investor?.id || 'N/A'}
                 </div>
               </div>
 
@@ -141,7 +143,7 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                 <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4" />
-                    <span>{investor.identityProofType}: {investor.identityProofNumber}</span>
+                    <span>{investor?.identityProofType || 'N/A'}: {investor?.identityProofNumber || 'N/A'}</span>
                   </div>
                 </div>
               </div>
@@ -151,7 +153,7 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                 <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    <span>{investor.createdAt ? new Date(investor.createdAt).toLocaleDateString() : "N/A"}</span>
+                    <span>{investor?.createdAt ? new Date(investor.createdAt).toLocaleDateString() : "N/A"}</span>
                   </div>
                 </div>
               </div>
@@ -177,11 +179,11 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                 </h3>
                 <p className="text-sm text-gray-600">You can update these details</p>
               </div>
-              {!editMode && (
+              {!isEditMode && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setEditMode(true)}
+                  onClick={() => setIsEditMode(true)}
                   data-testid="button-edit-profile"
                 >
                   Edit Details
@@ -193,7 +195,7 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                 <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                   Email Address *
                 </Label>
-                {editMode ? (
+                {isEditMode ? (
                   <Input
                     id="email"
                     type="email"
@@ -206,7 +208,7 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                   <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4" />
-                      <span>{investor.email}</span>
+                      <span>{investor?.email}</span>
                     </div>
                   </div>
                 )}
@@ -216,7 +218,7 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                 <Label htmlFor="primaryMobile" className="text-sm font-medium text-gray-700">
                   Primary Mobile *
                 </Label>
-                {editMode ? (
+                {isEditMode ? (
                   <Input
                     id="primaryMobile"
                     type="tel"
@@ -229,7 +231,7 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                   <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4" />
-                      <span>{investor.primaryMobile}</span>
+                      <span>{investor?.primaryMobile}</span>
                     </div>
                   </div>
                 )}
@@ -239,7 +241,7 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                 <Label htmlFor="secondaryMobile" className="text-sm font-medium text-gray-700">
                   Secondary Mobile
                 </Label>
-                {editMode ? (
+                {isEditMode ? (
                   <Input
                     id="secondaryMobile"
                     type="tel"
@@ -253,7 +255,7 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                   <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4" />
-                      <span>{investor.secondaryMobile || "Not provided"}</span>
+                      <span>{investor?.secondaryMobile || "Not provided"}</span>
                     </div>
                   </div>
                 )}
@@ -265,7 +267,7 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                 <Label htmlFor="primaryAddress" className="text-sm font-medium text-gray-700">
                   Primary Address *
                 </Label>
-                {editMode ? (
+                {isEditMode ? (
                   <Input
                     id="primaryAddress"
                     value={formData.primaryAddress}
@@ -277,7 +279,7 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                   <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4" />
-                      <span>{investor.primaryAddress}</span>
+                      <span>{investor?.primaryAddress}</span>
                     </div>
                   </div>
                 )}
@@ -287,7 +289,7 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                 <Label htmlFor="secondaryAddress" className="text-sm font-medium text-gray-700">
                   Secondary Address
                 </Label>
-                {editMode ? (
+                {isEditMode ? (
                   <Input
                     id="secondaryAddress"
                     value={formData.secondaryAddress}
@@ -300,13 +302,13 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                   <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4" />
-                      <span>{investor.secondaryAddress || "Not provided"}</span>
+                      <span>{investor?.secondaryAddress || "Not provided"}</span>
                     </div>
                   </div>
                 )}
               </div>
 
-              {editMode && (
+              {isEditMode && (
                 <div className="flex gap-3 pt-4">
                   <Button
                     onClick={handleSave}

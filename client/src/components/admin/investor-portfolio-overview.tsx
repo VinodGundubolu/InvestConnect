@@ -42,11 +42,11 @@ function InvestorPortfolioCard({ investor }: { investor: InvestorPortfolioItem }
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="text-center">
             <p className="text-sm text-gray-600">Daily Interest</p>
-            <p className="text-lg font-semibold text-green-600">₹{investor.dailyInterest}</p>
+            <p className="text-lg font-semibold text-green-600">₹{isNaN(investor.dailyInterest) ? 0 : investor.dailyInterest.toLocaleString()}</p>
           </div>
           <div className="text-center">
             <p className="text-sm text-gray-600">Total Returns</p>
-            <p className="text-lg font-semibold text-gray-900">{formatCurrency(investor.totalReturns)}</p>
+            <p className="text-lg font-semibold text-gray-900">{formatCurrency(isNaN(investor.totalReturns) ? 0 : investor.totalReturns)}</p>
           </div>
         </div>
 
@@ -106,8 +106,20 @@ export default function InvestorPortfolioOverview() {
     );
   }
 
-  // Sample data if no API data available
-  const investors: InvestorPortfolioItem[] = portfolioData ? portfolioData : [
+  // Ensure we have valid data and fix NaN issues
+  const portfolioList = Array.isArray(portfolioData) ? portfolioData : [];
+  const investors: InvestorPortfolioItem[] = portfolioList.length > 0 ? portfolioList.map(investor => ({
+    id: investor.id || `INV-${Math.random().toString(36).substr(2, 9)}`,
+    name: investor.name || 'Unknown Investor',
+    aadhar: investor.aadhar || investor.aadhaar || 'N/A',
+    totalInvestment: Number(investor.totalInvestment) || Number(investor.total_investment) || 0,
+    bonds: Number(investor.bonds) || Number(investor.bondsCount) || Number(investor.bonds_count) || 0,
+    dailyInterest: Number(investor.dailyInterest) || Number(investor.daily_interest) || 0,
+    totalReturns: Number(investor.totalReturns) || Number(investor.total_returns) || 0,
+    maturityStatus: investor.maturityStatus || investor.maturity_status || 'Active',
+    year: Number(investor.year) || Number(investor.current_year) || 1,
+    bondMaturityProgress: investor.bondMaturityProgress || investor.bond_maturity_progress || '0%'
+  })) : [
     {
       id: "1",
       name: "Vinod Sharma", 
