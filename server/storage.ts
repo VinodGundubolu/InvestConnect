@@ -180,6 +180,23 @@ export class DatabaseStorage implements IStorage {
     return investor;
   }
 
+  async updateInvestor(id: string, updateData: Partial<InsertInvestor>): Promise<Investor> {
+    const [updatedInvestor] = await db
+      .update(investors)
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(eq(investors.id, id))
+      .returning();
+    
+    if (!updatedInvestor) {
+      throw new Error(`Investor with id ${id} not found`);
+    }
+    
+    return updatedInvestor;
+  }
+
   async deleteInvestor(id: string): Promise<boolean> {
     try {
       // First delete all related investments

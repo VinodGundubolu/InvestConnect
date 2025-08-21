@@ -1167,6 +1167,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/admin/investors/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const investorId = req.params.id;
+      const updateData = req.body;
+      
+      const updatedInvestor = await storage.updateInvestor(investorId, updateData);
+      res.json(updatedInvestor);
+    } catch (error) {
+      console.error("Error updating investor:", error);
+      res.status(500).json({ message: "Failed to update investor" });
+    }
+  });
+
   app.get('/api/admin/portfolio-overview', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

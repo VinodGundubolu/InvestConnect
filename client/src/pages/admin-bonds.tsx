@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, TrendingUp, Calendar, DollarSign } from "lucide-react";
+import BondDetailDialog from "@/components/admin/bond-detail-dialog";
 import AdminSidebar from "@/components/admin/admin-sidebar";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
@@ -182,9 +183,7 @@ export default function AdminBonds() {
                             </Badge>
                           </td>
                           <td className="p-4">
-                            <Button variant="ghost" size="sm">
-                              View Details
-                            </Button>
+                            <BondDetailDialog bond={investment} />
                           </td>
                         </tr>
                       ))}
