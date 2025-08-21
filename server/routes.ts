@@ -398,6 +398,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return { username, password };
   };
 
+  // Helper function to generate investment agreement content
+  const generateAgreementContent = (investor: any, totalInvestment: number) => {
+    const currentDate = new Date().toLocaleDateString('en-GB');
+    const maturityDate = new Date();
+    maturityDate.setFullYear(maturityDate.getFullYear() + 10);
+    const maturityDateStr = maturityDate.toLocaleDateString('en-GB');
+    const agreementId = `AGR-${Date.now()}`;
+
+    return {
+      content: `INVESTMENT PARTNERSHIP AGREEMENT
+
+This Investment Partnership Agreement ("Agreement") is entered into on ${currentDate} between:
+
+INVESTOR: ${investor.firstName} ${investor.lastName}
+EMAIL: ${investor.email || 'Not provided'}
+COMPANY: Your Investment Company
+
+INVESTMENT DETAILS:
+- Investment Amount: ₹${(totalInvestment / 100000).toFixed(0)},00,000
+- Investment Date: ${currentDate}
+- Maturity Date: ${maturityDateStr}
+- Interest Rate: 6-18% per annum
+- Agreement ID: ${agreementId}
+
+TERMS AND CONDITIONS:
+1. The investor agrees to invest the specified amount
+2. Interest will be paid annually as per the schedule
+3. Principal will be returned upon maturity
+4. This agreement is governed by applicable laws
+
+By signing below, both parties agree to the terms outlined in this agreement.
+
+_________________________________
+Investor Signature
+
+Date: _______________`,
+      agreementId
+    };
+  };
+
   // Create new investor with database storage
   app.post("/api/admin/investors", async (req, res) => {
     try {
@@ -495,6 +535,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       credentialsMap.set(username, { username, password, investorId });
 
       console.log('New investor created in database:', investor);
+
+      // Generate investment agreement automatically
+      const { content: agreementContent, agreementId } = generateAgreementContent(investor, parseInt(investmentAmount));
+      
+      const investmentAgreement = await storage.createInvestmentAgreement({
+        investorId: investorId,
+        agreementId,
+        title: "Investment Partnership Agreement",
+        status: "pending",
+        content: agreementContent,
+      });
+
+      console.log('✅ Investment agreement generated automatically:', investmentAgreement.id);
 
       // Send email notification using template system
       const mergeFields: EmailMergeFields = {
@@ -700,6 +753,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Password change error:", error);
       res.status(500).json({ message: "Failed to update password" });
+    }
+  });
+
+  // Get investor agreements
+  app.get("/api/investor/agreements/:investorId", async (req, res) => {
+    try {
+      const { investorId } = req.params;
+      const agreements = await storage.getInvestmentAgreementsByInvestor(investorId);
+      res.json(agreements);
+    } catch (error) {
+      console.error("Error fetching agreements:", error);
+      res.status(500).json({ message: "Failed to fetch agreements" });
     }
   });
 

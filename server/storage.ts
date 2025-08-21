@@ -5,6 +5,7 @@ import {
   investmentPlans,
   transactions,
   dividendRates,
+  investmentAgreements,
   type User,
   type UpsertUser,
   type Investor,
@@ -15,6 +16,8 @@ import {
   type InsertInvestmentPlan,
   type Transaction,
   type InsertTransaction,
+  type InvestmentAgreement,
+  type InsertInvestmentAgreement,
   type InvestorWithInvestments,
   type InvestmentWithDetails,
 } from "@shared/schema";
@@ -71,6 +74,11 @@ export interface IStorage {
   // Dividend rates
   getDividendRates(): Promise<{ year: number; rate: string }[]>;
   initializeDividendRates(): Promise<void>;
+
+  // Agreement operations
+  createInvestmentAgreement(agreement: InsertInvestmentAgreement): Promise<InvestmentAgreement>;
+  getInvestmentAgreementsByInvestor(investorId: string): Promise<InvestmentAgreement[]>;
+  updateInvestmentAgreement(id: string, agreement: Partial<InsertInvestmentAgreement>): Promise<InvestmentAgreement>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -414,6 +422,32 @@ export class DatabaseStorage implements IStorage {
         .values(rate)
         .onConflictDoNothing();
     }
+  }
+
+  // Agreement operations
+  async createInvestmentAgreement(agreement: InsertInvestmentAgreement): Promise<InvestmentAgreement> {
+    const [result] = await db
+      .insert(investmentAgreements)
+      .values(agreement)
+      .returning();
+    return result;
+  }
+
+  async getInvestmentAgreementsByInvestor(investorId: string): Promise<InvestmentAgreement[]> {
+    return await db
+      .select()
+      .from(investmentAgreements)
+      .where(eq(investmentAgreements.investorId, investorId))
+      .orderBy(desc(investmentAgreements.createdAt));
+  }
+
+  async updateInvestmentAgreement(id: string, agreement: Partial<InsertInvestmentAgreement>): Promise<InvestmentAgreement> {
+    const [result] = await db
+      .update(investmentAgreements)
+      .set(agreement)
+      .where(eq(investmentAgreements.id, id))
+      .returning();
+    return result;
   }
 }
 

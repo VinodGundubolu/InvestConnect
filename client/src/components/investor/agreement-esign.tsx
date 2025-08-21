@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, PenTool, Check, Clock, Download, X } from "lucide-react";
 import { InvestorWithInvestments } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
 
 interface AgreementESignProps {
   investor: InvestorWithInvestments;
@@ -14,11 +15,14 @@ interface AgreementESignProps {
 
 interface Agreement {
   id: string;
+  agreementId: string;
   title: string;
   status: "pending" | "signed" | "expired";
-  createdDate: string;
-  signedDate?: string;
-  documentUrl?: string;
+  content: string;
+  createdAt: string;
+  signedAt?: string;
+  signatureData?: string;
+  signatureType?: string;
 }
 
 export default function AgreementESign({ investor }: AgreementESignProps) {
@@ -42,16 +46,10 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
   
   const agreementId = `test-agreement-${Date.now()}`;
 
-  // Mock agreements data - in real app this would come from API
-  const agreements: Agreement[] = [
-    {
-      id: "AGR-001",
-      title: "Investment Partnership Agreement",
-      status: "pending",
-      createdDate: currentDate,
-      documentUrl: "/documents/agreement-001.pdf"
-    }
-  ];
+  // Load real agreements from database
+  const { data: agreements = [], isLoading } = useQuery({
+    queryKey: ["/api/investor/agreements", investor.id],
+  });
 
   // Canvas signature functions
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -151,35 +149,9 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
     }
   };
 
-  // Generate the exact agreement template format you specified
-  const generateAgreementContent = () => {
-    return `INVESTMENT PARTNERSHIP AGREEMENT
-
-This Investment Partnership Agreement ("Agreement") is entered into on ${currentDate} between:
-
-INVESTOR: ${investor.firstName} ${investor.lastName}
-EMAIL: ${investor.email || 'Not provided'}
-COMPANY: Your Investment Company
-
-INVESTMENT DETAILS:
-- Investment Amount: ₹${(totalInvestment / 100000).toFixed(0)},00,000
-- Investment Date: ${currentDate}
-- Maturity Date: ${maturityDateStr}
-- Interest Rate: 6-18% per annum
-- Agreement ID: ${agreementId}
-
-TERMS AND CONDITIONS:
-1. The investor agrees to invest the specified amount
-2. Interest will be paid annually as per the schedule
-3. Principal will be returned upon maturity
-4. This agreement is governed by applicable laws
-
-By signing below, both parties agree to the terms outlined in this agreement.
-
-_________________________________
-Investor Signature
-
-Date: _______________`;
+  // Get agreement content from selected agreement
+  const getAgreementContent = () => {
+    return selectedAgreement?.content || '';
   };
 
   const getStatusIcon = (status: string) => {
@@ -218,7 +190,19 @@ Date: _______________`;
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {agreements.map((agreement) => (
+          {isLoading ? (
+            <div className="text-center py-8">
+              <Clock className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-400" />
+              <p className="text-gray-500">Loading agreements...</p>
+            </div>
+          ) : agreements.length === 0 ? (
+            <div className="text-center py-8">
+              <FileText className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+              <p className="text-gray-500">No agreements available yet.</p>
+              <p className="text-sm text-gray-400">Your investment agreements will appear here once generated.</p>
+            </div>
+          ) : (
+            agreements.map((agreement) => (
             <div
               key={agreement.id}
               className="flex items-center justify-between p-4 border rounded-lg bg-gray-50"
@@ -229,10 +213,10 @@ Date: _______________`;
                   {getStatusIcon(agreement.status)}
                 </div>
                 <div className="text-sm text-gray-600">
-                  <p>Agreement ID: {agreement.id}</p>
-                  <p>Created: {new Date(agreement.createdDate).toLocaleDateString()}</p>
-                  {agreement.signedDate && (
-                    <p>Signed: {new Date(agreement.signedDate).toLocaleDateString()}</p>
+                  <p>Agreement ID: {agreement.agreementId}</p>
+                  <p>Created: {new Date(agreement.createdAt).toLocaleDateString()}</p>
+                  {agreement.signedAt && (
+                    <p>Signed: {new Date(agreement.signedAt).toLocaleDateString()}</p>
                   )}
                 </div>
               </div>
@@ -242,7 +226,7 @@ Date: _______________`;
                   {getStatusText(agreement.status)}
                 </span>
                 
-                {agreement.status === "signed" && agreement.documentUrl && (
+                {agreement.status === "signed" && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -280,7 +264,7 @@ Date: _______________`;
                         {/* Agreement Content */}
                         <div className="bg-white border-2 border-gray-300 p-6 rounded-lg font-mono text-sm leading-relaxed">
                           <pre className="whitespace-pre-wrap">
-                            {generateAgreementContent()}
+                            {getAgreementContent()}
                           </pre>
                         </div>
                         
@@ -394,7 +378,8 @@ Date: _______________`;
                 )}
               </div>
             </div>
-          ))}
+            ))
+          )}
           
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800">

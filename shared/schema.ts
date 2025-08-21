@@ -161,6 +161,7 @@ export const investorsRelations = relations(investors, ({ one, many }) => ({
     references: [users.id],
   }),
   investments: many(investments),
+  agreements: many(investmentAgreements),
 }));
 
 export const investmentPlansRelations = relations(investmentPlans, ({ many }) => ({
@@ -230,6 +231,30 @@ export type InvestmentPlan = typeof investmentPlans.$inferSelect;
 export type InsertInvestmentPlan = z.infer<typeof insertInvestmentPlanSchema>;
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+
+// Investment agreements table
+export const investmentAgreements = pgTable("investment_agreements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  investorId: varchar("investor_id").notNull().references(() => investors.id),
+  agreementId: varchar("agreement_id").notNull().unique(),
+  title: varchar("title").notNull(),
+  status: varchar("status").notNull().default("pending"), // pending, signed, expired
+  content: text("content").notNull(), // Full agreement text
+  createdAt: timestamp("created_at").defaultNow(),
+  signedAt: timestamp("signed_at"),
+  signatureData: text("signature_data"), // Store signature details (text or canvas data)
+  signatureType: varchar("signature_type"), // "text" or "canvas"
+});
+
+export const investmentAgreementsRelations = relations(investmentAgreements, ({ one }) => ({
+  investor: one(investors, {
+    fields: [investmentAgreements.investorId],
+    references: [investors.id],
+  }),
+}));
+
+export type InvestmentAgreement = typeof investmentAgreements.$inferSelect;
+export type InsertInvestmentAgreement = typeof investmentAgreements.$inferInsert;
 
 // Extended types for API responses
 export type InvestorWithInvestments = Investor & {
