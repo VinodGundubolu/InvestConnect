@@ -135,44 +135,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const investors = await storage.getAllInvestors();
       const investments = await storage.getAllInvestments();
       
-      // Create portfolio data with real information
-      const portfolioData = investors.map(investor => {
-        // Find all investments for this investor
-        const investorInvestments = investments.filter(inv => inv.investorId === investor.id);
-        
-        // Calculate totals
-        const totalInvestment = investorInvestments.reduce((sum, inv) => sum + parseFloat(inv.investedAmount), 0);
-        const totalBonds = investorInvestments.reduce((sum, inv) => sum + inv.bondsPurchased, 0);
-        
-        // Calculate current year (based on first investment date)
-        let currentYear = 1;
-        if (investorInvestments.length > 0) {
-          const firstInvestment = investorInvestments[0];
-          const yearsSince = Math.floor((new Date().getTime() - new Date(firstInvestment.investmentDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-          currentYear = Math.max(1, yearsSince + 1);
-        }
-        
-        // Calculate current rate based on year
-        let rate = 0;
-        if (currentYear === 1) rate = 0;
-        else if (currentYear === 2) rate = 6;
-        else if (currentYear === 3) rate = 9;
-        else if (currentYear === 4) rate = 12;
-        else rate = 18;
-        
-        // Calculate today's interest
-        const todayInterest = Math.round(totalInvestment * (rate / 100) / 365);
-        
-        return {
-          id: investor.id,
-          name: `${investor.firstName} ${investor.lastName}`,
-          investment: totalInvestment,
-          bonds: totalBonds,
-          currentYear,
-          rate,
-          todayInterest
-        };
-      });
+      // Create portfolio data with real information - only include investors who have investments
+      const portfolioData = investors
+        .map(investor => {
+          // Find all investments for this investor
+          const investorInvestments = investments.filter(inv => inv.investorId === investor.id);
+          
+          if (investorInvestments.length === 0) {
+            return null; // Skip investors without investments
+          }
+          
+          // Calculate totals
+          const totalInvestment = investorInvestments.reduce((sum, inv) => sum + parseFloat(inv.investedAmount), 0);
+          const totalBonds = investorInvestments.reduce((sum, inv) => sum + inv.bondsPurchased, 0);
+          
+          // Calculate current year (based on first investment date)
+          let currentYear = 1;
+          if (investorInvestments.length > 0) {
+            const firstInvestment = investorInvestments[0];
+            const investmentDate = new Date(firstInvestment.investmentDate);
+            const currentDate = new Date();
+            const yearsSince = Math.floor((currentDate.getTime() - investmentDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+            currentYear = Math.max(1, yearsSince + 1);
+          }
+          
+          // Calculate current rate based on year
+          let rate = 0;
+          if (currentYear === 1) rate = 0;
+          else if (currentYear === 2) rate = 6;
+          else if (currentYear === 3) rate = 9;
+          else if (currentYear === 4) rate = 12;
+          else rate = 18;
+          
+          // Calculate today's interest
+          const todayInterest = Math.round(totalInvestment * (rate / 100) / 365);
+          
+          // Calculate total returns (rough estimate)
+          const totalReturns = Math.round(totalInvestment * (rate / 100) * (currentYear - 1));
+          
+          // Calculate bond maturity progress (percentage through the 10-year term)
+          const maturityProgress = investorInvestments.length > 0 ? 
+            Math.min(100, Math.round(((currentYear - 1) / 10) * 100)) : 0;
+          
+          return {
+            id: investor.id,
+            name: `${investor.firstName} ${investor.lastName}`,
+            investment: totalInvestment,
+            bonds: totalBonds,
+            currentYear,
+            rate,
+            todayInterest,
+            totalReturns,
+            maturityProgress,
+            status: 'Active',
+            aadharNumber: investor.identityProofNumber || 'N/A'
+          };
+        })
+        .filter(portfolio => portfolio !== null); // Remove null entries
       
       res.json(portfolioData);
     } catch (error) {
@@ -1167,9 +1186,56 @@ Date: _______________`,
       }
 
       if (user.role === "admin") {
-        // Admin can see all investments
+        // Admin can see all investments with enriched data
         const investments = await storage.getAllInvestments();
-        res.json(investments);
+        const investors = await storage.getAllInvestors();
+        
+        // Create a map of investors for quick lookup
+        const investorMap = new Map();
+        investors.forEach(investor => {
+          investorMap.set(investor.id, investor);
+        });
+        
+        // Enrich investments with investor information
+        const enrichedInvestments = investments.map(investment => {
+          const investor = investorMap.get(investment.investorId);
+          const investmentDate = new Date(investment.investmentDate);
+          const currentDate = new Date();
+          const yearsSinceInvestment = Math.floor((currentDate.getTime() - investmentDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+          const currentYear = Math.max(1, yearsSinceInvestment + 1);
+          
+          // Calculate current rate based on year
+          let currentRate = 0;
+          if (currentYear === 1) currentRate = 0;
+          else if (currentYear === 2) currentRate = 6;
+          else if (currentYear === 3) currentRate = 9;
+          else if (currentYear === 4) currentRate = 12;
+          else currentRate = 18;
+          
+          return {
+            id: investment.id,
+            investorName: investor ? `${investor.firstName} ${investor.lastName}` : 'Unknown Investor',
+            investorId: investment.investorId,
+            bondType: 'Fixed Income Bond',
+            amount: parseFloat(investment.investedAmount),
+            purchaseDate: investment.investmentDate,
+            maturityDate: investment.maturityDate,
+            currentRate: currentRate,
+            status: investment.isActive ? 'Active' : 'Inactive',
+            year: currentYear,
+            bondsPurchased: investment.bondsPurchased,
+            // Additional fields for compatibility
+            total_amount: parseFloat(investment.investedAmount),
+            purchase_date: investment.investmentDate,
+            maturity_date: investment.maturityDate,
+            current_rate: currentRate,
+            current_year: currentYear,
+            bond_type: 'Fixed Income Bond',
+            investor_name: investor ? `${investor.firstName} ${investor.lastName}` : 'Unknown Investor'
+          };
+        });
+        
+        res.json(enrichedInvestments);
       } else {
         // Investor can only see their own investments
         const investor = await storage.getInvestorByUserId(userId);

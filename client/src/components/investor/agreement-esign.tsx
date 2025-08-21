@@ -47,22 +47,32 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
   const agreementId = `test-agreement-${Date.now()}`;
 
   // Load real agreements from database
-  const { data: agreements = [], isLoading } = useQuery({
+  const { data: agreements = [], isLoading } = useQuery<Agreement[]>({
     queryKey: ["/api/investor/agreements", investor.id],
   });
 
   // Canvas signature functions
+  const getCanvasCoordinates = (canvas: HTMLCanvasElement, clientX: number, clientY: number) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
+    };
+  };
+
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDrawing(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
+    const { x, y } = getCanvasCoordinates(canvas, e.clientX, e.clientY);
     ctx.beginPath();
-    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    ctx.moveTo(x, y);
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -71,16 +81,53 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    const { x, y } = getCanvasCoordinates(canvas, e.clientX, e.clientY);
+    ctx.lineTo(x, y);
     ctx.stroke();
     setSignatureDrawn(true);
   };
 
   const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  // Touch event handlers for mobile
+  const startTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const touch = e.touches[0];
+    const { x, y } = getCanvasCoordinates(canvas, touch.clientX, touch.clientY);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const drawTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    if (!isDrawing) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const touch = e.touches[0];
+    const { x, y } = getCanvasCoordinates(canvas, touch.clientX, touch.clientY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    setSignatureDrawn(true);
+  };
+
+  const endTouch = () => {
     setIsDrawing(false);
   };
 
@@ -102,9 +149,25 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
+    // Set up high-quality drawing context
+    ctx.strokeStyle = '#1f2937';
+    ctx.lineWidth = 3;
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.imageSmoothingEnabled = true;
+    
+    // Set canvas size for better quality
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    
+    // Reapply styles after scaling
+    ctx.strokeStyle = '#1f2937';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
   }, []);
 
   const handleSign = async () => {
@@ -126,7 +189,7 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
       // In real implementation, this would call the API to record the signature
       if (selectedAgreement) {
         selectedAgreement.status = "signed";
-        selectedAgreement.signedDate = new Date().toISOString().split('T')[0];
+        selectedAgreement.signedAt = new Date().toISOString();
       }
       
       toast({
@@ -300,31 +363,34 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
                           {/* Canvas Signature */}
                           <div>
                             <Label className="text-sm font-medium">Draw Signature</Label>
-                            <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-2">
+                            <div className="mt-2 border-2 border-solid border-gray-300 rounded-lg p-4 bg-white">
                               <canvas
                                 ref={canvasRef}
-                                width={400}
-                                height={120}
-                                className="border border-gray-200 rounded cursor-crosshair w-full"
+                                width={500}
+                                height={150}
+                                className="border-2 border-gray-300 rounded-lg cursor-crosshair w-full bg-white shadow-inner"
                                 onMouseDown={startDrawing}
                                 onMouseMove={draw}
                                 onMouseUp={stopDrawing}
                                 onMouseLeave={stopDrawing}
-                                style={{ touchAction: 'none' }}
+                                onTouchStart={startTouch}
+                                onTouchMove={drawTouch}
+                                onTouchEnd={endTouch}
+                                style={{ touchAction: 'none', maxWidth: '100%', height: '150px' }}
                               />
-                              <div className="flex justify-between items-center mt-2">
-                                <p className="text-xs text-gray-500">
-                                  Draw your signature in the box above
+                              <div className="flex justify-between items-center mt-3">
+                                <p className="text-sm text-gray-600 font-medium">
+                                  Please sign your name in the box above
                                 </p>
                                 <Button
                                   type="button"
                                   variant="outline"
                                   size="sm"
                                   onClick={clearSignature}
-                                  className="text-xs"
+                                  className="text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-300"
                                 >
-                                  <X className="h-3 w-3 mr-1" />
-                                  Clear
+                                  <X className="h-4 w-4 mr-2" />
+                                  Clear Signature
                                 </Button>
                               </div>
                             </div>
