@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { EmailTemplateEngine, type EmailMergeFields } from "./email-templates";
+import { sendEmail, sendInvestorCreationNotification, sendWelcomeEmail, testEmailService } from "./emailService";
 import { insertInvestorSchema, insertInvestmentSchema, insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 import { InterestDisbursementEngine, type InterestCalculation } from './interest-disbursement';
@@ -1569,6 +1570,33 @@ Date: _______________`,
         success: false, 
         message: "Failed to process investment transactions",
         error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Email testing endpoint
+  app.post("/api/test-email", async (req, res) => {
+    try {
+      console.log("🧪 Testing email service...");
+      const success = await testEmailService();
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Email test completed successfully. Check console logs for details." 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Email test failed. Check console logs for errors." 
+        });
+      }
+    } catch (error) {
+      console.error("Email test error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Email test encountered an error", 
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   });
