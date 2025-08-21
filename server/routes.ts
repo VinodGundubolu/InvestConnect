@@ -248,9 +248,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // All credentials are now managed by the database-backed credentialsService
   // The credentialsService automatically initializes existing test credentials on startup
 
-  // Helper function to generate login credentials
-  const generateCredentials = (firstName: string, lastName: string) => {
-    const username = `${firstName.toLowerCase().trim()}_${lastName.toLowerCase().trim()}`;
+  // Helper function to generate unique login credentials
+  const generateCredentials = async (firstName: string, lastName: string) => {
+    const baseUsername = `${firstName.toLowerCase().trim()}_${lastName.toLowerCase().trim()}`;
+    let username = baseUsername;
+    let counter = 1;
+    
+    // Check for uniqueness and add counter if needed
+    while (true) {
+      const existing = await credentialsService.getCredentialsByIdentifier(username);
+      if (!existing) {
+        break;
+      }
+      username = `${baseUsername}_${counter}`;
+      counter++;
+    }
+    
     const password = `${firstName.toUpperCase().substring(0, 2)}${new Date().getFullYear()}`;
     return { username, password };
   };
@@ -276,7 +289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = req.body;
 
       // Generate unique credentials
-      const { username, password } = generateCredentials(firstName, lastName);
+      const { username, password } = await generateCredentials(firstName, lastName);
       const investorId = await storage.generateInvestorId({
         firstName,
         lastName,
@@ -347,8 +360,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maturityDate: maturityDate.toISOString().split('T')[0],
       });
 
-      // Store credentials mapping for login
-      credentialsMap.set(username, { username, password, investorId });
+      // Credentials are now stored in database via credentialsService
+      console.log('Credentials stored in database for:', username);
 
       console.log('New investor created in database:', investor);
 
