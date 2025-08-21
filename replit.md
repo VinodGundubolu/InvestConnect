@@ -4,9 +4,20 @@
 
 An Investment Relationship Management (IRM) Tool designed for organizations to manage investor relationships and investment portfolios. The system provides dual-portal access with distinct interfaces for investors and administrators, enabling secure investment tracking, transaction management, and comprehensive reporting.
 
-## Recent Changes (August 20, 2025)
+## Recent Changes (August 21, 2025)
 
-### **Latest Merge Fields Enhancement (Session 10):**
+### **Latest SMTP2GO Email Integration (Session 11):**
+- ✓ **SMTP2GO Integration Complete** - Migrated from SendGrid to SMTP2GO for cost-effective email delivery
+- ✓ **Free Tier Benefits** - 1,000 emails/month free tier perfect for 100 investors (covers years of usage)
+- ✓ **Nodemailer Implementation** - Professional SMTP integration with proper error handling and configuration
+- ✓ **Flexible Email Configuration** - Environment-based sender email configuration for easy testing and production setup
+- ✓ **Seamless Migration Path** - Easy transition from personal testing account to company production account
+- ✓ **Testing Framework** - Created comprehensive test scripts for email functionality verification
+- ✓ **Documentation Created** - Complete setup guide for both testing and production configurations
+- ✓ **Cost Optimization** - Reduced email costs from $19.95/month (SendGrid) to FREE (SMTP2GO)
+- ✓ **Package Migration** - Removed SendGrid dependency, added Nodemailer for SMTP integration
+
+### **Previous Merge Fields Enhancement & Testing (Session 10):**
 - ✓ **Comprehensive Merge Fields System** - Created extensive merge field library with 30+ placeholders for dynamic content
 - ✓ **Investment Agreement Personalization** - Enhanced agreement templates with detailed investor, company, and investment data
 - ✓ **Email Template Enhancement** - Upgraded both welcome and agreement notification emails with rich merge field support

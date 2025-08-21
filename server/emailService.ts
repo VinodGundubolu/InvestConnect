@@ -1,14 +1,31 @@
-import { MailService } from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 import { storage } from './storage';
 import type { Investor } from '@shared/schema';
 
-if (!process.env.SENDGRID_API_KEY) {
-  console.warn("SENDGRID_API_KEY not set - email notifications will be disabled");
+// Check if SMTP2GO credentials are available
+const SMTP2GO_USERNAME = process.env.SMTP2GO_USERNAME;
+const SMTP2GO_PASSWORD = process.env.SMTP2GO_PASSWORD;
+
+if (!SMTP2GO_USERNAME || !SMTP2GO_PASSWORD) {
+  console.warn("SMTP2GO credentials not set - email notifications will be disabled");
 }
 
-const mailService = new MailService();
-if (process.env.SENDGRID_API_KEY) {
-  mailService.setApiKey(process.env.SENDGRID_API_KEY);
+// Create SMTP2GO transporter
+let transporter: nodemailer.Transporter | null = null;
+
+if (SMTP2GO_USERNAME && SMTP2GO_PASSWORD) {
+  transporter = nodemailer.createTransport({
+    host: 'mail.smtp2go.com',
+    port: 587,
+    secure: false, // Use TLS
+    auth: {
+      user: SMTP2GO_USERNAME,
+      pass: SMTP2GO_PASSWORD
+    },
+    tls: {
+      ciphers: 'SSLv3'
+    }
+  });
 }
 
 interface EmailParams {
@@ -20,23 +37,25 @@ interface EmailParams {
 }
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
-  if (!process.env.SENDGRID_API_KEY) {
+  if (!transporter) {
     console.log("Email would be sent:", params.subject, "to", params.to);
     return false;
   }
 
   try {
-    await mailService.send({
-      to: params.to,
+    const mailOptions = {
       from: params.from,
+      to: params.to,
       subject: params.subject,
       text: params.text || '',
       html: params.html || '',
-    });
+    };
+
+    await transporter.sendMail(mailOptions);
     console.log(`Email sent successfully to ${params.to}: ${params.subject}`);
     return true;
   } catch (error) {
-    console.error('SendGrid email error:', error);
+    console.error('SMTP2GO email error:', error);
     return false;
   }
 }
@@ -204,7 +223,7 @@ IRM Investment Platform Team
 
   return await sendEmail({
     to: investor.email,
-    from: 'noreply@irm-platform.com', // Replace with your verified sender
+    from: process.env.SMTP2GO_FROM_EMAIL || 'test@example.com', // Will be configured with your email
     subject,
     text: textContent,
     html: htmlContent
@@ -519,7 +538,7 @@ Generated on ${mergeFields.generatedDate}
 
     return await sendEmail({
       to: investor.email,
-      from: 'noreply@irm-platform.com',
+      from: process.env.SMTP2GO_FROM_EMAIL || 'test@example.com',
       subject: finalSubject,
       text: textContent,
       html: finalHtmlContent
