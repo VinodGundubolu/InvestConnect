@@ -125,6 +125,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin API routes
+  // Get detailed investor information
+  app.get("/api/admin/investor-details/:id", async (req, res) => {
+    try {
+      const investorId = req.params.id;
+      const investor = await storage.getInvestorWithInvestments(investorId);
+      
+      if (!investor) {
+        return res.status(404).json({ message: "Investor not found" });
+      }
+
+      res.json(investor);
+    } catch (error) {
+      console.error("Error fetching investor details:", error);
+      res.status(500).json({ message: "Failed to fetch investor details" });
+    }
+  });
+
   app.get("/api/admin/investor-portfolio", async (req, res) => {
     try {
       // Get real investor and investment data from database
@@ -162,11 +179,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return {
           id: investor.id,
           name: `${investor.firstName} ${investor.lastName}`,
-          investment: totalInvestment,
+          aadhar: `****-****-${investor.identityProofNumber?.slice(-4) || '0000'}`,
+          totalInvestment,
           bonds: totalBonds,
-          currentYear,
-          rate,
-          todayInterest
+          dailyInterest: todayInterest,
+          totalReturns: totalInvestment * (rate / 100) * currentYear,
+          maturityStatus: `Year ${currentYear}`,
+          year: currentYear,
+          bondMaturityProgress: `${Math.min(100, (currentYear / 10) * 100)}%`
         };
       });
       
@@ -906,9 +926,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (user.role === "admin") {
-        // Admin can see all investments
-        const investments = await storage.getAllInvestments();
-        res.json(investments);
+        // Admin can see all investments with enhanced data for bond management
+        const allInvestments = await storage.getAllInvestments();
+        const allInvestors = await storage.getAllInvestors();
+        
+        // Transform investments data for bond management view
+        const investmentsData = allInvestments.map(investment => {
+          // Calculate current year based on investment date
+          const investmentDate = new Date(investment.investmentDate);
+          const currentDate = new Date();
+          const yearsSince = Math.floor((currentDate.getTime() - investmentDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+          const currentYear = Math.max(1, yearsSince + 1);
+          
+          // Calculate current rate based on year
+          let currentRate = 0;
+          if (currentYear === 1) currentRate = 0;
+          else if (currentYear === 2) currentRate = 6;
+          else if (currentYear === 3) currentRate = 9;
+          else if (currentYear === 4) currentRate = 12;
+          else currentRate = 18;
+          
+          // Get investor name from ID
+          const investor = allInvestors.find(inv => inv.id === investment.investorId);
+          const investorName = investor ? `${investor.firstName} ${investor.lastName}` : "Unknown Investor";
+          
+          return {
+            id: investment.id,
+            investorName,
+            bondType: "Fixed Income Bond",
+            amount: parseFloat(investment.investedAmount),
+            purchaseDate: investment.investmentDate,
+            maturityDate: investment.maturityDate,
+            currentRate,
+            status: investment.isActive ? "Active" : "Inactive",
+            year: currentYear,
+            bondsPurchased: investment.bondsPurchased
+          };
+        });
+        
+        res.json(investmentsData);
       } else {
         // Investor can only see their own investments
         const investor = await storage.getInvestorByUserId(userId);
@@ -1047,7 +1103,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const investors = await storage.getAllInvestors();
-      res.json(investors);
+      const investments = await storage.getAllInvestments();
+      
+      // Transform investor data with investment details
+      const enhancedInvestors = investors.map(investor => {
+        const investorInvestments = investments.filter(inv => inv.investorId === investor.id);
+        const totalInvestment = investorInvestments.reduce((sum, inv) => sum + parseFloat(inv.investedAmount), 0);
+        const bondsCount = investorInvestments.reduce((sum, inv) => sum + inv.bondsPurchased, 0);
+        
+        // Calculate current year and rate
+        let currentYear = 1;
+        if (investorInvestments.length > 0) {
+          const firstInvestment = investorInvestments[0];
+          const yearsSince = Math.floor((new Date().getTime() - new Date(firstInvestment.investmentDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+          currentYear = Math.max(1, yearsSince + 1);
+        }
+        
+        let currentRate = 0;
+        if (currentYear === 2) currentRate = 6;
+        else if (currentYear === 3) currentRate = 9;
+        else if (currentYear === 4) currentRate = 12;
+        else if (currentYear >= 5) currentRate = 18;
+        
+        const totalReturns = totalInvestment * (currentRate / 100) * currentYear;
+        
+        return {
+          ...investor,
+          name: `${investor.firstName} ${investor.lastName}`,
+          phone: investor.primaryMobile,
+          totalInvestment,
+          bondsCount,
+          currentYear,
+          currentRate,
+          totalReturns,
+          status: "Active",
+          investmentStartDate: investorInvestments.length > 0 ? investorInvestments[0].investmentDate : investor.createdAt,
+          maturityDate: investorInvestments.length > 0 ? investorInvestments[0].maturityDate : "TBD"
+        };
+      });
+      
+      res.json(enhancedInvestors);
     } catch (error) {
       console.error("Error fetching investors:", error);
       res.status(500).json({ message: "Failed to fetch investors" });

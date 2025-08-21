@@ -73,20 +73,16 @@ export default function AdminBonds() {
       <AdminSidebar />
       
       <div className="flex-1 flex flex-col">
-        <header className="bg-white border-b border-gray-200 px-8 py-6">
+        <header className="nav-modern px-8 py-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Bond Management</h1>
-              <p className="text-gray-600">Manage investment bonds and portfolio allocation</p>
+            <div className="page-header">
+              <h1 className="page-title">Bond Management</h1>
+              <p className="page-subtitle">Manage investment bonds and portfolio allocation</p>
             </div>
-            <Button className="bg-blue-500 hover:bg-blue-600">
-              <Plus className="h-4 w-4 mr-2" />
-              Create New Bond
-            </Button>
           </div>
         </header>
 
-        <main className="flex-1 p-8">
+        <main className="flex-1 container-modern">
           <div className="space-y-6">
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

@@ -65,10 +65,6 @@ export default function AdminPortal() {
                 <p className="text-sm text-gray-500 font-medium">Today's Date</p>
                 <p className="font-semibold text-gray-900">{today}</p>
               </div>
-              <button className="btn-modern-primary" data-testid="button-add-investor">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Investor
-              </button>
             </div>
           </div>
         </header>
@@ -81,14 +77,9 @@ export default function AdminPortal() {
               <DashboardStats />
             </div>
 
-            {/* Portfolio Overview and Interest Breakdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 fade-in">
-              <div className="lg:col-span-2">
-                <InvestorPortfolioOverview />
-              </div>
-              <div className="lg:col-span-1">
-                <TodayInterestBreakdown />
-              </div>
+            {/* Portfolio Overview */}
+            <div className="fade-in">
+              <InvestorPortfolioOverview />
             </div>
 
             {/* Email Management Section */}
