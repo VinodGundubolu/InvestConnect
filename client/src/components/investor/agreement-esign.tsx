@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, PenTool, Check, Clock, Download } from "lucide-react";
+import { FileText, PenTool, Check, Clock, Download, X } from "lucide-react";
 import { InvestorWithInvestments } from "@shared/schema";
 
 interface AgreementESignProps {
@@ -27,49 +27,93 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
   const [selectedAgreement, setSelectedAgreement] = useState<Agreement | null>(null);
   const [signatureText, setSignatureText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [signatureDrawn, setSignatureDrawn] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Generate agreement from investor data
+  const currentDate = new Date().toLocaleDateString('en-GB');
+  const maturityDate = new Date();
+  maturityDate.setFullYear(maturityDate.getFullYear() + 10);
+  const maturityDateStr = maturityDate.toLocaleDateString('en-GB');
+  
+  const totalInvestment = investor.investments?.reduce((sum, inv) => 
+    sum + (parseFloat(inv.investedAmount) || 0), 0) || 2000000;
+  
+  const agreementId = `test-agreement-${Date.now()}`;
 
   // Mock agreements data - in real app this would come from API
   const agreements: Agreement[] = [
     {
       id: "AGR-001",
-      title: "Investment Agreement - 20 Lakhs Bond",
-      status: "signed",
-      createdDate: "2024-01-01",
-      signedDate: "2024-01-01",
+      title: "Investment Partnership Agreement",
+      status: "pending",
+      createdDate: currentDate,
       documentUrl: "/documents/agreement-001.pdf"
-    },
-    {
-      id: "AGR-002", 
-      title: "Additional Terms & Conditions",
-      status: "pending",
-      createdDate: "2025-08-21"
-    },
-    {
-      id: "AGR-003",
-      title: "Annual Disclosure Agreement", 
-      status: "pending",
-      createdDate: "2025-08-21"
     }
   ];
 
+  // Canvas signature functions
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.beginPath();
+    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    ctx.stroke();
+    setSignatureDrawn(true);
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignatureDrawn(false);
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+  }, []);
+
   const handleSign = async () => {
-    if (!selectedAgreement || !signatureText.trim()) {
+    if (!selectedAgreement || (!signatureText.trim() && !signatureDrawn)) {
       toast({
         title: "Invalid Signature",
-        description: "Please enter your full name to sign the agreement.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const expectedName = `${investor.firstName} ${investor.lastName}`.toLowerCase();
-    const enteredName = signatureText.toLowerCase();
-    
-    if (!enteredName.includes(investor.firstName.toLowerCase()) || 
-        !enteredName.includes(investor.lastName.toLowerCase())) {
-      toast({
-        title: "Name Mismatch",
-        description: "Please enter your full name as registered in the system.",
+        description: "Please enter your full name or draw your signature.",
         variant: "destructive",
       });
       return;
@@ -82,17 +126,20 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // In real implementation, this would call the API to record the signature
-      selectedAgreement.status = "signed";
-      selectedAgreement.signedDate = new Date().toISOString().split('T')[0];
+      if (selectedAgreement) {
+        selectedAgreement.status = "signed";
+        selectedAgreement.signedDate = new Date().toISOString().split('T')[0];
+      }
       
       toast({
         title: "Agreement Signed Successfully",
-        description: `${selectedAgreement.title} has been digitally signed.`,
+        description: `${selectedAgreement?.title} has been digitally signed.`,
       });
       
       setIsDialogOpen(false);
       setSignatureText("");
       setSelectedAgreement(null);
+      clearSignature();
     } catch (error) {
       toast({
         title: "Signing Failed",
@@ -102,6 +149,37 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // Generate the exact agreement template format you specified
+  const generateAgreementContent = () => {
+    return `INVESTMENT PARTNERSHIP AGREEMENT
+
+This Investment Partnership Agreement ("Agreement") is entered into on ${currentDate} between:
+
+INVESTOR: ${investor.firstName} ${investor.lastName}
+EMAIL: ${investor.email || 'Not provided'}
+COMPANY: Your Investment Company
+
+INVESTMENT DETAILS:
+- Investment Amount: ₹${(totalInvestment / 100000).toFixed(0)},00,000
+- Investment Date: ${currentDate}
+- Maturity Date: ${maturityDateStr}
+- Interest Rate: 6-18% per annum
+- Agreement ID: ${agreementId}
+
+TERMS AND CONDITIONS:
+1. The investor agrees to invest the specified amount
+2. Interest will be paid annually as per the schedule
+3. Principal will be returned upon maturity
+4. This agreement is governed by applicable laws
+
+By signing below, both parties agree to the terms outlined in this agreement.
+
+_________________________________
+Investor Signature
+
+Date: _______________`;
   };
 
   const getStatusIcon = (status: string) => {
@@ -194,36 +272,79 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
                         Sign Now
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-md">
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
-                        <DialogTitle>Digital Signature</DialogTitle>
+                        <DialogTitle>Sign Agreement: {selectedAgreement?.title}</DialogTitle>
                       </DialogHeader>
-                      
-                      <div className="space-y-4">
-                        <div className="bg-blue-50 p-4 rounded-lg">
-                          <h4 className="font-medium text-blue-900 mb-1">
-                            {selectedAgreement?.title}
-                          </h4>
-                          <p className="text-sm text-blue-700">
-                            Agreement ID: {selectedAgreement?.id}
-                          </p>
+                      <div className="space-y-6">
+                        {/* Agreement Content */}
+                        <div className="bg-white border-2 border-gray-300 p-6 rounded-lg font-mono text-sm leading-relaxed">
+                          <pre className="whitespace-pre-wrap">
+                            {generateAgreementContent()}
+                          </pre>
                         </div>
                         
-                        <div>
-                          <Label htmlFor="signature" className="text-sm font-medium">
-                            Digital Signature *
-                          </Label>
-                          <Input
-                            id="signature"
-                            value={signatureText}
-                            onChange={(e) => setSignatureText(e.target.value)}
-                            placeholder="Type your full name as signature"
-                            className="mt-1"
-                            data-testid="input-signature"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Please type your full name: {investor.firstName} {investor.lastName}
-                          </p>
+                        {/* Signature Section */}
+                        <div className="space-y-4">
+                          <h4 className="font-semibold text-lg">Digital Signature</h4>
+                          
+                          {/* Text Signature */}
+                          <div>
+                            <Label htmlFor="signature" className="text-sm font-medium">
+                              Type Signature
+                            </Label>
+                            <Input
+                              id="signature"
+                              value={signatureText}
+                              onChange={(e) => setSignatureText(e.target.value)}
+                              placeholder="Type your full name as signature"
+                              className="mt-1"
+                              data-testid="input-signature"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Please type your full name: {investor.firstName} {investor.lastName}
+                            </p>
+                          </div>
+
+                          {/* OR Divider */}
+                          <div className="flex items-center gap-4">
+                            <div className="flex-1 h-px bg-gray-300"></div>
+                            <span className="text-sm text-gray-500 bg-white px-2">OR</span>
+                            <div className="flex-1 h-px bg-gray-300"></div>
+                          </div>
+
+                          {/* Canvas Signature */}
+                          <div>
+                            <Label className="text-sm font-medium">Draw Signature</Label>
+                            <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-2">
+                              <canvas
+                                ref={canvasRef}
+                                width={400}
+                                height={120}
+                                className="border border-gray-200 rounded cursor-crosshair w-full"
+                                onMouseDown={startDrawing}
+                                onMouseMove={draw}
+                                onMouseUp={stopDrawing}
+                                onMouseLeave={stopDrawing}
+                                style={{ touchAction: 'none' }}
+                              />
+                              <div className="flex justify-between items-center mt-2">
+                                <p className="text-xs text-gray-500">
+                                  Draw your signature in the box above
+                                </p>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={clearSignature}
+                                  className="text-xs"
+                                >
+                                  <X className="h-3 w-3 mr-1" />
+                                  Clear
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                         
                         <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded">
@@ -238,7 +359,7 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
                         <div className="flex gap-3 pt-4">
                           <Button
                             onClick={handleSign}
-                            disabled={isProcessing || !signatureText.trim()}
+                            disabled={isProcessing || (!signatureText.trim() && !signatureDrawn)}
                             className="flex-1"
                             data-testid="button-confirm-sign"
                           >
@@ -259,6 +380,7 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
                             onClick={() => {
                               setIsDialogOpen(false);
                               setSignatureText("");
+                              clearSignature();
                             }}
                             disabled={isProcessing}
                             data-testid="button-cancel-sign"
