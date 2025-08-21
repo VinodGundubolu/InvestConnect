@@ -424,36 +424,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const maturityDate = new Date();
     maturityDate.setFullYear(maturityDate.getFullYear() + 10);
     const maturityDateStr = maturityDate.toLocaleDateString('en-GB');
-    const agreementId = `AGR-${Date.now()}`;
+    const agreementId = `test-agreement-${Date.now()}`;
 
     return {
-      content: `INVESTMENT PARTNERSHIP AGREEMENT
-
-This Investment Partnership Agreement ("Agreement") is entered into on ${currentDate} between:
-
-INVESTOR: ${investor.firstName} ${investor.lastName}
-EMAIL: ${investor.email || 'Not provided'}
-COMPANY: Your Investment Company
-
-INVESTMENT DETAILS:
-- Investment Amount: ₹${(totalInvestment / 100000).toFixed(0)},00,000
-- Investment Date: ${currentDate}
-- Maturity Date: ${maturityDateStr}
-- Interest Rate: 6-18% per annum
-- Agreement ID: ${agreementId}
-
-TERMS AND CONDITIONS:
-1. The investor agrees to invest the specified amount
-2. Interest will be paid annually as per the schedule
-3. Principal will be returned upon maturity
-4. This agreement is governed by applicable laws
-
-By signing below, both parties agree to the terms outlined in this agreement.
-
-_________________________________
-Investor Signature
-
-Date: _______________`,
+      content: `INVESTMENT PARTNERSHIP AGREEMENT This Investment Partnership Agreement ("Agreement") is entered into on ${currentDate} between: INVESTOR: ${investor.firstName} ${investor.middleName ? investor.middleName + ' ' : ''}${investor.lastName} EMAIL: ${investor.email} COMPANY: Your Investment Company INVESTMENT DETAILS: - Investment Amount: ₹${(totalInvestment / 100000).toFixed(2)},00,000 - Investment Date: ${currentDate} - Maturity Date: ${maturityDateStr} - Interest Rate: 6-18% per annum - Agreement ID: ${agreementId} TERMS AND CONDITIONS: 1. The investor agrees to invest the specified amount 2. Interest will be paid annually as per the schedule 3. Principal will be returned upon maturity 4. This agreement is governed by applicable laws By signing below, both parties agree to the terms outlined in this agreement. _________________ Investor Signature Date: ______________`,
       agreementId
     };
   };
