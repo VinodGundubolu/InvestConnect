@@ -23,6 +23,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error("Error during auto-transaction processing:", error);
   }
 
+  // Create test investors in database for the new credentials
+  try {
+    const testInvestors = [
+      {
+        id: "4",
+        firstName: "Krishna",
+        lastName: "John", 
+        email: "krishna.john@example.com",
+        primaryMobile: "+91 98765 43211",
+        primaryAddress: "456 Test Street",
+        primaryAddressPin: "400002",
+        city: "Mumbai",
+        state: "Maharashtra",
+        zipcode: "400002",
+        identityProofType: "aadhar",
+        identityProofNumber: "4567-8901-2345",
+        proofType: "aadhar",
+        proofNumber: "4567-8901-2345",
+        status: "active"
+      },
+      {
+        id: "5", 
+        firstName: "Sid",
+        lastName: "Vid",
+        email: "sid.vid@example.com",
+        primaryMobile: "+91 98765 43212", 
+        primaryAddress: "789 Test Avenue",
+        primaryAddressPin: "400003",
+        city: "Mumbai", 
+        state: "Maharashtra",
+        zipcode: "400003",
+        identityProofType: "aadhar",
+        identityProofNumber: "7890-1234-5678",
+        proofType: "aadhar", 
+        proofNumber: "7890-1234-5678",
+        status: "active"
+      },
+      {
+        id: "6",
+        firstName: "Vinod", 
+        lastName: "Kumar",
+        email: "vk2615@example.com",
+        primaryMobile: "+91 98765 43213",
+        primaryAddress: "321 Test Road",
+        primaryAddressPin: "400004", 
+        city: "Mumbai",
+        state: "Maharashtra", 
+        zipcode: "400004",
+        identityProofType: "aadhar",
+        identityProofNumber: "3210-9876-5432", 
+        proofType: "aadhar",
+        proofNumber: "3210-9876-5432",
+        status: "active"
+      }
+    ];
+
+    for (const investorData of testInvestors) {
+      const existingInvestor = await storage.getInvestor(investorData.id);
+      if (!existingInvestor) {
+        try {
+          await storage.createInvestor(investorData);
+          console.log(`✓ Created test investor: ${investorData.firstName} ${investorData.lastName} (ID: ${investorData.id})`);
+        } catch (error) {
+          console.error(`✗ Failed to create investor ${investorData.id}:`, error);
+        }
+      } else {
+        console.log(`✓ Test investor already exists: ${existingInvestor.firstName} ${existingInvestor.lastName} (ID: ${investorData.id})`);
+      }
+    }
+  } catch (error) {
+    console.error("Error creating test investors:", error);
+  }
+
   // Test login route for demo credentials
   app.post('/api/test-login', async (req, res) => {
     try {
@@ -282,10 +355,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     phone: "+91 98765 43210"
   });
 
+  // Add the missing credentials you've been trying to use
+  addInvestorCredentials({
+    username: "krishna_john",
+    password: "KR2025",
+    investorId: "4",
+    email: "krishna.john@example.com",
+    phone: "+91 98765 43211"
+  });
+
+  addInvestorCredentials({
+    username: "sid_vid",
+    password: "SI2025", 
+    investorId: "5",
+    email: "sid.vid@example.com",
+    phone: "+91 98765 43212"
+  });
+
+  addInvestorCredentials({
+    username: "VK2615",
+    password: "VK2025",
+    investorId: "6", 
+    email: "vk2615@example.com",
+    phone: "+91 98765 43213"
+  });
+  
+  // Add credentials for the newly created investors via admin API
+  addInvestorCredentials({
+    username: "sid_vid",
+    password: "SI2025",
+    investorId: "331",
+    email: "sid.vid@example.com",
+    phone: "+91 98765 43212"
+  });
+  
+  addInvestorCredentials({
+    username: "vinod_kumar",
+    password: "VI2025",
+    investorId: "341", 
+    email: "vk2615@example.com",
+    phone: "+91 98765 43213"
+  });
+
   // Legacy credentials map for backward compatibility
   credentialsMap.set("nd_kumar", { username: "nd_kumar", password: "ND2025", investorId: "1" });
   credentialsMap.set("suresh_kumar", { username: "suresh_kumar", password: "SU2025", investorId: "2" });
   credentialsMap.set("suri_kumar", { username: "suri_kumar", password: "SU2025", investorId: "3" });
+  credentialsMap.set("krishna_john", { username: "krishna_john", password: "KR2025", investorId: "4" });
+  credentialsMap.set("sid_vid", { username: "sid_vid", password: "SI2025", investorId: "5" });
+  credentialsMap.set("VK2615", { username: "VK2615", password: "VK2025", investorId: "6" });
+  // Add credentials for newly created investors
+  credentialsMap.set("sid_vid", { username: "sid_vid", password: "SI2025", investorId: "331" });
+  credentialsMap.set("vinod_kumar", { username: "vinod_kumar", password: "VI2025", investorId: "341" });
 
   // Helper function to generate login credentials
   const generateCredentials = (firstName: string, lastName: string) => {
@@ -462,6 +583,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       investorId: data.investorId
     }));
     res.json(credentialsList);
+  });
+
+  // Debug endpoint to check enhanced credentials
+  app.get("/api/debug/enhanced-credentials", async (req, res) => {
+    const uniqueCredentials = new Map();
+    
+    // Get unique credentials by investorId
+    Array.from(enhancedCredentialsMap.entries()).forEach(([key, creds]) => {
+      if (!uniqueCredentials.has(creds.investorId)) {
+        uniqueCredentials.set(creds.investorId, {
+          username: creds.username,
+          password: creds.password,
+          investorId: creds.investorId,
+          email: creds.email,
+          phone: creds.phone,
+          identifiers: [key]
+        });
+      } else {
+        // Add this identifier to existing credential
+        uniqueCredentials.get(creds.investorId).identifiers.push(key);
+      }
+    });
+    
+    res.json(Array.from(uniqueCredentials.values()));
   });
 
   // Investor login API

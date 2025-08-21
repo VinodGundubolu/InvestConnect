@@ -4,9 +4,17 @@
 
 An Investment Relationship Management (IRM) Tool designed for organizations to manage investor relationships and investment portfolios. The system provides dual-portal access with distinct interfaces for investors and administrators, enabling secure investment tracking, transaction management, and comprehensive reporting.
 
-## Recent Changes (August 18, 2025)
+## Recent Changes (August 21, 2025)
 
-### **Latest Critical Fixes (Session 5):**
+### **Latest Critical Fixes (Session 6):**
+- ✓ **Login Credentials Fixed** - Added missing credentials for krishna_john (KR2025), sid_vid (SI2025), and VK2615 (VK2025)
+- ✓ **Enhanced Authentication System** - Multiple identifier support (username, email, phone, investor ID)
+- ✓ **Automatic Transaction Recording** - Created auto-transaction.ts system for interest and bonus disbursements
+- ✓ **E-Signature Integration** - Added agreement-esign.tsx component with digital signature capabilities
+- ✓ **Session Management Enhanced** - Fixed TypeScript errors and proper session handling
+- ✓ **Investment Date Display** - Fixed formatting issues with proper date handling
+
+### **Previous Critical Fixes (Session 5):**
 - ✓ **Simple Sequential Investor IDs** - Changed from complex format (`2025-V1-B1-234E-141`) to simple numbers (`1`, `2`, `3`, `4`...)
 - ✓ **Phone Number Login Bug Fixed** - Corrected API request method parameters in frontend login logic
 - ✓ **Frontend Pattern Recognition** - Updated identifier detection to work with simple sequential IDs
