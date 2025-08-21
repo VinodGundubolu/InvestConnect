@@ -26,97 +26,115 @@ export default function BondDetailDialog({ bond }: BondDetailProps) {
           <Eye className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Bond Details - {bond.id}</DialogTitle>
+      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto bg-white z-50">
+        <DialogHeader className="pb-4 border-b bg-white">
+          <DialogTitle className="text-xl font-semibold text-gray-900">
+            Bond Details - {bond.id}
+          </DialogTitle>
+          <p className="text-sm text-gray-600">Complete investment bond information</p>
         </DialogHeader>
         
-        <div className="space-y-6">
-          {/* Bond Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Bond Information</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600 font-medium">Bond ID</p>
-                <p className="text-lg font-semibold text-gray-900">{bond.id}</p>
+        <div className="space-y-8 mt-6 bg-white">
+          {/* Bond Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <div className="text-center">
+                <h3 className="text-sm font-medium text-blue-600 mb-2">BOND ID</h3>
+                <p className="text-lg font-bold text-blue-900 break-all">{bond.id}</p>
               </div>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600 font-medium">Bond Type</p>
-                <p className="text-lg font-semibold text-gray-900">Fixed Income Bond</p>
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+              <div className="text-center">
+                <h3 className="text-sm font-medium text-green-600 mb-2">INVESTOR</h3>
+                <p className="text-lg font-bold text-green-900">{bond.investorName}</p>
               </div>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600 font-medium">Investor Name</p>
-                <p className="text-lg font-semibold text-gray-900">{bond.investorName}</p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600 font-medium">Status</p>
-                <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+            </div>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+              <div className="text-center">
+                <h3 className="text-sm font-medium text-purple-600 mb-2">STATUS</h3>
+                <Badge className="bg-green-100 text-green-800 border-green-300 px-3 py-1">
                   {bond.status}
                 </Badge>
               </div>
+            </div>
+          </div>
+
+          {/* Financial Information */}
+          <Card className="border-2 border-gray-200">
+            <CardHeader className="bg-gray-50">
+              <CardTitle className="text-xl text-gray-800">Financial Details</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-600 mb-3">INVESTMENT AMOUNT</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {formatCurrency(bond.amount)}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-600 mb-3">UNITS PURCHASED</p>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {Math.floor(bond.amount / 2000000)} Unit{Math.floor(bond.amount / 2000000) !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-600 mb-3">CURRENT RATE</p>
+                  <p className="text-3xl font-bold text-purple-600">
+                    {bond.currentRate}%
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-600 mb-3">INVESTMENT YEAR</p>
+                  <p className="text-3xl font-bold text-orange-600">
+                    Year {bond.year}
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Financial Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Financial Details</CardTitle>
+          {/* Timeline Information */}
+          <Card className="border-2 border-gray-200">
+            <CardHeader className="bg-gray-50">
+              <CardTitle className="text-xl text-gray-800">Investment Timeline</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600 font-medium">Investment Amount</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {formatCurrency(bond.amount)}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600 font-medium">Units Purchased</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {Math.floor(bond.amount / 2000000)} Unit{Math.floor(bond.amount / 2000000) !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600 font-medium">Current Rate</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {bond.currentRate}%
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600 font-medium">Investment Year</p>
-                <p className="text-2xl font-bold text-orange-600">
-                  Year {bond.year}
-                </p>
+            <CardContent className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-600 mb-3">PURCHASE DATE</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {new Date(bond.purchaseDate).toLocaleDateString('en-IN', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-600 mb-3">MATURITY DATE</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {new Date(bond.maturityDate).toLocaleDateString('en-IN', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Investment Timeline</CardTitle>
+          {/* Bond Type Information */}
+          <Card className="border-2 border-gray-200">
+            <CardHeader className="bg-gray-50">
+              <CardTitle className="text-xl text-gray-800">Bond Information</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600 font-medium">Purchase Date</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {new Date(bond.purchaseDate).toLocaleDateString('en-IN', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600 font-medium">Maturity Date</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {new Date(bond.maturityDate).toLocaleDateString('en-IN', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </p>
+            <CardContent className="p-8">
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-600 mb-3">BOND TYPE</p>
+                <p className="text-xl font-semibold text-gray-900">Fixed Income Bond</p>
+                <p className="text-sm text-gray-500 mt-2">₹20 Lakh per unit investment vehicle</p>
               </div>
             </CardContent>
           </Card>
