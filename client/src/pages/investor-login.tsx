@@ -220,12 +220,21 @@ export default function InvestorLogin() {
           {/* Demo Credentials */}
           <Alert className="mt-4 bg-blue-50 border-blue-200">
             <AlertDescription className="text-sm text-blue-800">
-              <strong>Demo Account:</strong><br />
-              Email: suri.kumar@example.com<br />
-              Phone: +91 98765 43210<br />
-              Investor ID: 3<br />
-              Username: suri_kumar<br />
-              Password: SU2025
+              <strong>Working Demo Accounts:</strong><br />
+              <div className="mt-2 space-y-2">
+                <div className="bg-white/50 p-2 rounded border-l-2 border-blue-400">
+                  <strong>Account 1:</strong> krishna_john / KR2025
+                </div>
+                <div className="bg-white/50 p-2 rounded border-l-2 border-green-400">
+                  <strong>Account 2:</strong> sid_vid / SI2025
+                </div>
+                <div className="bg-white/50 p-2 rounded border-l-2 border-purple-400">
+                  <strong>Account 3:</strong> vinod_kumar / VI2025
+                </div>
+              </div>
+              <div className="mt-2 text-xs">
+                <em>Also supports: Email ID, Phone Number, and Investor ID login</em>
+              </div>
             </AlertDescription>
           </Alert>
         </CardContent>
