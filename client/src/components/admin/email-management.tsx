@@ -32,9 +32,8 @@ export default function EmailManagement({ investors }: EmailManagementProps) {
 
   const sendWelcomeEmailMutation = useMutation({
     mutationFn: async (investorId: string) => {
-      return await apiRequest(`/api/email/welcome/${investorId}`, {
-        method: 'POST',
-      });
+      const response = await apiRequest(`/api/email/welcome/${investorId}`, 'POST');
+      return await response.json();
     },
     onSuccess: (data, investorId) => {
       const investor = investors.find(inv => inv.id === investorId);
@@ -54,9 +53,8 @@ export default function EmailManagement({ investors }: EmailManagementProps) {
 
   const sendMonthlyReportMutation = useMutation({
     mutationFn: async (investorId: string) => {
-      return await apiRequest(`/api/email/monthly-report/${investorId}`, {
-        method: 'POST',
-      });
+      const response = await apiRequest(`/api/email/monthly-report/${investorId}`, 'POST');
+      return await response.json();
     },
     onSuccess: (data, investorId) => {
       const investor = investors.find(inv => inv.id === investorId);
@@ -76,11 +74,10 @@ export default function EmailManagement({ investors }: EmailManagementProps) {
 
   const sendAllMonthlyReportsMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/email/monthly-reports-all', {
-        method: 'POST',
-      });
+      const response = await apiRequest('/api/email/monthly-reports-all', 'POST');
+      return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setLastSentReports(new Date().toLocaleString());
       toast({
         title: "Monthly Reports Sent",
@@ -99,9 +96,8 @@ export default function EmailManagement({ investors }: EmailManagementProps) {
 
   const triggerSchedulerTestMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/email/test-scheduler', {
-        method: 'POST',
-      });
+      const response = await apiRequest('/api/email/test-scheduler', 'POST');
+      return await response.json();
     },
     onSuccess: () => {
       toast({
