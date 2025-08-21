@@ -73,6 +73,25 @@ An Investment Relationship Management (IRM) Tool designed for organizations to m
 
 Preferred communication style: Simple, everyday language.
 
+## Data Protection & Backup Strategy
+
+### **Code Safety Measures:**
+1. **Replit.md Documentation** - All major changes documented with session tracking
+2. **Automatic Checkpoints** - Replit creates automatic snapshots during development
+3. **Database Persistence** - PostgreSQL data remains intact across server restarts
+4. **Git Integration** - Project can be connected to personal GitHub repository for version control
+
+### **Recovery Options:**
+- **Checkpoint Rollback** - Use "View Checkpoints" button to restore to previous states
+- **Documentation Reference** - Replit.md contains complete feature implementation history
+- **Database Backup** - Critical data stored in persistent PostgreSQL database
+
+### **Change Verification:**
+- Always test functionality after server restarts
+- Check database contents using SQL queries
+- Verify API endpoints with proper authentication
+- Monitor console logs for system health
+
 ## System Architecture
 
 ### Frontend Architecture

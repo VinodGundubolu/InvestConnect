@@ -558,7 +558,7 @@ Date: _______________`,
         email,
         phone: mobileNumber,
         investorId: investorId,
-        investmentAmount: EmailTemplateEngine.formatCurrency(parseInt(investmentAmount)),
+        investmentAmount: parseInt(investmentAmount),
         bondUnits: bondsCount.toString(),
         investmentDate: new Date().toLocaleDateString('en-IN'),
         username,
@@ -1459,7 +1459,7 @@ Date: _______________`,
         for (const disbursement of sampleDisbursements) {
           const transaction = await storage.createTransaction({
             investmentId: disbursement.investmentId,
-            type: disbursement.type,
+            type: disbursement.type as "investment" | "dividend_disbursement" | "bonus_disbursement" | "maturity_disbursement",
             amount: disbursement.amount.toString(),
             transactionDate: disbursement.disbursementDate.toISOString().split('T')[0], // Convert to date string
             status: 'completed',
