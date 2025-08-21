@@ -220,20 +220,24 @@ export default function InvestorLogin() {
           {/* Demo Credentials */}
           <Alert className="mt-4 bg-blue-50 border-blue-200">
             <AlertDescription className="text-sm text-blue-800">
-              <strong>Working Demo Accounts:</strong><br />
+              <strong>Working Demo Accounts (Auto-Generated):</strong><br />
               <div className="mt-2 space-y-2">
                 <div className="bg-white/50 p-2 rounded border-l-2 border-blue-400">
                   <strong>Account 1:</strong> krishna_john / KR2025
                 </div>
                 <div className="bg-white/50 p-2 rounded border-l-2 border-green-400">
-                  <strong>Account 2:</strong> sid_vid / SI2025
+                  <strong>Account 2:</strong> ram_raju / RA2025
                 </div>
                 <div className="bg-white/50 p-2 rounded border-l-2 border-purple-400">
-                  <strong>Account 3:</strong> vinod_kumar / VI2025
+                  <strong>Account 3:</strong> vinodh_durga / VI2025
+                </div>
+                <div className="bg-white/50 p-2 rounded border-l-2 border-orange-400">
+                  <strong>Account 4:</strong> suresh_gun / SU2025
                 </div>
               </div>
               <div className="mt-2 text-xs">
-                <em>Also supports: Email ID, Phone Number, and Investor ID login</em>
+                <em>✅ All 39 investors now have auto-generated credentials!</em><br />
+                <em>Format: firstname_lastname / FL2025 | Supports Email/Phone/ID login</em>
               </div>
             </AlertDescription>
           </Alert>

@@ -23,78 +23,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error("Error during auto-transaction processing:", error);
   }
 
-  // Create test investors in database for the new credentials
-  try {
-    const testInvestors = [
-      {
-        id: "4",
-        firstName: "Krishna",
-        lastName: "John", 
-        email: "krishna.john@example.com",
-        primaryMobile: "+91 98765 43211",
-        primaryAddress: "456 Test Street",
-        primaryAddressPin: "400002",
-        city: "Mumbai",
-        state: "Maharashtra",
-        zipcode: "400002",
-        identityProofType: "aadhar",
-        identityProofNumber: "4567-8901-2345",
-        proofType: "aadhar",
-        proofNumber: "4567-8901-2345",
-        status: "active"
-      },
-      {
-        id: "5", 
-        firstName: "Sid",
-        lastName: "Vid",
-        email: "sid.vid@example.com",
-        primaryMobile: "+91 98765 43212", 
-        primaryAddress: "789 Test Avenue",
-        primaryAddressPin: "400003",
-        city: "Mumbai", 
-        state: "Maharashtra",
-        zipcode: "400003",
-        identityProofType: "aadhar",
-        identityProofNumber: "7890-1234-5678",
-        proofType: "aadhar", 
-        proofNumber: "7890-1234-5678",
-        status: "active"
-      },
-      {
-        id: "6",
-        firstName: "Vinod", 
-        lastName: "Kumar",
-        email: "vk2615@example.com",
-        primaryMobile: "+91 98765 43213",
-        primaryAddress: "321 Test Road",
-        primaryAddressPin: "400004", 
-        city: "Mumbai",
-        state: "Maharashtra", 
-        zipcode: "400004",
-        identityProofType: "aadhar",
-        identityProofNumber: "3210-9876-5432", 
-        proofType: "aadhar",
-        proofNumber: "3210-9876-5432",
-        status: "active"
-      }
-    ];
 
-    for (const investorData of testInvestors) {
-      const existingInvestor = await storage.getInvestor(investorData.id);
-      if (!existingInvestor) {
-        try {
-          await storage.createInvestor(investorData);
-          console.log(`✓ Created test investor: ${investorData.firstName} ${investorData.lastName} (ID: ${investorData.id})`);
-        } catch (error) {
-          console.error(`✗ Failed to create investor ${investorData.id}:`, error);
-        }
-      } else {
-        console.log(`✓ Test investor already exists: ${existingInvestor.firstName} ${existingInvestor.lastName} (ID: ${investorData.id})`);
-      }
-    }
-  } catch (error) {
-    console.error("Error creating test investors:", error);
-  }
 
   // Test login route for demo credentials
   app.post('/api/test-login', async (req, res) => {
@@ -407,6 +336,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add credentials for newly created investors
   credentialsMap.set("sid_vid", { username: "sid_vid", password: "SI2025", investorId: "331" });
   credentialsMap.set("vinod_kumar", { username: "vinod_kumar", password: "VI2025", investorId: "341" });
+
+  // Generate credentials for ALL existing investors automatically
+  (async () => {
+    try {
+      console.log("🔐 Generating credentials for all existing investors...");
+      
+      // Get all investors from database
+      const allInvestors = await storage.getAllInvestors();
+      console.log(`📊 Found ${allInvestors.length} investors in database`);
+
+      // Helper function to generate credentials like the admin API does
+      const generateInvestorCredentials = (firstName: string, lastName: string) => {
+        const username = `${firstName.toLowerCase().trim()}_${lastName.toLowerCase().trim()}`;
+        const password = `${firstName.toUpperCase().substring(0, 2)}${new Date().getFullYear()}`;
+        return { username, password };
+      };
+
+      let credentialsGenerated = 0;
+
+      for (const investor of allInvestors) {
+        // Generate credentials for this investor
+        const { username, password } = generateInvestorCredentials(investor.firstName, investor.lastName);
+        
+        // Check if credentials already exist
+        const existsInEnhanced = enhancedCredentialsMap.has(username) || enhancedCredentialsMap.has(investor.id);
+        const existsInLegacy = credentialsMap.has(username);
+
+        if (!existsInEnhanced && !existsInLegacy) {
+          // Add credentials to both systems
+          const credentials = {
+            username,
+            password,
+            investorId: investor.id,
+            email: investor.email || undefined,
+            phone: investor.primaryMobile || undefined
+          };
+
+          addInvestorCredentials(credentials);
+          credentialsMap.set(username, { username, password, investorId: investor.id });
+          
+          credentialsGenerated++;
+          console.log(`✓ Generated credentials for: ${investor.firstName} ${investor.lastName} (${username}/${password}) -> ID: ${investor.id}`);
+        } else {
+          console.log(`⚪ Credentials already exist for: ${investor.firstName} ${investor.lastName} (ID: ${investor.id})`);
+        }
+      }
+
+      console.log(`🎉 Generated ${credentialsGenerated} new credential pairs for existing investors!`);
+      console.log(`📈 Total credentials now available: ${Array.from(enhancedCredentialsMap.keys()).length}`);
+
+    } catch (error) {
+      console.error("❌ Error generating investor credentials:", error);
+    }
+  })();
 
   // Helper function to generate login credentials
   const generateCredentials = (firstName: string, lastName: string) => {
