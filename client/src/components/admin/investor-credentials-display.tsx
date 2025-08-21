@@ -14,14 +14,10 @@ interface InvestorCredentialsDisplayProps {
     bondsCount?: number;
     username?: string;
     password?: string;
-    investorId?: string;
-    phone?: string;
     investor?: {
-      id?: string;
       firstName: string;
       lastName: string;
       email: string;
-      primaryMobile?: string;
     };
   };
 }

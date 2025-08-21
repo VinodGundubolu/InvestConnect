@@ -71,16 +71,6 @@ export interface IStorage {
   // Dividend rates
   getDividendRates(): Promise<{ year: number; rate: string }[]>;
   initializeDividendRates(): Promise<void>;
-
-  // Agreement operations
-  getAgreementTemplate(id: string): Promise<any | undefined>;
-  createAgreementTemplate(template: any): Promise<any>;
-  getInvestorAgreement(id: string): Promise<any | undefined>;
-  createInvestorAgreement(agreement: any): Promise<any>;
-  updateInvestorAgreement(id: string, updates: any): Promise<any>;
-  getInvestorAgreements(investorId: string): Promise<any[]>;
-  getAllInvestorAgreements(): Promise<any[]>;
-  createAgreementAction(action: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -180,23 +170,6 @@ export class DatabaseStorage implements IStorage {
     return investor;
   }
 
-  async updateInvestor(id: string, updateData: Partial<InsertInvestor>): Promise<Investor> {
-    const [updatedInvestor] = await db
-      .update(investors)
-      .set({
-        ...updateData,
-        updatedAt: new Date()
-      })
-      .where(eq(investors.id, id))
-      .returning();
-    
-    if (!updatedInvestor) {
-      throw new Error(`Investor with id ${id} not found`);
-    }
-    
-    return updatedInvestor;
-  }
-
   async deleteInvestor(id: string): Promise<boolean> {
     try {
       // First delete all related investments
@@ -217,21 +190,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generateInvestorId(investorData: InsertInvestor): Promise<string> {
-    // Get the highest numeric ID from existing investors
-    const existingInvestors = await db
-      .select({ id: investors.id })
+    // Get total count of investors + 1 to get the next sequential number
+    const totalInvestors = await db
+      .select({ count: sql<number>`count(*)` })
       .from(investors);
     
-    // Filter and find the highest numeric ID
-    const numericIds = existingInvestors
-      .map(inv => inv.id)
-      .filter(id => /^\d+$/.test(id)) // Only pure numeric IDs
-      .map(id => parseInt(id))
-      .filter(id => !isNaN(id)); // Remove any NaN values
-    
-    // Get the next sequential number (start from 1 if no numeric IDs exist)
-    const highestId = numericIds.length > 0 ? Math.max(...numericIds) : 0;
-    const nextId = highestId + 1;
+    const nextId = (totalInvestors[0]?.count || 0) + 1;
     
     return nextId.toString();
   }
@@ -450,64 +414,6 @@ export class DatabaseStorage implements IStorage {
         .values(rate)
         .onConflictDoNothing();
     }
-  }
-
-  // Agreement operations
-  async getAgreementTemplate(id: string): Promise<any | undefined> {
-    const { agreementTemplates } = await import('@shared/agreement-schema');
-    const [template] = await db.select().from(agreementTemplates).where(eq(agreementTemplates.id, id));
-    return template;
-  }
-
-  async createAgreementTemplate(template: any): Promise<any> {
-    const { agreementTemplates } = await import('@shared/agreement-schema');
-    const [created] = await db.insert(agreementTemplates).values(template).returning();
-    return created;
-  }
-
-  async getInvestorAgreement(id: string): Promise<any | undefined> {
-    const { investorAgreements } = await import('@shared/agreement-schema');
-    const [agreement] = await db.select().from(investorAgreements).where(eq(investorAgreements.id, id));
-    return agreement;
-  }
-
-  async createInvestorAgreement(agreement: any): Promise<any> {
-    const { investorAgreements } = await import('@shared/agreement-schema');
-    const [created] = await db.insert(investorAgreements).values(agreement).returning();
-    return created;
-  }
-
-  async updateInvestorAgreement(id: string, updates: any): Promise<any> {
-    const { investorAgreements } = await import('@shared/agreement-schema');
-    const [updated] = await db
-      .update(investorAgreements)
-      .set(updates)
-      .where(eq(investorAgreements.id, id))
-      .returning();
-    return updated;
-  }
-
-  async getInvestorAgreements(investorId: string): Promise<any[]> {
-    const { investorAgreements } = await import('@shared/agreement-schema');
-    return await db
-      .select()
-      .from(investorAgreements)
-      .where(eq(investorAgreements.investorId, investorId))
-      .orderBy(desc(investorAgreements.createdAt));
-  }
-
-  async getAllInvestorAgreements(): Promise<any[]> {
-    const { investorAgreements } = await import('@shared/agreement-schema');
-    return await db
-      .select()
-      .from(investorAgreements)
-      .orderBy(desc(investorAgreements.createdAt));
-  }
-
-  async createAgreementAction(action: any): Promise<any> {
-    const { agreementActions } = await import('@shared/agreement-schema');
-    const [created] = await db.insert(agreementActions).values(action).returning();
-    return created;
   }
 }
 

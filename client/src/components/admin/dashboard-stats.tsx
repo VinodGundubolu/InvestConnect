@@ -76,78 +76,46 @@ export default function DashboardStats() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {/* Total Investment - Blue to Purple gradient */}
-      <Card className="bg-white border border-gray-200 shadow-lg overflow-hidden relative">
-        <div className="h-1 bg-gradient-to-r from-blue-500 to-purple-600"></div>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="h-4 w-4 text-blue-600" />
-            </div>
-            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">ACTIVE</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900 mb-1">
-            {formatCurrency(stats.totalInvestment)}
-          </p>
-          <p className="text-sm font-medium text-gray-600 mb-1">TOTAL INVESTMENT</p>
-          <p className="text-xs text-gray-500">Portfolio Value</p>
-        </CardContent>
-      </Card>
-
-      {/* Active Investors - Green gradient */}
-      <Card className="bg-white border border-gray-200 shadow-lg overflow-hidden relative">
-        <div className="h-1 bg-gradient-to-r from-green-500 to-blue-600"></div>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
-              <Users className="h-4 w-4 text-green-600" />
-            </div>
-            <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full">VERIFIED</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900 mb-1">
-            {stats.activeInvestors}
-          </p>
-          <p className="text-sm font-medium text-gray-600 mb-1">ACTIVE INVESTORS</p>
-          <p className="text-xs text-gray-500">Verified Profiles</p>
-        </CardContent>
-      </Card>
-
-      {/* Investment Bonds - Purple gradient */}
-      <Card className="bg-white border border-gray-200 shadow-lg overflow-hidden relative">
-        <div className="h-1 bg-gradient-to-r from-purple-500 to-pink-600"></div>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center">
-              <CreditCard className="h-4 w-4 text-purple-600" />
-            </div>
-            <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">UNITS</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900 mb-1">
-            {stats.totalBonds}
-          </p>
-          <p className="text-sm font-medium text-gray-600 mb-1">INVESTMENT BONDS</p>
-          <p className="text-xs text-gray-500">₹20L Each Unit</p>
-        </CardContent>
-      </Card>
-
-      {/* Today's Interest - Orange gradient */}
-      <Card className="bg-white border border-gray-200 shadow-lg overflow-hidden relative">
-        <div className="h-1 bg-gradient-to-r from-orange-500 to-red-600"></div>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="h-8 w-8 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Percent className="h-4 w-4 text-orange-600" />
-            </div>
-            <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-1 rounded-full">DAILY</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900 mb-1">
-            {formatCurrency(stats.todayInterest)}
-          </p>
-          <p className="text-sm font-medium text-gray-600 mb-1">TODAY'S INTEREST</p>
-          <p className="text-xs text-gray-500">Interest Accrual</p>
-        </CardContent>
-      </Card>
+    <div className="grid-modern grid-4 fade-in">
+      <div className="stats-card-modern">
+        <div className="flex items-center justify-between mb-4">
+          <TrendingUp className="w-8 h-8 text-blue-500" />
+          <span className="badge-primary">Active</span>
+        </div>
+        <div className="stats-value">{formatCurrency(stats.totalInvestment)}</div>
+        <div className="stats-label">Total Investment</div>
+        <p className="text-sm text-gray-500 mt-2">Portfolio Value</p>
+      </div>
+      
+      <div className="stats-card-modern">
+        <div className="flex items-center justify-between mb-4">
+          <Users className="w-8 h-8 text-green-500" />
+          <span className="badge-success">Verified</span>
+        </div>
+        <div className="stats-value">{stats.activeInvestors}</div>
+        <div className="stats-label">Active Investors</div>
+        <p className="text-sm text-gray-500 mt-2">Verified Profiles</p>
+      </div>
+      
+      <div className="stats-card-modern">
+        <div className="flex items-center justify-between mb-4">
+          <CreditCard className="w-8 h-8 text-purple-500" />
+          <span className="badge-primary">Units</span>
+        </div>
+        <div className="stats-value">{stats.totalBonds}</div>
+        <div className="stats-label">Investment Bonds</div>
+        <p className="text-sm text-gray-500 mt-2">₹20L Each Unit</p>
+      </div>
+      
+      <div className="stats-card-modern">
+        <div className="flex items-center justify-between mb-4">
+          <Percent className="w-8 h-8 text-orange-500" />
+          <span className="badge-success">Daily</span>
+        </div>
+        <div className="stats-value">₹{stats.todayInterest.toLocaleString('en-IN')}</div>
+        <div className="stats-label">Today's Interest</div>
+        <p className="text-sm text-gray-500 mt-2">Interest Accrual</p>
+      </div>
     </div>
   );
 }

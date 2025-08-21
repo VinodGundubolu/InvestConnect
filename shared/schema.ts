@@ -59,21 +59,6 @@ export const investmentPlans = pgTable("investment_plans", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Investor Login Credentials - stores all login methods and passwords
-export const investorCredentials = pgTable("investor_credentials", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  investorId: varchar("investor_id").notNull(),
-  username: varchar("username").notNull().unique(),
-  password: varchar("password").notNull(),
-  email: varchar("email"),
-  phone: varchar("phone"),
-  isActive: boolean("is_active").notNull().default(true),
-  lastLoginAt: timestamp("last_login_at"),
-  passwordChangedAt: timestamp("password_changed_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 // Investors
 export const investors = pgTable("investors", {
   id: varchar("id").primaryKey(), // Auto-generated ID following the formula
@@ -201,13 +186,6 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
   }),
 }));
 
-export const investorCredentialsRelations = relations(investorCredentials, ({ one }) => ({
-  investor: one(investors, {
-    fields: [investorCredentials.investorId],
-    references: [investors.id],
-  }),
-}));
-
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -241,18 +219,9 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
   updatedAt: true,
 });
 
-export const insertInvestorCredentialsSchema = createInsertSchema(investorCredentials).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
-
-// Import agreement schemas
-export * from './agreement-schema';
 export type Investor = typeof investors.$inferSelect;
 export type InsertInvestor = z.infer<typeof insertInvestorSchema>;
 export type Investment = typeof investments.$inferSelect;
@@ -261,8 +230,6 @@ export type InvestmentPlan = typeof investmentPlans.$inferSelect;
 export type InsertInvestmentPlan = z.infer<typeof insertInvestmentPlanSchema>;
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
-export type InvestorCredentials = typeof investorCredentials.$inferSelect;
-export type InsertInvestorCredentials = z.infer<typeof insertInvestorCredentialsSchema>;
 
 // Extended types for API responses
 export type InvestorWithInvestments = Investor & {

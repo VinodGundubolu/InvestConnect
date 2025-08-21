@@ -4,68 +4,7 @@
 
 An Investment Relationship Management (IRM) Tool designed for organizations to manage investor relationships and investment portfolios. The system provides dual-portal access with distinct interfaces for investors and administrators, enabling secure investment tracking, transaction management, and comprehensive reporting.
 
-## Recent Changes (August 21, 2025)
-
-### **Latest SMTP2GO Email Integration (Session 11):**
-- ✓ **SMTP2GO Integration Complete** - Migrated from SendGrid to SMTP2GO for cost-effective email delivery
-- ✓ **Free Tier Benefits** - 1,000 emails/month free tier perfect for 100 investors (covers years of usage)
-- ✓ **Nodemailer Implementation** - Professional SMTP integration with proper error handling and configuration
-- ✓ **Flexible Email Configuration** - Environment-based sender email configuration for easy testing and production setup
-- ✓ **Seamless Migration Path** - Easy transition from personal testing account to company production account
-- ✓ **Testing Framework** - Created comprehensive test scripts for email functionality verification
-- ✓ **Documentation Created** - Complete setup guide for both testing and production configurations
-- ✓ **Cost Optimization** - Reduced email costs from $19.95/month (SendGrid) to FREE (SMTP2GO)
-- ✓ **Package Migration** - Removed SendGrid dependency, added Nodemailer for SMTP integration
-
-### **Previous Merge Fields Enhancement & Testing (Session 10):**
-- ✓ **Comprehensive Merge Fields System** - Created extensive merge field library with 30+ placeholders for dynamic content
-- ✓ **Investment Agreement Personalization** - Enhanced agreement templates with detailed investor, company, and investment data
-- ✓ **Email Template Enhancement** - Upgraded both welcome and agreement notification emails with rich merge field support
-- ✓ **Professional Email Design** - Modern HTML email templates with responsive design and professional styling
-- ✓ **Dynamic Data Population** - Automatic replacement of placeholders like {{investorName}}, {{investmentAmount}}, {{companyInfo}}
-- ✓ **Agreement Template Overhaul** - Comprehensive legal agreement template with detailed terms, conditions, and compliance information
-- ✓ **Enhanced Signature Confirmation** - Rich confirmation emails with investment summary and next steps
-- ✓ **Company Branding Integration** - Professional company information display across all communications
-- ✓ **Legal Compliance Fields** - Comprehensive legal terms, jurisdiction, and regulatory compliance information
-
-### **Previous Architectural Upgrade (Session 9):**
-- ✓ **Database-Backed Authentication System** - Migrated from in-memory credential maps to persistent PostgreSQL storage
-- ✓ **Credential Service Implementation** - Built comprehensive credentialsService for database credential management
-- ✓ **Permanent Credential Storage** - All login credentials now persist in `investor_credentials` table
-- ✓ **Universal Login Database Integration** - Updated all authentication endpoints to use database instead of memory
-- ✓ **Password Change Persistence** - Password updates now save permanently to database
-- ✓ **Credential Migration Complete** - Successfully migrated all 5 test credentials (nd_kumar, suresh_kumar, suri_kumar, sid_vid, vinodh_durga)
-- ✓ **Auto-Initialization System** - Database credentials automatically initialized on server startup
-- ✓ **Code Cleanup** - Removed obsolete in-memory credential maps and legacy authentication code
-
-### **Previous Fixes (Session 8):**
-- ✓ **Agreement Auto-Generation Fixed** - Investment agreements now automatically created when new investors are added
-- ✓ **Sequential Investor ID System** - Fixed ID generation to use proper sequential numbering (222, 223, 224...)
-- ✓ **Authentication Mapping** - Fixed credential mapping for new investor logins
-- ✓ **Agreement Service Integration** - Proper function exports and error handling for agreement generation
-- ✓ **Database ID Consistency** - Only considers numeric IDs for sequential numbering, ignoring legacy UUID formats
-
-### **Previous Digital Agreement System Implementation (Session 7):**
-- ✓ **Digital Agreement Generation** - Comprehensive agreement templates with investor-specific personalization
-- ✓ **E-signature Functionality** - HTML5 canvas-based digital signature capture with legal compliance
-- ✓ **Automated Agreement Delivery** - Investment agreements automatically sent when new investors are created
-- ✓ **Agreement Signing Interface** - Professional agreement review and signing page with validation
-- ✓ **Agreement Status Tracking** - Complete agreement lifecycle management (pending, signed, expired, rejected)
-- ✓ **Email Integration** - Agreement notifications and confirmations via existing email system
-- ✓ **Investor Agreement Portal** - Dedicated agreements section in investor portal for management
-- ✓ **Admin Agreement Management** - Administrative controls for sending, resending, and tracking agreements
-- ✓ **Legal Compliance Features** - IP address logging, user agent tracking, and signature timestamps
-- ✓ **Document Security** - Agreement content hash verification and digital integrity protection
-
-### **Previous Email System Implementation (Session 6):**
-- ✓ **Automated Email Notifications** - Implemented comprehensive SendGrid-based email system
-- ✓ **Monthly Progress Reports** - Personalized monthly investment reports with detailed portfolio summaries
-- ✓ **Welcome Email Automation** - Automatic welcome emails sent to new investors upon registration
-- ✓ **Email Scheduler** - Automated monthly report delivery on 1st of each month at 9:00 AM
-- ✓ **Admin Email Management** - Complete email management interface in admin portal
-- ✓ **Individual & Bulk Operations** - Send emails to specific investors or all investors at once
-- ✓ **Email Templates** - Professional HTML email templates with personalized investment data
-- ✓ **Scheduler Testing** - Manual trigger functionality for testing email automation
+## Recent Changes (August 18, 2025)
 
 ### **Latest Critical Fixes (Session 5):**
 - ✓ **Simple Sequential Investor IDs** - Changed from complex format (`2025-V1-B1-234E-141`) to simple numbers (`1`, `2`, `3`, `4`...)
@@ -153,7 +92,6 @@ Preferred communication style: Simple, everyday language.
 - **Investment Tracking**: Individual investment records with maturity dates and amounts
 - **Transaction System**: Complete audit trail of all financial transactions
 - **Dividend Management**: Configurable dividend rates by year and investment type
-- **Agreement System**: Digital agreement templates, investor agreements, and signature tracking with full audit trail
 
 ### Security Features
 - **Data Isolation**: Investors can only access their own data

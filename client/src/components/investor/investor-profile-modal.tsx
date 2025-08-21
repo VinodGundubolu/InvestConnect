@@ -37,9 +37,6 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
     secondaryMobile: investor.secondaryMobile || "",
     primaryAddress: investor.primaryAddress || "",
     secondaryAddress: investor.secondaryAddress || "",
-    city: investor.city || "",
-    state: investor.state || "",
-    zipcode: investor.zipcode || "",
   });
 
   const updateProfileMutation = useMutation({
@@ -88,9 +85,6 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
       secondaryMobile: investor.secondaryMobile || "",
       primaryAddress: investor.primaryAddress || "",
       secondaryAddress: investor.secondaryAddress || "",
-      city: investor.city || "",
-      state: investor.state || "",
-      zipcode: investor.zipcode || "",
     });
     setEditMode(false);
   };
@@ -310,80 +304,6 @@ export default function InvestorProfileModal({ isOpen, onClose, investor }: Inve
                     </div>
                   </div>
                 )}
-              </div>
-
-              <Separator />
-
-              {/* Add State, City, and Zip Code Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="city" className="text-sm font-medium text-gray-700">
-                    City
-                  </Label>
-                  {editMode ? (
-                    <Input
-                      id="city"
-                      value={formData.city || ''}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      className="mt-1"
-                      placeholder="Enter city"
-                      data-testid="input-city"
-                    />
-                  ) : (
-                    <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>{investor.city || "Not provided"}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="state" className="text-sm font-medium text-gray-700">
-                    State
-                  </Label>
-                  {editMode ? (
-                    <Input
-                      id="state"
-                      value={formData.state || ''}
-                      onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                      className="mt-1"
-                      placeholder="Enter state"
-                      data-testid="input-state"
-                    />
-                  ) : (
-                    <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>{investor.state || "Not provided"}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="zipcode" className="text-sm font-medium text-gray-700">
-                    Zip Code
-                  </Label>
-                  {editMode ? (
-                    <Input
-                      id="zipcode"
-                      value={formData.zipcode || ''}
-                      onChange={(e) => setFormData({ ...formData, zipcode: e.target.value })}
-                      className="mt-1"
-                      placeholder="Enter zip code"
-                      data-testid="input-zipcode"
-                    />
-                  ) : (
-                    <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>{investor.zipcode || "Not provided"}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
 
               {editMode && (

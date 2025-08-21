@@ -6,8 +6,6 @@ import { EmailTemplateEngine, type EmailMergeFields } from "./email-templates";
 import { insertInvestorSchema, insertInvestmentSchema, insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 import { InterestDisbursementEngine, type InterestCalculation } from './interest-disbursement';
-import { initializeEmailScheduler, emailScheduler } from './scheduler';
-import { credentialsService } from './credentials-service';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -15,12 +13,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Initialize dividend rates
   await storage.initializeDividendRates();
-
-  // Initialize email scheduler for automated monthly reports
-  initializeEmailScheduler();
-
-  // Initialize database credentials from existing test data
-  await credentialsService.initializeTestCredentials();
 
   // Test login route for demo credentials
   app.post('/api/test-login', async (req, res) => {
@@ -125,23 +117,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin API routes
-  // Get detailed investor information
-  app.get("/api/admin/investor-details/:id", async (req, res) => {
-    try {
-      const investorId = req.params.id;
-      const investor = await storage.getInvestorWithInvestments(investorId);
-      
-      if (!investor) {
-        return res.status(404).json({ message: "Investor not found" });
-      }
-
-      res.json(investor);
-    } catch (error) {
-      console.error("Error fetching investor details:", error);
-      res.status(500).json({ message: "Failed to fetch investor details" });
-    }
-  });
-
   app.get("/api/admin/investor-portfolio", async (req, res) => {
     try {
       // Get real investor and investment data from database
@@ -179,14 +154,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return {
           id: investor.id,
           name: `${investor.firstName} ${investor.lastName}`,
-          aadhar: `****-****-${investor.identityProofNumber?.slice(-4) || '0000'}`,
-          totalInvestment,
+          investment: totalInvestment,
           bonds: totalBonds,
-          dailyInterest: todayInterest,
-          totalReturns: totalInvestment * (rate / 100) * currentYear,
-          maturityStatus: `Year ${currentYear}`,
-          year: currentYear,
-          bondMaturityProgress: `${Math.min(100, (currentYear / 10) * 100)}%`
+          currentYear,
+          rate,
+          todayInterest
         };
       });
       
@@ -245,25 +217,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // All credentials are now managed by the database-backed credentialsService
-  // The credentialsService automatically initializes existing test credentials on startup
+  // Store for temporary credentials mapping (will be replaced with database)
+  const credentialsMap = new Map<string, { username: string; password: string; investorId: string }>();
 
-  // Helper function to generate unique login credentials
-  const generateCredentials = async (firstName: string, lastName: string) => {
-    const baseUsername = `${firstName.toLowerCase().trim()}_${lastName.toLowerCase().trim()}`;
-    let username = baseUsername;
-    let counter = 1;
-    
-    // Check for uniqueness and add counter if needed
-    while (true) {
-      const existing = await credentialsService.getCredentialsByIdentifier(username);
-      if (!existing) {
-        break;
-      }
-      username = `${baseUsername}_${counter}`;
-      counter++;
+  // Enhanced credentials mapping with multiple identifier support
+  interface InvestorCredentials {
+    username: string;
+    password: string;
+    investorId: string;
+    email?: string;
+    phone?: string;
+  }
+
+  // Store for enhanced credentials mapping
+  const enhancedCredentialsMap = new Map<string, InvestorCredentials>();
+
+  // Add test credentials for existing investors with multiple identifiers
+  const addInvestorCredentials = (creds: InvestorCredentials) => {
+    // Store by username
+    enhancedCredentialsMap.set(creds.username, creds);
+    // Store by investor ID
+    enhancedCredentialsMap.set(creds.investorId, creds);
+    // Store by email if provided
+    if (creds.email) {
+      enhancedCredentialsMap.set(creds.email, creds);
     }
-    
+    // Store by phone if provided  
+    if (creds.phone) {
+      enhancedCredentialsMap.set(creds.phone, creds);
+    }
+  };
+
+  // Add test credentials with simple sequential investor IDs
+  addInvestorCredentials({
+    username: "nd_kumar",
+    password: "ND2025", 
+    investorId: "1",
+    email: "nd.kumar@example.com",
+    phone: "+91 98765 43209"
+  });
+  
+  addInvestorCredentials({
+    username: "suresh_kumar",
+    password: "SU2025",
+    investorId: "2", 
+    email: "suresh.kumar@example.com",
+    phone: "+91 98765 43208"
+  });
+  
+  addInvestorCredentials({
+    username: "suri_kumar",
+    password: "SU2025",
+    investorId: "3",
+    email: "suri.kumar@example.com", 
+    phone: "+91 98765 43210"
+  });
+
+  // Legacy credentials map for backward compatibility
+  credentialsMap.set("nd_kumar", { username: "nd_kumar", password: "ND2025", investorId: "1" });
+  credentialsMap.set("suresh_kumar", { username: "suresh_kumar", password: "SU2025", investorId: "2" });
+  credentialsMap.set("suri_kumar", { username: "suri_kumar", password: "SU2025", investorId: "3" });
+
+  // Helper function to generate login credentials
+  const generateCredentials = (firstName: string, lastName: string) => {
+    const username = `${firstName.toLowerCase().trim()}_${lastName.toLowerCase().trim()}`;
     const password = `${firstName.toUpperCase().substring(0, 2)}${new Date().getFullYear()}`;
     return { username, password };
   };
@@ -289,7 +306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = req.body;
 
       // Generate unique credentials
-      const { username, password } = await generateCredentials(firstName, lastName);
+      const { username, password } = generateCredentials(firstName, lastName);
       const investorId = await storage.generateInvestorId({
         firstName,
         lastName,
@@ -301,8 +318,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         identityProofNumber: proofNumber
       });
 
-      // Store credentials in database for persistent login
-      await credentialsService.upsertCredentials({
+      // Store credentials in map for login (both maps for compatibility)
+      credentialsMap.set(username, { username, password, investorId });
+      addInvestorCredentials({
         username,
         password,
         investorId,
@@ -360,8 +378,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maturityDate: maturityDate.toISOString().split('T')[0],
       });
 
-      // Credentials are now stored in database via credentialsService
-      console.log('Credentials stored in database for:', username);
+      // Store credentials mapping for login
+      credentialsMap.set(username, { username, password, investorId });
 
       console.log('New investor created in database:', investor);
 
@@ -411,25 +429,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🚨'.repeat(20));
       console.log('\n'.repeat(2));
 
-      // Generate investment agreement automatically
-      try {
-        const agreementService = await import('./agreementService');
-        await agreementService.generateInvestmentAgreement(investorId);
-        console.log(`✅ Investment agreement generated for investor ${investorId}`);
-      } catch (agreementError) {
-        console.error('❌ Failed to generate investment agreement:', agreementError);
-        // Don't fail the investor creation if agreement generation fails
-      }
-
       res.json({
         success: true,
         investor,
         username,
         password,
-        investorId,
         investmentAmount: parseInt(investmentAmount),
         bondsCount: parseInt(bondsCount),
-        phone: mobileNumber,
         message: "Investor created successfully with login credentials sent to admin email"
       });
 
@@ -441,18 +447,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Debug endpoint to check credentials (remove in production)
   app.get("/api/debug/credentials", async (req, res) => {
-    try {
-      const credentials = await credentialsService.getAllCredentials();
-      const credentialsList = credentials.map((cred) => ({
-        username: cred.username,
-        password: cred.password,
-        investorId: cred.investorId
-      }));
-      res.json(credentialsList);
-    } catch (error) {
-      console.error("Error fetching credentials:", error);
-      res.status(500).json({ message: "Failed to fetch credentials" });
-    }
+    const credentialsList = Array.from(credentialsMap.entries()).map(([username, data]) => ({
+      username,
+      password: data.password,
+      investorId: data.investorId
+    }));
+    res.json(credentialsList);
   });
 
   // Investor login API
@@ -465,10 +465,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Identifier and password are required" });
       }
 
-      // Validate credentials using database-backed service
-      const credentials = await credentialsService.validateCredentials(identifier, password);
+      // Check enhanced credentials map for any identifier type
+      const credentials = enhancedCredentialsMap.get(identifier);
       
-      if (!credentials) {
+      if (!credentials || credentials.password !== password) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
@@ -520,19 +520,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
-      // Get current credentials from database
-      const currentCredentials = await credentialsService.getCredentialsByInvestorId(investorId);
+      // Find current credentials
+      let currentCredentials: InvestorCredentials | undefined;
+      for (const [key, creds] of enhancedCredentialsMap.entries()) {
+        if (creds.investorId === investorId) {
+          currentCredentials = creds;
+          break;
+        }
+      }
 
       if (!currentCredentials || currentCredentials.password !== currentPassword) {
         return res.status(401).json({ message: "Current password is incorrect" });
       }
 
-      // Update password in database
-      const success = await credentialsService.updatePassword(investorId, newPassword);
-      
-      if (!success) {
-        return res.status(500).json({ message: "Failed to update password" });
+      // Update password in all credential maps
+      const updatedCredentials: InvestorCredentials = {
+        ...currentCredentials,
+        password: newPassword
+      };
+
+      // Remove old entries
+      enhancedCredentialsMap.delete(currentCredentials.username);
+      enhancedCredentialsMap.delete(currentCredentials.investorId);
+      if (currentCredentials.email) {
+        enhancedCredentialsMap.delete(currentCredentials.email);
       }
+      if (currentCredentials.phone) {
+        enhancedCredentialsMap.delete(currentCredentials.phone);
+      }
+
+      // Add updated entries
+      addInvestorCredentials(updatedCredentials);
+
+      // Update legacy map
+      credentialsMap.set(currentCredentials.username, {
+        username: currentCredentials.username,
+        password: newPassword,
+        investorId: currentCredentials.investorId
+      });
 
       res.json({ success: true, message: "Password updated successfully" });
     } catch (error) {
@@ -939,45 +964,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (user.role === "admin") {
-        // Admin can see all investments with enhanced data for bond management
-        const allInvestments = await storage.getAllInvestments();
-        const allInvestors = await storage.getAllInvestors();
-        
-        // Transform investments data for bond management view
-        const investmentsData = allInvestments.map(investment => {
-          // Calculate current year based on investment date
-          const investmentDate = new Date(investment.investmentDate);
-          const currentDate = new Date();
-          const yearsSince = Math.floor((currentDate.getTime() - investmentDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-          const currentYear = Math.max(1, yearsSince + 1);
-          
-          // Calculate current rate based on year
-          let currentRate = 0;
-          if (currentYear === 1) currentRate = 0;
-          else if (currentYear === 2) currentRate = 6;
-          else if (currentYear === 3) currentRate = 9;
-          else if (currentYear === 4) currentRate = 12;
-          else currentRate = 18;
-          
-          // Get investor name from ID
-          const investor = allInvestors.find(inv => inv.id === investment.investorId);
-          const investorName = investor ? `${investor.firstName} ${investor.lastName}` : "Unknown Investor";
-          
-          return {
-            id: investment.id,
-            investorName,
-            bondType: "Fixed Income Bond",
-            amount: parseFloat(investment.investedAmount),
-            purchaseDate: investment.investmentDate,
-            maturityDate: investment.maturityDate,
-            currentRate,
-            status: investment.isActive ? "Active" : "Inactive",
-            year: currentYear,
-            bondsPurchased: investment.bondsPurchased
-          };
-        });
-        
-        res.json(investmentsData);
+        // Admin can see all investments
+        const investments = await storage.getAllInvestments();
+        res.json(investments);
       } else {
         // Investor can only see their own investments
         const investor = await storage.getInvestorByUserId(userId);
@@ -1116,46 +1105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const investors = await storage.getAllInvestors();
-      const investments = await storage.getAllInvestments();
-      
-      // Transform investor data with investment details
-      const enhancedInvestors = investors.map(investor => {
-        const investorInvestments = investments.filter(inv => inv.investorId === investor.id);
-        const totalInvestment = investorInvestments.reduce((sum, inv) => sum + parseFloat(inv.investedAmount), 0);
-        const bondsCount = investorInvestments.reduce((sum, inv) => sum + inv.bondsPurchased, 0);
-        
-        // Calculate current year and rate
-        let currentYear = 1;
-        if (investorInvestments.length > 0) {
-          const firstInvestment = investorInvestments[0];
-          const yearsSince = Math.floor((new Date().getTime() - new Date(firstInvestment.investmentDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-          currentYear = Math.max(1, yearsSince + 1);
-        }
-        
-        let currentRate = 0;
-        if (currentYear === 2) currentRate = 6;
-        else if (currentYear === 3) currentRate = 9;
-        else if (currentYear === 4) currentRate = 12;
-        else if (currentYear >= 5) currentRate = 18;
-        
-        const totalReturns = totalInvestment * (currentRate / 100) * currentYear;
-        
-        return {
-          ...investor,
-          name: `${investor.firstName} ${investor.lastName}`,
-          phone: investor.primaryMobile,
-          totalInvestment,
-          bondsCount,
-          currentYear,
-          currentRate,
-          totalReturns,
-          status: "Active",
-          investmentStartDate: investorInvestments.length > 0 ? investorInvestments[0].investmentDate : investor.createdAt,
-          maturityDate: investorInvestments.length > 0 ? investorInvestments[0].maturityDate : "TBD"
-        };
-      });
-      
-      res.json(enhancedInvestors);
+      res.json(investors);
     } catch (error) {
       console.error("Error fetching investors:", error);
       res.status(500).json({ message: "Failed to fetch investors" });
@@ -1177,26 +1127,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating investor:", error);
       res.status(500).json({ message: "Failed to create investor" });
-    }
-  });
-
-  app.put('/api/admin/investors/:id', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ message: "Unauthorized" });
-      }
-
-      const investorId = req.params.id;
-      const updateData = req.body;
-      
-      const updatedInvestor = await storage.updateInvestor(investorId, updateData);
-      res.json(updatedInvestor);
-    } catch (error) {
-      console.error("Error updating investor:", error);
-      res.status(500).json({ message: "Failed to update investor" });
     }
   });
 
@@ -1393,358 +1323,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error calculating interest details:", error);
       res.status(500).json({ message: "Failed to calculate interest details" });
-    }
-  });
-
-  // Email notification routes
-  app.post('/api/email/welcome/:investorId', isAuthenticated, async (req, res) => {
-    try {
-      const { investorId } = req.params;
-      const investor = await storage.getInvestor(investorId);
-      
-      if (!investor) {
-        return res.status(404).json({ message: 'Investor not found' });
-      }
-
-      const { sendWelcomeEmail } = await import('./emailService');
-      const success = await sendWelcomeEmail(investor);
-      
-      if (success) {
-        res.json({ success: true, message: 'Welcome email sent successfully' });
-      } else {
-        res.status(500).json({ success: false, message: 'Failed to send welcome email' });
-      }
-    } catch (error) {
-      console.error('Error sending welcome email:', error);
-      res.status(500).json({ message: 'Failed to send welcome email' });
-    }
-  });
-
-  app.post('/api/email/monthly-report/:investorId', isAuthenticated, async (req, res) => {
-    try {
-      const { investorId } = req.params;
-      const investor = await storage.getInvestor(investorId);
-      
-      if (!investor) {
-        return res.status(404).json({ message: 'Investor not found' });
-      }
-
-      const { sendMonthlyProgressReport } = await import('./emailService');
-      const success = await sendMonthlyProgressReport(investor);
-      
-      if (success) {
-        res.json({ success: true, message: 'Monthly report sent successfully' });
-      } else {
-        res.status(500).json({ success: false, message: 'Failed to send monthly report' });
-      }
-    } catch (error) {
-      console.error('Error sending monthly report:', error);
-      res.status(500).json({ message: 'Failed to send monthly report' });
-    }
-  });
-
-  app.post('/api/email/monthly-reports-all', isAuthenticated, async (req, res) => {
-    try {
-      const { sendMonthlyReportsToAllInvestors } = await import('./emailService');
-      const results = await sendMonthlyReportsToAllInvestors();
-      
-      res.json({
-        success: true,
-        message: `Monthly reports completed: ${results.sent} sent, ${results.failed} failed`,
-        results
-      });
-    } catch (error) {
-      console.error('Error sending monthly reports to all investors:', error);
-      res.status(500).json({ message: 'Failed to send monthly reports' });
-    }
-  });
-
-  // Test email scheduler endpoint
-  app.post('/api/email/test-scheduler', isAuthenticated, async (req, res) => {
-    try {
-      const results = await emailScheduler.testMonthlyReports();
-      res.json({
-        success: true,
-        message: 'Scheduler test completed successfully',
-        results
-      });
-    } catch (error) {
-      console.error('Error testing email scheduler:', error);
-      res.status(500).json({ message: 'Failed to test email scheduler' });
-    }
-  });
-
-  // Auto-trigger welcome email when new investor is created
-  app.post('/api/admin/investors', isAuthenticated, async (req, res) => {
-    try {
-      const validatedData = insertInvestorSchema.parse(req.body);
-      const investor = await storage.createInvestor(validatedData);
-      
-      // Auto-send welcome email and agreement
-      try {
-        const { sendWelcomeEmail } = await import('./emailService');
-        await sendWelcomeEmail(investor);
-        console.log(`Welcome email sent to new investor: ${investor.id}`);
-        
-        // Auto-generate and send investment agreement
-        const { agreementService } = await import('./agreementService');
-        const agreementId = await agreementService.createAndSendAgreement(investor.id);
-        console.log(`Investment agreement sent to investor ${investor.id}: ${agreementId}`);
-      } catch (emailError) {
-        console.error('Failed to send welcome email/agreement to new investor:', emailError);
-        // Don't fail the investor creation if email fails
-      }
-      
-      res.json(investor);
-    } catch (error) {
-      console.error('Error creating investor:', error);
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: 'Validation error', errors: error.errors });
-      } else {
-        res.status(500).json({ message: 'Failed to create investor' });
-      }
-    }
-  });
-
-  // Agreement API routes
-  app.get('/agreement/sign/:agreementId', async (req, res) => {
-    try {
-      const { agreementId } = req.params;
-      const { agreementService } = await import('./agreementService');
-      const agreement = await agreementService.getAgreementForSigning(agreementId);
-      
-      // Render the agreement signing page (you can serve an HTML template here)
-      const signingPageHTML = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Sign Investment Agreement</title>
-        <script>window.agreementData = ${JSON.stringify(agreement)};</script>
-        <script src="/static/js/agreement-signing.js" defer></script>
-        <link rel="stylesheet" href="/static/css/agreement-signing.css">
-      </head>
-      <body>
-        <div id="agreement-signing-root"></div>
-        <script>
-          // Redirect to main app for signing
-          window.location.href = '/agreement-sign/${agreementId}';
-        </script>
-      </body>
-      </html>`;
-      
-      res.send(signingPageHTML);
-    } catch (error) {
-      console.error('Error loading agreement for signing:', error);
-      res.status(404).send('Agreement not found or expired');
-    }
-  });
-
-  // API endpoints for agreement management
-  app.get('/api/agreement/:agreementId', async (req, res) => {
-    try {
-      const { agreementId } = req.params;
-      const { agreementService } = await import('./agreementService');
-      const agreement = await agreementService.getAgreementForSigning(agreementId);
-      res.json(agreement);
-    } catch (error) {
-      console.error('Error fetching agreement:', error);
-      res.status(404).json({ message: 'Agreement not found' });
-    }
-  });
-
-  app.post('/api/agreement/:agreementId/sign', async (req, res) => {
-    try {
-      const { agreementId } = req.params;
-      const { signature, signatoryName, signatoryEmail } = req.body;
-      
-      const ipAddress = req.ip || req.connection.remoteAddress;
-      const userAgent = req.get('User-Agent');
-      
-      const { agreementService } = await import('./agreementService');
-      await agreementService.signAgreement(
-        agreementId, 
-        signature, 
-        signatoryName, 
-        signatoryEmail,
-        ipAddress,
-        userAgent
-      );
-      
-      res.json({ success: true, message: 'Agreement signed successfully' });
-    } catch (error) {
-      console.error('Error signing agreement:', error);
-      res.status(400).json({ message: error.message || 'Failed to sign agreement' });
-    }
-  });
-
-  // Get investor agreements
-  app.get('/api/investor/agreements', async (req: any, res) => {
-    try {
-      let investorId = null;
-      
-      // Check investor authentication session
-      if (req.session?.investorAuth?.isAuthenticated) {
-        investorId = req.session.investorAuth.investorId;
-      } else if (req.session?.testUser?.portalType === 'investor') {
-        investorId = req.session.testUser.investorId || "1";
-      }
-      
-      if (!investorId) {
-        return res.status(401).json({ message: 'Authentication required' });
-      }
-      
-      const { agreementService } = await import('./agreementService');
-      const agreements = await agreementService.getInvestorAgreements(investorId);
-      res.json(agreements);
-    } catch (error) {
-      console.error('Error fetching investor agreements:', error);
-      res.status(500).json({ message: 'Failed to fetch agreements' });
-    }
-  });
-
-  // Admin - Get all agreements
-  app.get('/api/admin/agreements', isAuthenticated, async (req, res) => {
-    try {
-      const { agreementService } = await import('./agreementService');
-      const agreements = await agreementService.getAllAgreements();
-      res.json(agreements);
-    } catch (error) {
-      console.error('Error fetching all agreements:', error);
-      res.status(500).json({ message: 'Failed to fetch agreements' });
-    }
-  });
-
-  // Admin - Send agreement to investor
-  app.post('/api/admin/agreements/send', isAuthenticated, async (req, res) => {
-    try {
-      const { investorId, templateId, expiresInDays } = req.body;
-      const { agreementService } = await import('./agreementService');
-      const agreementId = await agreementService.createAndSendAgreement(investorId, templateId, expiresInDays);
-      res.json({ success: true, agreementId });
-    } catch (error) {
-      console.error('Error sending agreement:', error);
-      res.status(500).json({ message: 'Failed to send agreement' });
-    }
-  });
-
-  // Admin - Resend agreement
-  app.post('/api/admin/agreements/:agreementId/resend', isAuthenticated, async (req, res) => {
-    try {
-      const { agreementId } = req.params;
-      const { agreementService } = await import('./agreementService');
-      await agreementService.resendAgreement(agreementId);
-      res.json({ success: true, message: 'Agreement resent successfully' });
-    } catch (error) {
-      console.error('Error resending agreement:', error);
-      res.status(500).json({ message: 'Failed to resend agreement' });
-    }
-  });
-
-  // Test endpoint for merge fields
-  app.post('/api/test/merge-fields', async (req, res) => {
-    try {
-      const { type = 'welcome' } = req.body;
-      
-      // Get a test investor to use for merge field testing
-      const testInvestorId = "1"; // Use first investor for testing
-      const investor = await storage.getInvestor(testInvestorId);
-      
-      if (!investor) {
-        return res.status(404).json({ message: 'Test investor not found. Please ensure investor ID 1 exists.' });
-      }
-
-      if (type === 'welcome') {
-        // Test welcome email with merge fields
-        const { sendWelcomeEmail } = await import('./emailService');
-        const success = await sendWelcomeEmail(investor);
-        
-        return res.json({ 
-          success,
-          message: success ? 'Welcome email sent successfully with merge fields' : 'Failed to send welcome email',
-          testData: {
-            investorId: investor.id,
-            investorName: `${investor.firstName} ${investor.lastName}`,
-            email: investor.email
-          }
-        });
-      }
-      
-      if (type === 'monthly-report') {
-        // Test monthly progress report with merge fields
-        const { sendMonthlyProgressReport } = await import('./emailService');
-        const success = await sendMonthlyProgressReport(investor);
-        
-        return res.json({ 
-          success,
-          message: success ? 'Monthly report sent successfully with merge fields' : 'Failed to send monthly report',
-          testData: {
-            investorId: investor.id,
-            investorName: `${investor.firstName} ${investor.lastName}`,
-            email: investor.email
-          }
-        });
-      }
-      
-      if (type === 'agreement') {
-        // Test agreement email with merge fields
-        const { agreementService } = await import('./agreementService');
-        const agreementId = await agreementService.createAndSendAgreement(investor.id);
-        
-        return res.json({ 
-          success: true,
-          message: 'Investment agreement sent successfully with merge fields',
-          testData: {
-            investorId: investor.id,
-            investorName: `${investor.firstName} ${investor.lastName}`,
-            email: investor.email,
-            agreementId
-          }
-        });
-      }
-      
-      return res.status(400).json({ 
-        message: 'Invalid test type. Use: welcome, monthly-report, or agreement' 
-      });
-      
-    } catch (error) {
-      console.error('Error testing merge fields:', error);
-      res.status(500).json({ message: 'Failed to test merge fields', error: (error as Error).message });
-    }
-  });
-
-  // Transaction generation routes
-  app.post('/api/admin/generate-transactions', isAuthenticated, async (req, res) => {
-    try {
-      const { transactionGenerator } = await import('./transactionGenerator');
-      const result = await transactionGenerator.generateAllMissingTransactions();
-      
-      res.json({
-        success: true,
-        message: `Transaction generation completed: ${result.generated} generated, ${result.skipped} skipped`,
-        result
-      });
-    } catch (error) {
-      console.error('Error generating transactions:', error);
-      res.status(500).json({ message: 'Failed to generate transactions' });
-    }
-  });
-
-  app.post('/api/admin/generate-transactions/:investorId', isAuthenticated, async (req, res) => {
-    try {
-      const { investorId } = req.params;
-      const { transactionGenerator } = await import('./transactionGenerator');
-      const generated = await transactionGenerator.generateTransactionsForSpecificInvestor(investorId);
-      
-      res.json({
-        success: true,
-        message: `Generated ${generated} transactions for investor ${investorId}`,
-        generated
-      });
-    } catch (error) {
-      console.error('Error generating transactions for investor:', error);
-      res.status(500).json({ message: 'Failed to generate transactions for investor' });
     }
   });
 
