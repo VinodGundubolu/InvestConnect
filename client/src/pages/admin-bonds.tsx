@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TrendingUp, Calendar, DollarSign } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, TrendingUp, Calendar, DollarSign, Eye } from "lucide-react";
 import AdminSidebar from "@/components/admin/admin-sidebar";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
@@ -12,6 +13,8 @@ import { formatCurrency } from "@/lib/utils";
 export default function AdminBonds() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
+  const [selectedBond, setSelectedBond] = useState<any>(null);
+  const [showBondDetails, setShowBondDetails] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -178,7 +181,16 @@ export default function AdminBonds() {
                             </Badge>
                           </td>
                           <td className="p-4">
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedBond(investment);
+                                setShowBondDetails(true);
+                              }}
+                              data-testid={`button-view-bond-${investment.id}`}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
                               View Details
                             </Button>
                           </td>
@@ -192,6 +204,80 @@ export default function AdminBonds() {
           </div>
         </main>
       </div>
+      
+      {/* Bond Details Modal */}
+      {showBondDetails && selectedBond && (
+        <Dialog open={showBondDetails} onOpenChange={setShowBondDetails}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Bond Details - {selectedBond.id}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-gray-900">Investor Information</h4>
+                  <p className="text-sm text-gray-600">Name: {selectedBond.investorName}</p>
+                  <p className="text-sm text-gray-600">Investor ID: {selectedBond.investorId}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Bond Information</h4>
+                  <p className="text-sm text-gray-600">Type: {selectedBond.bondType}</p>
+                  <p className="text-sm text-gray-600">Bonds: {selectedBond.bondsPurchased}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-gray-900">Investment Details</h4>
+                  <p className="text-sm text-gray-600">Amount: {formatCurrency(selectedBond.amount)}</p>
+                  <p className="text-sm text-gray-600">Purchase Date: {selectedBond.purchaseDate}</p>
+                  <p className="text-sm text-gray-600">Maturity Date: {selectedBond.maturityDate}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Current Status</h4>
+                  <p className="text-sm text-gray-600">Year: {selectedBond.year}</p>
+                  <p className="text-sm text-gray-600">Current Rate: {selectedBond.currentRate}%</p>
+                  <div className="mt-2">
+                    <Badge variant="secondary" className="bg-green-50 text-green-700">
+                      {selectedBond.status}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Investment Timeline</h4>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-center">
+                    {[1, 2, 3, 4, 5].map((year) => (
+                      <div key={year} className={`p-2 rounded ${selectedBond.year >= year ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
+                        <div className="font-semibold">Year {year}</div>
+                        <div className="text-xs">
+                          {year === 1 ? '0%' : year === 2 ? '6%' : year === 3 ? '9%' : year === 4 ? '12%' : '18%'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <Button variant="outline" onClick={() => setShowBondDetails(false)}>
+                  Close
+                </Button>
+                <Button onClick={() => {
+                  toast({
+                    title: "Feature Coming Soon",
+                    description: "Bond editing functionality will be available in the next update.",
+                  });
+                }}>
+                  Edit Bond
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

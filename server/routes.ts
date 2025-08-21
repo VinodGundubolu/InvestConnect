@@ -894,7 +894,14 @@ Date: _______________`,
             status: "Active",
             currentYear,
             currentRate,
-            totalReturns
+            totalReturns,
+            // Additional fields for portfolio display
+            investment: totalInvestment,
+            bonds: bondsCount,
+            todayInterest: Math.round(totalInvestment * (currentRate / 100) / 365),
+            aadharNumber: investor.identityProofNumber || 'N/A',
+            maturityProgress: Math.min(100, Math.round(((currentYear - 1) / 10) * 100)),
+            rate: currentRate
           };
         })
       );

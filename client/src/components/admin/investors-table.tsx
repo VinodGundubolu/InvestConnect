@@ -25,15 +25,16 @@ export default function InvestorsTable() {
     name: `${inv.first_name || ''} ${inv.last_name || ''}`.trim() || inv.name || 'Unknown',
     email: inv.email || 'No email',
     phone: inv.primary_mobile || inv.phone || 'No phone',
-    totalInvestment: inv.totalInvestment || 0,
-    bondsCount: 1, // Default bond count
+    totalInvestment: inv.investment || inv.totalInvestment || 0,
+    bondsCount: inv.bonds || inv.bondsCount || 0,
     joinDate: new Date(inv.created_at || Date.now()).toLocaleDateString(),
-    investmentStartDate: new Date(inv.created_at || Date.now()).toLocaleDateString(),
-    maturityDate: new Date(new Date(inv.created_at || Date.now()).getTime() + 10 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+    investmentStartDate: inv.investmentStartDate || new Date(inv.created_at || Date.now()).toLocaleDateString(),
+    maturityDate: inv.maturityDate || new Date(new Date(inv.created_at || Date.now()).getTime() + 10 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString(),
     status: inv.status || 'Active',
-    currentYear: 1,
-    currentRate: 0,
-    totalReturns: 0
+    currentYear: inv.currentYear || 1,
+    currentRate: inv.rate || 0,
+    totalReturns: inv.totalReturns || 0,
+    maturityProgress: inv.maturityProgress || 0
   }));
 
   if (isLoading) {
