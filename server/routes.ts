@@ -6,13 +6,22 @@ import { EmailTemplateEngine, type EmailMergeFields } from "./email-templates";
 import { insertInvestorSchema, insertInvestmentSchema, insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 import { InterestDisbursementEngine, type InterestCalculation } from './interest-disbursement';
+import { autoTransactionRecorder } from './auto-transaction';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // Initialize dividend rates
+  // Initialize dividend rates and auto-process transactions
   await storage.initializeDividendRates();
+  
+  // Auto-process all investment transactions on startup
+  try {
+    const result = await autoTransactionRecorder.processAllInvestments();
+    console.log(`Auto-processed ${result.processed} investments, created ${result.created} transactions`);
+  } catch (error) {
+    console.error("Error during auto-transaction processing:", error);
+  }
 
   // Test login route for demo credentials
   app.post('/api/test-login', async (req, res) => {
@@ -31,7 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(401).json({ message: 'Invalid admin credentials' });
         }
         
-        req.session.testUser = {
+        (req.session as any).testUser = {
           id: adminCreds.userId,
           portalType: 'admin',
           isTestAccount: true
@@ -58,7 +67,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Invalid investor credentials' });
       }
       
-      req.session.testUser = {
+      (req.session as any).testUser = {
         id: validCreds.userId || validCreds.investorId,
         portalType: 'investor',
         isTestAccount: true,
@@ -480,7 +489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Store session
-      req.session.investorAuth = {
+      (req.session as any).investorAuth = {
         isAuthenticated: true,
         investorId: credentials.investorId,
         username: credentials.username,
@@ -522,7 +531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Find current credentials
       let currentCredentials: InvestorCredentials | undefined;
-      for (const [key, creds] of enhancedCredentialsMap.entries()) {
+      for (const [key, creds] of Array.from(enhancedCredentialsMap.entries())) {
         if (creds.investorId === investorId) {
           currentCredentials = creds;
           break;
@@ -590,7 +599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.session) {
         req.session = {} as any;
       }
-      req.session.investorAuth = {
+      (req.session as any).investorAuth = {
         isAuthenticated: true,
         investorId: credentials.investorId,
         username: username,
@@ -688,8 +697,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/investor/investments', async (req: any, res) => {
     try {
       // Check for investor authentication session first
-      if (req.session?.investorAuth?.isAuthenticated) {
-        const investorId = req.session.investorAuth.investorId;
+      if ((req.session as any)?.investorAuth?.isAuthenticated) {
+        const investorId = (req.session as any).investorAuth.investorId;
         
         // Get investor investments from database
         const investments = await storage.getInvestmentsByInvestor(investorId);
@@ -702,8 +711,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check for test session second
-      if (req.session?.testUser?.portalType === 'investor') {
-        const investorId = req.session.testUser.investorId || "2024-V1-B5-1234-001";
+      if ((req.session as any)?.testUser?.portalType === 'investor') {
+        const investorId = (req.session as any).testUser.investorId || "2024-V1-B5-1234-001";
         
         // Get investor investments from database
         const investments = await storage.getInvestmentsByInvestor(investorId);
@@ -849,9 +858,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Investor logout API
   app.post("/api/investor/logout", async (req, res) => {
     try {
-      if (req.session?.investorAuth) {
-        req.session.investorAuth = null;
-        delete req.session.investorAuth;
+      if ((req.session as any)?.investorAuth) {
+        (req.session as any).investorAuth = null;
+        delete (req.session as any).investorAuth;
       }
       res.json({ success: true, message: "Logged out successfully" });
     } catch (error) {
@@ -865,11 +874,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Debug session
       console.log("Session data:", req.session);
-      console.log("Investor auth:", req.session?.investorAuth);
+      console.log("Investor auth:", (req.session as any)?.investorAuth);
       
       // Check for investor authentication session first
-      if (req.session?.investorAuth?.isAuthenticated) {
-        const investorId = req.session.investorAuth.investorId;
+      if ((req.session as any)?.investorAuth?.isAuthenticated) {
+        const investorId = (req.session as any).investorAuth.investorId;
         
         console.log("Found authenticated investor session:", investorId);
         
@@ -881,8 +890,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check for test session second
-      if (req.session?.testUser?.portalType === 'investor') {
-        const investorId = req.session.testUser.investorId || "2024-V1-B5-1234-001";
+      if ((req.session as any)?.testUser?.portalType === 'investor') {
+        const investorId = (req.session as any).testUser.investorId || "2024-V1-B5-1234-001";
         
         // Get investor from database
         const dbInvestor = await storage.getInvestor(investorId);
@@ -1180,29 +1189,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/investor/interest-details", async (req, res) => {
     try {
       console.log("=== Interest Details API Called ===");
-      const investorAuth = req.session?.investorAuth;
+      const investorAuth = (req.session as any)?.investorAuth;
       
       if (!investorAuth?.isAuthenticated) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const investor = await storage.getInvestor(investorAuth.investorId);
+      const investor = await storage.getInvestor(investorAuth.investorId as string);
       if (!investor) {
         return res.status(404).json({ message: "Investor not found" });
       }
 
       // Get investor's investments with all transactions
       const investments = await storage.getInvestorInvestments(investorAuth.investorId);
+      
+      // Auto-process transactions for this investor
+      for (const investment of investments) {
+        await autoTransactionRecorder.processInvestmentTransactions(investment.id);
+      }
       console.log("Found investments:", investments?.length || 0);
       
       // Get disbursed transactions (interest payments and bonuses) from all investments
       const allTransactions = [];
       for (const investment of investments) {
-        if (investment.transactions) {
-          allTransactions.push(...investment.transactions.filter(t => 
-            t.transactionType === 'dividend_disbursement' || t.transactionType === 'bonus_disbursement'
-          ));
-        }
+        const investmentTransactions = await storage.getTransactionsByInvestment(investment.id);
+        allTransactions.push(...investmentTransactions.filter(t => 
+          t.type === 'dividend_disbursement' || t.type === 'bonus_disbursement'
+        ));
       }
       let disbursedTransactions = allTransactions;
       console.log("Found disbursed transactions:", disbursedTransactions?.length || 0);
@@ -1323,6 +1336,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error calculating interest details:", error);
       res.status(500).json({ message: "Failed to calculate interest details" });
+    }
+  });
+
+  // Manual transaction processing endpoint for admin
+  app.post("/api/admin/process-transactions", async (req, res) => {
+    try {
+      const result = await autoTransactionRecorder.processAllInvestments();
+      res.json({
+        success: true,
+        message: `Processed ${result.processed} investments and created ${result.created} transactions`,
+        processed: result.processed,
+        created: result.created
+      });
+    } catch (error) {
+      console.error("Error processing transactions:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to process transactions",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Single investment transaction processing
+  app.post("/api/admin/process-investment-transactions/:investmentId", async (req, res) => {
+    try {
+      const { investmentId } = req.params;
+      const transactions = await autoTransactionRecorder.processInvestmentTransactions(investmentId);
+      
+      res.json({
+        success: true,
+        message: `Created ${transactions.length} transactions for investment ${investmentId}`,
+        transactions
+      });
+    } catch (error) {
+      console.error("Error processing investment transactions:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to process investment transactions",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

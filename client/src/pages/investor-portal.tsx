@@ -10,6 +10,7 @@ import InvestmentSummary from "@/components/investor/investment-summary";
 import InterestSummary from "@/components/investor/interest-summary";
 import TransactionHistory from "@/components/investor/transaction-history";
 import PasswordChange from "@/components/investor/password-change";
+import AgreementESign from "@/components/investor/agreement-esign";
 import { InvestorWithInvestments } from "@shared/schema";
 
 export default function InvestorPortal() {
@@ -136,6 +137,9 @@ export default function InvestorPortal() {
         <InvestmentSummary investor={investorProfile} />
 
         {/* Interest & Disbursements moved to Investment Summary */}
+
+        {/* Agreement E-Sign */}
+        <AgreementESign investor={investorProfile} />
 
         {/* Transaction History */}
         <TransactionHistory investorProfile={investorProfile} />

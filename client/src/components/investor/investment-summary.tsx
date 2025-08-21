@@ -30,7 +30,7 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
   const { data: interestDetails } = useQuery<InterestDetails>({
     queryKey: ["/api/investor/interest-details"],
     staleTime: 30000, // 30 seconds
-    cacheTime: 60000, // 1 minute
+    gcTime: 60000, // 1 minute (renamed from cacheTime in v5)
   });
   // Calculate combined daily returns for all investments
   const combinedReturns = (investor.investments || []).reduce(
@@ -108,7 +108,7 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
             </Badge>
           </div>
           <div className="text-3xl font-bold" data-testid="text-interest-earned">
-            {formatCurrency(interestDetails?.totalInterestTillDate || 0)}
+            {formatCurrency((interestDetails as any)?.totalInterestTillDate || 0)}
           </div>
           <div className="text-sm text-green-100">Interest Till Date</div>
         </CardContent>
@@ -124,7 +124,7 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
             </Badge>
           </div>
           <div className="text-3xl font-bold" data-testid="text-interest-disbursed">
-            {formatCurrency(interestDetails?.totalInterestDisbursedTillDate || 0)}
+            {formatCurrency((interestDetails as any)?.totalInterestDisbursedTillDate || 0)}
           </div>
           <div className="text-sm text-blue-100">Interest Disbursed Till Date</div>
         </CardContent>
@@ -140,16 +140,16 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
             </Badge>
           </div>
           <div className="text-3xl font-bold" data-testid="text-next-disbursement">
-            {formatCurrency(interestDetails?.interestToBeDispursedNext?.amount || 0)}
+            {formatCurrency((interestDetails as any)?.interestToBeDispursedNext?.amount || 0)}
           </div>
           <div className="text-sm text-purple-100">Next Disbursement</div>
           <div className="flex items-center mt-2 text-sm text-purple-100">
             <Calendar className="w-4 h-4 mr-1" />
-            {interestDetails?.interestToBeDispursedNext?.disbursementDate || "Not scheduled"}
+            {(interestDetails as any)?.interestToBeDispursedNext?.disbursementDate || "Not scheduled"}
           </div>
-          {interestDetails?.interestToBeDispursedNext?.yearCovered && (
+          {(interestDetails as any)?.interestToBeDispursedNext?.yearCovered && (
             <p className="text-xs text-purple-200 mt-1">
-              Year {interestDetails.interestToBeDispursedNext.yearCovered} Interest
+              Year {(interestDetails as any).interestToBeDispursedNext.yearCovered} Interest
             </p>
           )}
         </CardContent>
@@ -172,8 +172,8 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
               if (hasPassedLockIn) {
                 // Early Exit Value = Capital + Interest yet to be disbursed (excluding milestone bonuses)
                 const exitValue = combinedReturns.principalInvestment + 
-                  (interestDetails?.totalInterestTillDate || 0) - 
-                  (interestDetails?.totalInterestDisbursedTillDate || 0);
+                  ((interestDetails as any)?.totalInterestTillDate || 0) - 
+                  ((interestDetails as any)?.totalInterestDisbursedTillDate || 0);
                 return (
                   <>
                     <div className="text-3xl font-bold text-green-400" data-testid="text-exit-value">
@@ -249,7 +249,7 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
                       </div>
                       {isCompleted && completionDate && (
                         <div className="text-xs text-green-300 mt-1">
-                          Completed on: {formatDate(completionDate.toISOString())}
+                          Completed on: {formatDate(completionDate)}
                         </div>
                       )}
                       {!isCompleted && (investor.investments || []).length > 0 && (
@@ -258,7 +258,7 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
                             const firstInvestment = investor.investments[0];
                             const expectedDate = new Date(firstInvestment.investmentDate);
                             expectedDate.setFullYear(expectedDate.getFullYear() + year);
-                            return formatDate(expectedDate.toISOString());
+                            return formatDate(expectedDate);
                           })()}
                         </div>
                       )}
