@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
-import { Plus, Edit, Eye } from "lucide-react";
+import { Plus, Edit, Eye, Trash2 } from "lucide-react";
 import AddInvestorForm from "./add-investor-form";
 import DeleteInvestorDialog from "./delete-investor-dialog";
 
@@ -12,34 +12,23 @@ export default function InvestorsTable() {
     queryKey: ["/api/admin/investors"],
   });
 
-  const sampleInvestors = investors || [
-    {
-      id: "INV-001",
-      name: "Vinod Sharma",
-      email: "vinod.sharma@example.com", 
-      phone: "+91 98765 43210",
-      totalInvestment: 2000000,
-      bondsCount: 1,
-      joinDate: "2024-01-15",
-      status: "Active",
-      currentYear: 2,
-      currentRate: 6,
-      totalReturns: 120000
-    },
-    {
-      id: "INV-002",
-      name: "Suresh Kumar",
-      email: "suresh.kumar@example.com",
-      phone: "+91 98765 43211", 
-      totalInvestment: 6000000,
-      bondsCount: 3,
-      joinDate: "2024-03-01",
-      status: "Active",
-      currentYear: 2,
-      currentRate: 6,
-      totalReturns: 360000
-    }
-  ];
+  const investorsList = Array.isArray(investors) ? investors : [];
+  
+  const displayInvestors = investorsList.map(inv => ({
+    id: inv.id,
+    name: `${inv.first_name || ''} ${inv.last_name || ''}`.trim() || inv.name || 'Unknown',
+    email: inv.email || 'No email',
+    phone: inv.primary_mobile || inv.phone || 'No phone',
+    totalInvestment: inv.totalInvestment || 0,
+    bondsCount: 1, // Default bond count
+    joinDate: new Date(inv.created_at || Date.now()).toLocaleDateString(),
+    investmentStartDate: new Date(inv.created_at || Date.now()).toLocaleDateString(),
+    maturityDate: new Date(new Date(inv.created_at || Date.now()).getTime() + 10 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+    status: inv.status || 'Active',
+    currentYear: 1,
+    currentRate: 0,
+    totalReturns: 0
+  }));
 
   if (isLoading) {
     return (
@@ -70,7 +59,7 @@ export default function InvestorsTable() {
           <CardContent className="p-4">
             <div className="text-center">
               <p className="text-sm text-gray-600">Total Investors</p>
-              <p className="text-2xl font-bold">{sampleInvestors.length}</p>
+              <p className="text-2xl font-bold">{displayInvestors.length}</p>
             </div>
           </CardContent>
         </Card>
@@ -80,7 +69,7 @@ export default function InvestorsTable() {
             <div className="text-center">
               <p className="text-sm text-gray-600">Total Investment</p>
               <p className="text-2xl font-bold">
-                {formatCurrency(sampleInvestors.reduce((sum, inv) => sum + inv.totalInvestment, 0))}
+                {formatCurrency(displayInvestors.reduce((sum, inv) => sum + inv.totalInvestment, 0))}
               </p>
             </div>
           </CardContent>
@@ -91,7 +80,7 @@ export default function InvestorsTable() {
             <div className="text-center">
               <p className="text-sm text-gray-600">Active Bonds</p>
               <p className="text-2xl font-bold">
-                {sampleInvestors.reduce((sum, inv) => sum + inv.bondsCount, 0)}
+                {displayInvestors.reduce((sum, inv) => sum + inv.bondsCount, 0)}
               </p>
             </div>
           </CardContent>
@@ -102,7 +91,7 @@ export default function InvestorsTable() {
             <div className="text-center">
               <p className="text-sm text-gray-600">Total Returns</p>
               <p className="text-2xl font-bold">
-                {formatCurrency(sampleInvestors.reduce((sum, inv) => sum + inv.totalReturns, 0))}
+                {formatCurrency(displayInvestors.reduce((sum, inv) => sum + inv.totalReturns, 0))}
               </p>
             </div>
           </CardContent>
@@ -131,7 +120,7 @@ export default function InvestorsTable() {
                 </tr>
               </thead>
               <tbody>
-                {sampleInvestors.map((investor) => (
+                {displayInvestors.map((investor) => (
                   <tr key={investor.id} className="border-b hover:bg-gray-50">
                     <td className="p-4 font-mono text-sm">{investor.id}</td>
                     <td className="p-4">

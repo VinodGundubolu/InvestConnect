@@ -64,10 +64,7 @@ export default function AdminPortal() {
                 <p className="text-sm text-gray-500 font-medium">Today's Date</p>
                 <p className="font-semibold text-gray-900">{today}</p>
               </div>
-              <button className="btn-modern-primary" data-testid="button-add-investor">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Investor
-              </button>
+
             </div>
           </div>
         </header>
