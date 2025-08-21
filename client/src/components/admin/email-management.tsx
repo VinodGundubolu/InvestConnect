@@ -13,7 +13,9 @@ import {
   CheckCircle, 
   AlertCircle,
   Loader2,
-  Clock
+  Clock,
+  Calculator,
+  Database
 } from 'lucide-react';
 
 interface EmailManagementProps {
@@ -67,6 +69,49 @@ export default function EmailManagement({ investors }: EmailManagementProps) {
       toast({
         title: "Email Failed",
         description: "Failed to send monthly report",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const generateAllTransactionsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('/api/admin/generate-transactions', 'POST');
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Transaction Generation Complete",
+        description: data.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/investor"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Transaction Generation Failed",
+        description: "Failed to generate transactions for all investors",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const generateInvestorTransactionsMutation = useMutation({
+    mutationFn: async (investorId: string) => {
+      const response = await apiRequest(`/api/admin/generate-transactions/${investorId}`, 'POST');
+      return await response.json();
+    },
+    onSuccess: (data, investorId) => {
+      const investor = investors.find(inv => inv.id === investorId);
+      toast({
+        title: "Transaction Generation Complete",
+        description: `Generated transactions for ${investor?.name}: ${data.message}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/investor"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Transaction Generation Failed",
+        description: "Failed to generate transactions for investor",
         variant: "destructive",
       });
     },
@@ -217,6 +262,49 @@ export default function EmailManagement({ investors }: EmailManagementProps) {
         </CardContent>
       </Card>
 
+      {/* Transaction Generation */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calculator className="h-5 w-5" />
+            Transaction Management
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              onClick={() => generateAllTransactionsMutation.mutate()}
+              disabled={generateAllTransactionsMutation.isPending}
+              className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+              data-testid="button-generate-all-transactions"
+            >
+              {generateAllTransactionsMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Database className="h-4 w-4" />
+              )}
+              Generate All Missing Transactions
+            </Button>
+          </div>
+
+          <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
+            <div className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-green-900 dark:text-green-100">
+                  Automatic Transaction Generation
+                </p>
+                <p className="text-green-700 dark:text-green-300 mt-1">
+                  This system automatically creates interest and bonus transactions for all investors based on their investment timeline. 
+                  Interest rates: Year 1 (0%), Year 2 (6%), Year 3 (9%), Year 4 (12%), Year 5+ (18%). 
+                  Milestone bonuses: ₹20L at 5 years, ₹30L at 10 years.
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Individual Investor Email Management */}
       <Card>
         <CardHeader>
@@ -276,6 +364,22 @@ export default function EmailManagement({ investors }: EmailManagementProps) {
                       <Mail className="h-3 w-3" />
                     )}
                     Monthly Report
+                  </Button>
+                  
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => generateInvestorTransactionsMutation.mutate(investor.id)}
+                    disabled={generateInvestorTransactionsMutation.isPending}
+                    className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                    data-testid={`button-generate-transactions-${investor.id}`}
+                  >
+                    {generateInvestorTransactionsMutation.isPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Calculator className="h-3 w-3" />
+                    )}
+                    Generate
                   </Button>
                 </div>
               </div>

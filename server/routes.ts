@@ -1714,6 +1714,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Transaction generation routes
+  app.post('/api/admin/generate-transactions', isAuthenticated, async (req, res) => {
+    try {
+      const { transactionGenerator } = await import('./transactionGenerator');
+      const result = await transactionGenerator.generateAllMissingTransactions();
+      
+      res.json({
+        success: true,
+        message: `Transaction generation completed: ${result.generated} generated, ${result.skipped} skipped`,
+        result
+      });
+    } catch (error) {
+      console.error('Error generating transactions:', error);
+      res.status(500).json({ message: 'Failed to generate transactions' });
+    }
+  });
+
+  app.post('/api/admin/generate-transactions/:investorId', isAuthenticated, async (req, res) => {
+    try {
+      const { investorId } = req.params;
+      const { transactionGenerator } = await import('./transactionGenerator');
+      const generated = await transactionGenerator.generateTransactionsForSpecificInvestor(investorId);
+      
+      res.json({
+        success: true,
+        message: `Generated ${generated} transactions for investor ${investorId}`,
+        generated
+      });
+    } catch (error) {
+      console.error('Error generating transactions for investor:', error);
+      res.status(500).json({ message: 'Failed to generate transactions for investor' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
