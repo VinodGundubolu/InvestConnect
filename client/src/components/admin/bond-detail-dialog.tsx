@@ -13,18 +13,7 @@ import { Eye } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 interface BondDetailProps {
-  bond: {
-    id: string;
-    investorName: string;
-    bondType: string;
-    amount: number;
-    purchaseDate: string;
-    maturityDate: string;
-    currentRate: number;
-    status: string;
-    year: number;
-    bondsPurchased: number;
-  };
+  bond: any; // Using any to handle the actual data structure from API
 }
 
 export default function BondDetailDialog({ bond }: BondDetailProps) {
@@ -48,22 +37,22 @@ export default function BondDetailDialog({ bond }: BondDetailProps) {
             <CardHeader>
               <CardTitle>Bond Information</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Bond ID</p>
-                <p className="font-medium">{bond.id}</p>
+            <CardContent className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600 font-medium">Bond ID</p>
+                <p className="text-lg font-semibold text-gray-900">{bond.id}</p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Bond Type</p>
-                <p className="font-medium">{bond.bondType}</p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600 font-medium">Bond Type</p>
+                <p className="text-lg font-semibold text-gray-900">Fixed Income Bond</p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Investor</p>
-                <p className="font-medium">{bond.investorName}</p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600 font-medium">Investor Name</p>
+                <p className="text-lg font-semibold text-gray-900">{bond.investorName}</p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Status</p>
-                <Badge variant={bond.status === 'Active' ? 'default' : 'secondary'}>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600 font-medium">Status</p>
+                <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
                   {bond.status}
                 </Badge>
               </div>
@@ -75,27 +64,27 @@ export default function BondDetailDialog({ bond }: BondDetailProps) {
             <CardHeader>
               <CardTitle>Financial Details</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Investment Amount</p>
+            <CardContent className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600 font-medium">Investment Amount</p>
                 <p className="text-2xl font-bold text-green-600">
                   {formatCurrency(bond.amount)}
                 </p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Bonds Purchased</p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600 font-medium">Units Purchased</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {bond.bondsPurchased}
+                  {Math.floor(bond.amount / 2000000)} Unit{Math.floor(bond.amount / 2000000) !== 1 ? 's' : ''}
                 </p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Current Rate</p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600 font-medium">Current Rate</p>
                 <p className="text-2xl font-bold text-purple-600">
                   {bond.currentRate}%
                 </p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Investment Year</p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600 font-medium">Investment Year</p>
                 <p className="text-2xl font-bold text-orange-600">
                   Year {bond.year}
                 </p>
@@ -106,16 +95,28 @@ export default function BondDetailDialog({ bond }: BondDetailProps) {
           {/* Timeline */}
           <Card>
             <CardHeader>
-              <CardTitle>Timeline</CardTitle>
+              <CardTitle>Investment Timeline</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Purchase Date</p>
-                <p className="font-medium">{new Date(bond.purchaseDate).toLocaleDateString()}</p>
+            <CardContent className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600 font-medium">Purchase Date</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {new Date(bond.purchaseDate).toLocaleDateString('en-IN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Maturity Date</p>
-                <p className="font-medium">{new Date(bond.maturityDate).toLocaleDateString()}</p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600 font-medium">Maturity Date</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {new Date(bond.maturityDate).toLocaleDateString('en-IN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
               </div>
             </CardContent>
           </Card>
