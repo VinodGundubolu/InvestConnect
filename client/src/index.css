@@ -99,3 +99,32 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 }
+
+/* Modal and Dialog overlay fixes */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}
+
+[data-state="open"] > [data-radix-dialog-overlay] {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  z-index: 40 !important;
+}
+
+[data-radix-dialog-content] {
+  background-color: white !important;
+  z-index: 50 !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.dark [data-radix-dialog-content] {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+}
+
+/* Additional modal backdrop ensuring proper overlay */
+[data-radix-dialog-overlay] {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(2px) !important;
+  z-index: 45 !important;
+}

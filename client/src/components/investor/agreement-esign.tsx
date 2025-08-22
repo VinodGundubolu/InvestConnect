@@ -319,7 +319,7 @@ export default function AgreementESign({ investor }: AgreementESignProps) {
                         Sign Now
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900">
                       <DialogHeader>
                         <DialogTitle>Sign Agreement: {selectedAgreement?.title}</DialogTitle>
                       </DialogHeader>

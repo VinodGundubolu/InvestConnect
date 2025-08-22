@@ -208,7 +208,7 @@ export default function AdminBonds() {
       {/* Bond Details Modal */}
       {showBondDetails && selectedBond && (
         <Dialog open={showBondDetails} onOpenChange={setShowBondDetails}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl bg-white dark:bg-gray-900">
             <DialogHeader>
               <DialogTitle>Bond Details - {selectedBond.id}</DialogTitle>
             </DialogHeader>
