@@ -4,6 +4,26 @@
 
 An Investment Relationship Management (IRM) Tool designed for organizations to manage investor relationships and investment portfolios. The system provides dual-portal access with distinct interfaces for investors and administrators, enabling secure investment tracking, transaction management, and comprehensive reporting.
 
+## Current Version: 1.0.0 "Foundation Release"
+**Release Status**: Stable Production Release  
+**Release Date**: August 22, 2025  
+**Next Version**: 2.0.0 "Advanced Features Release" (In Planning)
+
+### Version Control Files:
+- `VERSION_CONTROL.md` - Complete version history and comparison
+- `v2-roadmap.md` - Detailed Version 2.0 development roadmap
+
+### Version 1.0 Core Features (Current):
+✅ Dual portal system (investor/admin)  
+✅ Universal authentication (4 login methods)  
+✅ Investment portfolio management  
+✅ Digital agreement system with e-signatures  
+✅ Transaction tracking and interest calculations  
+✅ Bond management with detailed views  
+✅ PostgreSQL database with 41 active investors  
+✅ Modern React/TypeScript frontend  
+✅ Express.js backend with full API
+
 ## Recent Changes (August 21, 2025)
 
 ### **Latest Critical Fixes (Session 8):**
