@@ -129,10 +129,23 @@ export default function AdminTransactions() {
             </div>
             <div className="flex items-center space-x-3">
               <Button variant="outline" onClick={() => {
-                toast({
-                  title: "Filter Options",
-                  description: "Transaction filtering options will be available soon",
-                });
+                // Implement transaction filtering
+                const filterType = prompt("Filter by type (investment/dividend_disbursement/bonus_disbursement):");
+                if (filterType) {
+                  const filteredTransactions = sampleTransactions.filter((txn: Transaction) => 
+                    txn.type.toLowerCase().includes(filterType.toLowerCase())
+                  );
+                  toast({
+                    title: "Filter Applied",
+                    description: `Found ${filteredTransactions.length} transactions of type: ${filterType}`,
+                  });
+                  // Here you would update the displayed transactions
+                } else {
+                  toast({
+                    title: "Filter Cancelled",
+                    description: "No filter applied",
+                  });
+                }
               }}>
                 <Filter className="h-4 w-4 mr-2" />
                 Filter

@@ -139,10 +139,15 @@ export function calculateReturns(
     yearsSinceInvestment,
   };
   
-  // Calculate full 10-year maturity value (Capital + All Interest + All Bonuses)
-  const fullMaturityInterest = principalAmount * (6/100 + 9/100 + 12/100 + 18/100 + 18/100 + 18/100 + 18/100 + 18/100 + 18/100); // Years 2-9 (no interest in years 1&10)
-  const fullMaturityBonuses = principalAmount * 2; // 100% bonus at year 5 and 10
-  const fullMaturityValue = principalAmount + fullMaturityInterest + fullMaturityBonuses; // Should be ₹83,40,000 for ₹20L
+  // Calculate full 10-year maturity value correctly
+  // Interest rates: Year 2(6%) + Year 3(9%) + Year 4(12%) + Year 5(18%) + Year 6(18%) + Year 7(18%) + Year 8(18%) + Year 9(18%) = 117%
+  // Total interest = ₹20L × 117% = ₹23,40,000
+  // Bonuses: Year 5(100%) + Year 10(100%) = 200% = ₹40,00,000  
+  // Final Value = ₹20,00,000 + ₹23,40,000 + ₹40,00,000 = ₹83,40,000
+  const totalInterestRate = 0.06 + 0.09 + 0.12 + 0.18 + 0.18 + 0.18 + 0.18 + 0.18; // = 1.17 (117%)
+  const fullMaturityInterest = principalAmount * totalInterestRate; // ₹23,40,000 for ₹20L
+  const fullMaturityBonuses = principalAmount * 2; // ₹40,00,000 for ₹20L (100% at year 5 + 100% at year 10)
+  const fullMaturityValue = principalAmount + fullMaturityInterest + fullMaturityBonuses; // ₹83,40,000 for ₹20L
 
   const summary = {
     principal: principalAmount,

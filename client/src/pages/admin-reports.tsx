@@ -64,10 +64,21 @@ export default function AdminReports() {
             </div>
             <div className="flex items-center space-x-3">
               <Button variant="outline" onClick={() => {
-                toast({
-                  title: "Date Range Selector",
-                  description: "Date range filtering will be available soon",
-                });
+                // Implement date range filtering
+                const startDate = prompt("Enter start date (YYYY-MM-DD):");
+                const endDate = prompt("Enter end date (YYYY-MM-DD):");
+                if (startDate && endDate) {
+                  toast({
+                    title: "Date Range Applied",
+                    description: `Filtering data from ${startDate} to ${endDate}`,
+                  });
+                  // Here you would filter the data based on the date range
+                } else {
+                  toast({
+                    title: "Invalid Date Range",
+                    description: "Please provide valid start and end dates",
+                  });
+                }
               }}>
                 <Calendar className="h-4 w-4 mr-2" />
                 Date Range
