@@ -1,0 +1,47 @@
+Complete Investor Database Export,8/23/2025
+Total Investors Exported,42
+Export Source,Live Database - Investor Directory
+
+Investor ID,Name,Email,Phone,Investment Amount,Bonds,Investment Start,Maturity Date,Current Status,Total Returns
+411,"Bhanu Tej Nambi","Test123@gmail.com","9876543210",₹20,00,000,1 Bond,2024-01-01,2034-01-01,"Active Year 2 @ 6%",₹1,20,000
+401,"John cena wwe","test1@gmail.com","9876543210",₹40,00,000,2 Bonds,2024-01-21,2034-01-21,"Active Year 2 @ 6%",₹2,40,000
+391,"John cena wwe","test1@gmail.com","9876543210",₹20,00,000,1 Bond,2025-08-23,2025-08-23,"Active Year 1 @ 6%",₹0
+381,"Vinod  Kumar","vk2615@example.com","+91 98765 43213",₹20,00,000,1 Bond,2025-08-23,2025-08-23,"Active Year 1 @ 6%",₹0
+371,"Sid  Vid","sid.vid@example.com","+91 98765 43212",₹20,00,000,1 Bond,2025-08-23,2025-08-23,"Active Year 1 @ 6%",₹0
+361,"Vinod  Kumar","vk2615@example.com","+91 98765 43213",₹20,00,000,1 Bond,2025-08-23,2025-08-23,"Active Year 1 @ 6%",₹0
+351,"Sid  Vid","sid.vid@example.com","+91 98765 43212",₹20,00,000,1 Bond,2025-08-23,2025-08-23,"Active Year 1 @ 6%",₹0
+341,"Vinod  Kumar","vk2615@example.com","+91 98765 43213",₹20,00,000,1 Bond,2024-01-01,2034-01-01,"Active Year 2 @ 6%",₹1,20,000
+331,"Sid  Vid","sid.vid@example.com","+91 98765 43212",₹20,00,000,1 Bond,2024-01-01,2034-01-01,"Active Year 2 @ 6%",₹1,20,000
+321,"Vinod  Kumar","vk2615@example.com","+91 98765 43213",₹20,00,000,1 Bond,2025-08-23,2025-08-23,"Active Year 1 @ 6%",₹0
+311,"Sid  Vid","sid.vid@example.com","+91 98765 43212",₹20,00,000,1 Bond,2025-08-23,2025-08-23,"Active Year 1 @ 6%",₹0
+301,"Vinod  Kumar","vk2615@example.com","+91 98765 43213",₹20,00,000,1 Bond,2025-08-23,2025-08-23,"Active Year 1 @ 6%",₹0
+291,"Sid  Vid","sid.vid@example.com","+91 98765 43212",₹20,00,000,1 Bond,2025-08-23,2025-08-23,"Active Year 1 @ 6%",₹0
+281,"krishna kumar John","test1@gmail.com","9876543210",₹20,00,000,1 Bond,2024-01-01,2034-01-01,"Active Year 2 @ 6%",₹1,20,000
+225,"VK  User","vk2615@example.com","+91-9876543210",₹20,00,000,1 Bond,2025-08-23,2025-08-23,"Active Year 1 @ 6%",₹0
+224,"ram krishna raju","vk2615@gmail.com","9876543210",₹20,00,000,1 Bond,2023-01-01,2033-01-01,"Active Year 3 @ 9%",₹3,00,000
+223,"suresh kum gun","vk2615@gmail.com","9876543210",₹20,00,000,1 Bond,2024-01-01,2034-01-01,"Active Year 2 @ 6%",₹1,20,000
+222,"sur kum gun","vk2615@gmail.com","9876543210",₹20,00,000,1 Bond,2024-01-01,2034-01-01,"Active Year 2 @ 6%",₹1,20,000
+4,"Sid  Vid","sid@test.com","9876543210",₹20,00,000,1 Bond,2025-08-23,2025-08-23,"Active Year 1 @ 6%",₹0
+221,"Sid vin vid","test1@gmail.com","9876543210",₹20,00,000,1 Bond,2025-08-01,2035-08-01,"Active Year 1 @ 6%",₹0
+211,"Vinodh Kumar Durga","test1@gmail.com","9876543210",₹20,00,000,1 Bond,2024-01-20,2034-01-20,"Active Year 2 @ 6%",₹1,20,000
+3,"Suri  Kumar","suri.kumar@example.com","+91 98765 43210",₹60,00,000,3 Bonds,2024-03-10,2034-03-10,"Active Year 2 @ 6%",₹3,60,000
+2,"Suresh  Kumar","suresh.kumar@example.com","+91 98765 43208",₹40,00,000,2 Bonds,2024-02-20,2034-02-20,"Active Year 2 @ 6%",₹2,40,000
+1,"ND  Kumar","nd.kumar@example.com","+91 98765 43209",₹20,00,000,1 Bond,2024-01-15,2034-01-15,"Active Year 2 @ 6%",₹1,20,000
+2025-V1-B1-1098-171,"Simple Test ID","simple.id@example.com","+91 98765 43213",₹20,00,000,1 Bond,2024-03-01,2034-03-01,"Active Year 2 @ 6%",₹1,20,000
+2025-V1-B1-234F-161,"Universal Login Test","universal.test@example.com","+91 98765 43212",₹20,00,000,1 Bond,2024-02-01,2034-02-01,"Active Year 2 @ 6%",₹1,20,000
+2025-V1-B1-9012-151,"Test Universal Investor","test.investor@example.com","+91 98765 43211",₹20,00,000,1 Bond,2024-01-15,2034-01-15,"Active Year 2 @ 6%",₹1,20,000
+2025-V1-B1-234E-141,"Suri Test Kumar","test1@gmail.com","9876543210",₹20,00,000,1 Bond,2019-01-18,2029-01-18,"Active Year 7 @ 18%",₹16,20,000
+2025-V1-B1-234E-131,"Test  User","test@example.com","9876543210",₹20,00,000,1 Bond,2025-08-18,2035-08-18,"Active Year 1 @ 6%",₹0
+2025-V1-B1-234E-121,"Kum Gun vin","test1@gmail.com","9876543210",₹40,00,000,2 Bonds,2022-01-18,2032-01-18,"Active Year 4 @ 12%",₹10,80,000
+2025-V1-B1-234E-111,"vin Kum gun","test1@gmail.com","9876543210",₹20,00,000,1 Bond,2018-01-18,2028-01-18,"Active Year 8 @ 18%",₹19,80,000
+2025-V1-B1-234E-101,"Kumar Vinod gundubolu","test1@gmail.com","9876543210",₹20,00,000,1 Bond,2020-01-01,2030-01-01,"Active Year 6 @ 18%",₹12,60,000
+2025-V1-B1-234E-091,"ND  Suresh Kumar","Test1@gmail.com","9876543210",₹20,00,000,1 Bond,2021-01-18,2031-01-18,"Active Year 5 @ 18%",₹9,00,000
+2025-V1-B1-234E-081,"Suresh Nagala Durga","Test1@gmail.com","9876543210",₹20,00,000,1 Bond,2022-01-18,2032-01-18,"Active Year 4 @ 12%",₹5,40,000
+2025-V1-B1-234E-071,"Suresh Nagala Durga","test1@gmail.com","9876543210",₹20,00,000,1 Bond,2023-01-18,2033-01-18,"Active Year 3 @ 9%",₹3,00,000
+bd3b5b6a-17a4-4ce7-8e37-6155a63c60c0,"Rajesh Singh Kumar","rajesh.kumar@example.com","9876543210",₹20,00,000,1 Bond,2025-01-01,2028-01-01,"Active Year 1 @ 6%",₹0
+e09e052b-1e2b-408f-8787-58e3df9762af,"Priya Rani Sharma","priya.sharma@example.com","8765432109",₹40,00,000,2 Bonds,2025-01-15,2028-01-15,"Active Year 1 @ 6%",₹0
+2025-V1-B1-234E-041,"Suresh Nagala Durga","Test1@gmail.com","9876543210",₹20,00,000,1 Bond,2023-01-18,2033-01-18,"Active Year 3 @ 9%",₹3,00,000
+INV-2024-YOUR-ACCOUNT,"Admin  User","viku2615@gmail.com","+91-9999999999",₹60,00,000,3 Bonds,2024-03-01,2029-03-01,"Active Year 2 @ 6%",₹3,60,000
+INV-2024-SAMPLE-001,"Rahul  Sharma","investor@test.com","+91-9876543210",₹40,00,000,2 Bonds,2024-01-15,2029-01-15,"Active Year 2 @ 6%",₹2,40,000
+2024-V1-B5-1234-002,"Rajesh Kumar Sharma","rajesh.sharma@example.com","+91-9876543211",₹1,20,00,000,6 Bonds,2024-01-10,2034-01-10,"Active Year 2 @ 6%",₹7,20,000
+2024-V1-B5-1234-001,"Vikash Kumar Ranjan","viku2615@gmail.com","+91-9876543210",₹4,00,00,000,20 Bonds,2022-03-15,2032-03-15,"Active Year 4 @ 12%",₹1,08,00,000
