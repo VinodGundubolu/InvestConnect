@@ -4,8 +4,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Calendar, TrendingUp, Users, DollarSign } from "lucide-react";
+import { Download, Calendar, TrendingUp, Users, DollarSign, FileText } from "lucide-react";
 import AdminSidebar from "@/components/admin/admin-sidebar";
+import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 
 export default function AdminReports() {
@@ -25,6 +26,15 @@ export default function AdminReports() {
       return;
     }
   }, [isAuthenticated, isLoading, toast]);
+
+  // Fetch investor data for reports
+  const { data: investors, isLoading: investorsLoading } = useQuery({
+    queryKey: ["/api/admin/investors"],
+  });
+
+  const { data: investments, isLoading: investmentsLoading } = useQuery({
+    queryKey: ["/api/investments"],
+  });
 
   if (isLoading) {
     return (
@@ -113,6 +123,61 @@ export default function AdminReports() {
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export Report
+              </Button>
+              
+              <Button 
+                className="bg-green-500 hover:bg-green-600"
+                onClick={() => {
+                  // Export complete investor data with investments
+                  if (!investors || investorsLoading) {
+                    toast({
+                      title: "Data Loading",
+                      description: "Please wait for investor data to load",
+                    });
+                    return;
+                  }
+
+                  const csvData = [
+                    `Investor Report Generated,${new Date().toLocaleDateString()}`,
+                    `Total Investors,${investors.length}`,
+                    ``,
+                    `Investor ID,Name,Email,Phone,Investment Date,Investment Amount,Current Value,Status,Years Invested,Next Dividend Date,KYC Status,PAN,Aadhar,Address`,
+                    ...investors.map((investor: any) => {
+                      const investment = investments?.find((inv: any) => inv.investorId === investor.id || inv.investor_id === investor.id);
+                      return [
+                        investor.id || investor.investorId || 'N/A',
+                        investor.name || 'N/A',
+                        investor.email || 'N/A',
+                        investor.phone || 'N/A',
+                        investment?.investmentDate || investment?.investment_date || 'N/A',
+                        investment?.amount || investment?.total_amount || 'N/A',
+                        investment?.currentValue || investment?.current_value || 'N/A',
+                        investment?.status || 'Active',
+                        investment?.yearsInvested || investment?.years_invested || 'N/A',
+                        investment?.nextDividendDate || investment?.next_dividend_date || 'N/A',
+                        investor.kycStatus || investor.kyc_status || 'Completed',
+                        investor.panNumber || investor.pan_number || 'N/A',
+                        investor.aadharNumber || investor.aadhar_number || 'N/A',
+                        `"${investor.address || 'N/A'}"`
+                      ].join(',');
+                    })
+                  ].join('\n');
+                  
+                  const blob = new Blob([csvData], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `investors-report-${new Date().toISOString().split('T')[0]}.csv`;
+                  a.click();
+                  
+                  toast({
+                    title: "Investors Report Exported",
+                    description: `Complete data for ${investors.length} investors exported to CSV`,
+                  });
+                }}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Export Investors Data
               </Button>
             </div>
           </div>
