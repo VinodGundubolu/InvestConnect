@@ -32,6 +32,17 @@ export default function AdminTransactions() {
     queryKey: ["/api/transactions"],
   });
 
+  type Transaction = {
+    id: string;
+    investorName: string;
+    type: string;
+    amount: number;
+    date: string;
+    status: string;
+    description: string;
+    mode: string;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -44,7 +55,7 @@ export default function AdminTransactions() {
     return null;
   }
 
-  const sampleTransactions = transactions || [
+  const sampleTransactions: Transaction[] = (transactions as Transaction[]) || [
     {
       id: "TXN-001",
       investorName: "Vinod Sharma",
@@ -117,11 +128,35 @@ export default function AdminTransactions() {
               <p className="text-gray-600">Monitor all investment and dividend transactions</p>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => {
+                toast({
+                  title: "Filter Options",
+                  description: "Transaction filtering options will be available soon",
+                });
+              }}>
                 <Filter className="h-4 w-4 mr-2" />
                 Filter
               </Button>
-              <Button className="bg-blue-500 hover:bg-blue-600">
+              <Button 
+                className="bg-blue-500 hover:bg-blue-600"
+                onClick={() => {
+                  // Export transactions as CSV
+                  const csvData = sampleTransactions.map((t: Transaction) => 
+                    `${t.id},${t.investorName},${t.type},${t.amount},${t.date},${t.status}`
+                  ).join('\n');
+                  const blob = new Blob([`ID,Investor,Type,Amount,Date,Status\n${csvData}`], 
+                    { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'transactions.csv';
+                  a.click();
+                  toast({
+                    title: "Export Complete",
+                    description: "Transactions exported to CSV file",
+                  });
+                }}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
@@ -163,7 +198,7 @@ export default function AdminTransactions() {
                   <div className="text-center">
                     <p className="text-sm text-gray-600">Total Value</p>
                     <p className="text-2xl font-bold">
-                      {formatCurrency(sampleTransactions.reduce((sum, txn) => sum + txn.amount, 0))}
+                      {formatCurrency(sampleTransactions.reduce((sum: number, txn: Transaction) => sum + txn.amount, 0))}
                     </p>
                   </div>
                 </CardContent>
@@ -174,7 +209,7 @@ export default function AdminTransactions() {
                   <div className="text-center">
                     <p className="text-sm text-gray-600">Investments</p>
                     <p className="text-2xl font-bold text-blue-600">
-                      {sampleTransactions.filter(txn => txn.type === 'investment').length}
+                      {sampleTransactions.filter((txn: Transaction) => txn.type === 'investment').length}
                     </p>
                   </div>
                 </CardContent>
@@ -185,7 +220,7 @@ export default function AdminTransactions() {
                   <div className="text-center">
                     <p className="text-sm text-gray-600">Dividends Paid</p>
                     <p className="text-2xl font-bold text-green-600">
-                      {formatCurrency(sampleTransactions.filter(txn => txn.type === 'dividend_disbursement').reduce((sum, txn) => sum + txn.amount, 0))}
+                      {formatCurrency(sampleTransactions.filter((txn: Transaction) => txn.type === 'dividend_disbursement').reduce((sum: number, txn: Transaction) => sum + txn.amount, 0))}
                     </p>
                   </div>
                 </CardContent>
@@ -213,7 +248,7 @@ export default function AdminTransactions() {
                       </tr>
                     </thead>
                     <tbody>
-                      {sampleTransactions.map((transaction) => (
+                      {sampleTransactions.map((transaction: Transaction) => (
                         <tr key={transaction.id} className="border-b hover:bg-gray-50">
                           <td className="p-4 font-mono text-sm">{transaction.id}</td>
                           <td className="p-4 font-medium">{transaction.investorName}</td>

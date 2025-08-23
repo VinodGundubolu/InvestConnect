@@ -63,11 +63,43 @@ export default function AdminReports() {
               <p className="text-gray-600">Investment performance and portfolio analytics</p>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => {
+                toast({
+                  title: "Date Range Selector",
+                  description: "Date range filtering will be available soon",
+                });
+              }}>
                 <Calendar className="h-4 w-4 mr-2" />
                 Date Range
               </Button>
-              <Button className="bg-blue-500 hover:bg-blue-600">
+              <Button 
+                className="bg-blue-500 hover:bg-blue-600"
+                onClick={() => {
+                  // Export report as CSV
+                  const csvData = [
+                    `Report Generated,${new Date().toLocaleDateString()}`,
+                    `Total Investors,${reportData.totalInvestors}`,
+                    `Total Investment,${reportData.totalInvestment}`,
+                    `Total Dividends Paid,${reportData.totalDividendsPaid}`,
+                    `Average ROI,${reportData.averageROI}%`,
+                    ``,
+                    `Month,New Investments,Dividends Paid,New Investors`,
+                    ...reportData.monthlyData.map(d => 
+                      `${d.month},${d.investments},${d.dividends},${d.newInvestors}`
+                    )
+                  ].join('\n');
+                  const blob = new Blob([csvData], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'investment-report.csv';
+                  a.click();
+                  toast({
+                    title: "Report Exported",
+                    description: "Investment report exported to CSV file",
+                  });
+                }}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Export Report
               </Button>

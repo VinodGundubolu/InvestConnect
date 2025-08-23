@@ -167,18 +167,18 @@ export default function ReturnsCalculator() {
                         // Calculate the number of bonds based on total investment
                         const numberOfBonds = calculation.summary.principal / 2000000;
                         
-                        // Present values per bond from reference image
+                        // Present values per bond from reference image - CORRECTED
                         const perBondPresentValues = {
                           1: 2000000,   // ₹20,00,000
                           2: 2120000,   // ₹21,20,000  
                           3: 2300000,   // ₹23,00,000
                           4: 2540000,   // ₹25,40,000
-                          5: 4900000,   // ₹49,00,000
-                          6: 360000,    // 360000/year (displayed differently)
-                          7: 360000,    // 360000/year
-                          8: 360000,    // 360000/year
-                          9: 360000,    // 360000/year (18% of 20L)
-                          10: 8340000   // ₹83,40,000
+                          5: 4900000,   // ₹49,00,000 (includes ₹20L bonus)
+                          6: 360000,    // ₹3,60,000/year (displayed differently)
+                          7: 360000,    // ₹3,60,000/year
+                          8: 360000,    // ₹3,60,000/year
+                          9: 360000,    // ₹3,60,000/year (18% of 20L)
+                          10: 8340000   // ₹83,40,000 (CORRECT: Capital + Interest + Bonus)
                         };
                         
                         // Calculate total present value for all bonds
