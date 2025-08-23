@@ -168,9 +168,9 @@ export default function AdminReports() {
                       
                       // Investment amount (should be 20,00,000 for most)
                       const amount = investor.totalInvestment || 2000000;
-                      const formattedAmount = `₹${amount.toLocaleString('en-IN')}`;
+                      const formattedAmount = `Rs ${amount.toLocaleString('en-IN')}`;
                       
-                      // Bond count (1 bond = ₹20,00,000)
+                      // Bond count (1 bond = Rs 20,00,000)
                       const bonds = investor.bondsCount || 1;
                       const formattedBonds = `${bonds} Bond${bonds > 1 ? 's' : ''}`;
                       
@@ -189,7 +189,7 @@ export default function AdminReports() {
                       
                       // Total returns
                       const returns = investor.totalReturns || 0;
-                      const formattedReturns = `₹${returns.toLocaleString('en-IN')}`;
+                      const formattedReturns = `Rs ${returns.toLocaleString('en-IN')}`;
                       
                       return [
                         `"${investorId}"`,           // Column 1: Investor ID
