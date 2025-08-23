@@ -154,11 +154,11 @@ export default function AdminReports() {
                   console.log('First investor data:', investors[0]);
                   
                   const csvData = [
-                    `Complete Investor Database Export,${new Date().toLocaleDateString()}`,
-                    `Total Investors Exported,${investors.length}`,
-                    `Export Source,Live Database - Investor Directory`,
+                    `"Complete Investor Database Export","${new Date().toLocaleDateString()}"`,
+                    `"Total Investors Exported","${investors.length}"`,
+                    `"Export Source","Live Database - Investor Directory"`,
                     ``,
-                    `Investor ID,Name,Email,Phone,Investment Amount,Bonds,Investment Start,Maturity Date,Current Status,Total Returns`,
+                    `"Investor ID","Name","Email","Phone","Investment Amount","Bonds","Investment Start","Maturity Date","Current Status","Total Returns"`,
                     ...investors.map((investor: any) => {
                       // Use exact field names from database
                       const investorId = investor.id || 'N/A';
@@ -192,16 +192,16 @@ export default function AdminReports() {
                       const formattedReturns = `₹${returns.toLocaleString('en-IN')}`;
                       
                       return [
-                        investorId,           // Column 1: Investor ID
-                        `"${name}"`,          // Column 2: Name  
-                        `"${email}"`,         // Column 3: Email
-                        `"${phone}"`,         // Column 4: Phone
-                        formattedAmount,      // Column 5: Investment Amount
-                        formattedBonds,       // Column 6: Bonds
-                        formattedStartDate,   // Column 7: Investment Start
-                        formattedMaturityDate,// Column 8: Maturity Date
-                        `"${status}"`,        // Column 9: Current Status
-                        formattedReturns      // Column 10: Total Returns
+                        `"${investorId}"`,           // Column 1: Investor ID
+                        `"${name}"`,                 // Column 2: Name  
+                        `"${email}"`,                // Column 3: Email
+                        `"${phone}"`,                // Column 4: Phone
+                        `"${formattedAmount}"`,      // Column 5: Investment Amount
+                        `"${formattedBonds}"`,       // Column 6: Bonds
+                        `"${formattedStartDate}"`,   // Column 7: Investment Start
+                        `"${formattedMaturityDate}"`,// Column 8: Maturity Date
+                        `"${status}"`,               // Column 9: Current Status
+                        `"${formattedReturns}"`      // Column 10: Total Returns
                       ].join(',');
                     })
                   ].join('\n');
