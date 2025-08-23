@@ -33,7 +33,7 @@ export interface ReturnsCalculation {
 }
 
 // Dividend rates by year as per the bond returns schedule
-const DIVIDEND_RATES = {
+const DIVIDEND_RATES_10_YEAR = {
   1: 0,    // 0% in year 1
   2: 6,    // 6% in year 2
   3: 9,    // 9% in year 3  
@@ -46,19 +46,33 @@ const DIVIDEND_RATES = {
   10: 0,   // 0% in year 10 (only bonus)
 };
 
-const BONUS_YEARS = [5, 10]; // 100% bonus at years 5 and 10
+const DIVIDEND_RATES_5_YEAR = {
+  1: 0,    // 0% in year 1
+  2: 6,    // 6% in year 2
+  3: 9,    // 9% in year 3  
+  4: 12,   // 12% in year 4
+  5: 0,    // 0% in year 5 (only bonus)
+};
+
+const BONUS_YEARS_10_YEAR = [5, 10]; // 100% bonus at years 5 and 10
+const BONUS_YEARS_5_YEAR = [5]; // 100% bonus at year 5 only
 const LOCK_IN_PERIOD_YEARS = 3;
 
 export function calculateReturns(
   principalAmount: number,
   investmentDate: Date,
-  currentDate: Date = new Date()
+  currentDate: Date = new Date(),
+  maturityPeriod: number = 10
 ): ReturnsCalculation {
   const daysSinceInvestment = differenceInDays(currentDate, investmentDate);
   const yearsSinceInvestment = differenceInYears(currentDate, investmentDate);
   
-  // Calculate current year (1-10)
-  const currentYear = Math.min(Math.floor(yearsSinceInvestment) + 1, 10);
+  // Select appropriate rates based on maturity period
+  const DIVIDEND_RATES = maturityPeriod === 5 ? DIVIDEND_RATES_5_YEAR : DIVIDEND_RATES_10_YEAR;
+  const BONUS_YEARS = maturityPeriod === 5 ? BONUS_YEARS_5_YEAR : BONUS_YEARS_10_YEAR;
+  
+  // Calculate current year (1-5 or 1-10)
+  const currentYear = Math.min(Math.floor(yearsSinceInvestment) + 1, maturityPeriod);
   const currentRate = DIVIDEND_RATES[currentYear as keyof typeof DIVIDEND_RATES] || 0;
   
   // Check if lock-in period has passed (3 years)
@@ -69,7 +83,7 @@ export function calculateReturns(
   let totalBonuses = 0;
   const yearlyBreakdown: YearlyBreakdown[] = [];
   
-  for (let year = 1; year <= 10; year++) {
+  for (let year = 1; year <= maturityPeriod; year++) {
     const rate = DIVIDEND_RATES[year as keyof typeof DIVIDEND_RATES];
     const yearStartDate = addYears(investmentDate, year - 1);
     const yearEndDate = addYears(investmentDate, year);
@@ -139,15 +153,27 @@ export function calculateReturns(
     yearsSinceInvestment,
   };
   
-  // Calculate full 10-year maturity value correctly
-  // Interest rates: Year 2(6%) + Year 3(9%) + Year 4(12%) + Year 5(18%) + Year 6(18%) + Year 7(18%) + Year 8(18%) + Year 9(18%) = 117%
-  // Total interest = ₹20L × 117% = ₹23,40,000
-  // Bonuses: Year 5(100%) + Year 10(100%) = 200% = ₹40,00,000  
-  // Final Value = ₹20,00,000 + ₹23,40,000 + ₹40,00,000 = ₹83,40,000
-  const totalInterestRate = 0.06 + 0.09 + 0.12 + 0.18 + 0.18 + 0.18 + 0.18 + 0.18; // = 1.17 (117%)
-  const fullMaturityInterest = principalAmount * totalInterestRate; // ₹23,40,000 for ₹20L
-  const fullMaturityBonuses = principalAmount * 2; // ₹40,00,000 for ₹20L (100% at year 5 + 100% at year 10)
-  const fullMaturityValue = principalAmount + fullMaturityInterest + fullMaturityBonuses; // ₹83,40,000 for ₹20L
+  // Calculate full maturity value based on selected period
+  let totalInterestRate = 0;
+  let totalBonusRate = 0;
+  
+  if (maturityPeriod === 5) {
+    // 5-year plan: Year 2(6%) + Year 3(9%) + Year 4(12%) + Year 5(0%) = 27%
+    // Bonus: Year 5(100%) = 100%
+    // For ₹20L: ₹20L + ₹5.4L + ₹20L = ₹45.4L
+    totalInterestRate = 0.06 + 0.09 + 0.12; // = 0.27 (27%)
+    totalBonusRate = 1.0; // 100% bonus at year 5
+  } else {
+    // 10-year plan: Year 2(6%) + Year 3(9%) + Year 4(12%) + Year 5(18%) + Year 6(18%) + Year 7(18%) + Year 8(18%) + Year 9(18%) = 117%
+    // Bonuses: Year 5(100%) + Year 10(100%) = 200%
+    // For ₹20L: ₹20L + ₹23.4L + ₹40L = ₹83.4L
+    totalInterestRate = 0.06 + 0.09 + 0.12 + 0.18 + 0.18 + 0.18 + 0.18 + 0.18; // = 1.17 (117%)
+    totalBonusRate = 2.0; // 200% bonus (year 5 + year 10)
+  }
+  
+  const fullMaturityInterest = principalAmount * totalInterestRate;
+  const fullMaturityBonuses = principalAmount * totalBonusRate;
+  const fullMaturityValue = principalAmount + fullMaturityInterest + fullMaturityBonuses;
 
   const summary = {
     principal: principalAmount,
@@ -222,11 +248,13 @@ export interface MilestoneStatus {
 
 export function getMilestoneStatus(
   investmentDate: Date,
-  currentDate: Date = new Date()
+  currentDate: Date = new Date(),
+  maturityPeriod: number = 10
 ): MilestoneStatus[] {
   const yearsSinceInvestment = differenceInYears(currentDate, investmentDate);
+  const bonusYears = maturityPeriod === 5 ? [5] : [5, 10];
   
-  return BONUS_YEARS.map(year => {
+  return bonusYears.map((year: number) => {
     const isCompleted = yearsSinceInvestment >= year;
     const completionDate = isCompleted ? addYears(investmentDate, year) : undefined;
     

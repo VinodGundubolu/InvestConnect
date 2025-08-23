@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
 import { 
   calculateReturns, 
@@ -15,6 +16,7 @@ import {
 export default function ReturnsCalculator() {
   const [amount, setAmount] = useState("2000000"); // Default to 1 unit (₹20 lakhs)
   const [investmentDate, setInvestmentDate] = useState("2024-03-15");
+  const [maturityPeriod, setMaturityPeriod] = useState<number>(10); // Default to 10 years
   const [calculation, setCalculation] = useState<ReturnsCalculation | null>(null);
   const [error, setError] = useState<string>("");
 
@@ -30,7 +32,7 @@ export default function ReturnsCalculator() {
     
     setError("");
     const startDate = new Date(investmentDate);
-    const result = calculateReturns(numAmount, startDate);
+    const result = calculateReturns(numAmount, startDate, new Date(), maturityPeriod);
     setCalculation(result);
   };
 
@@ -112,6 +114,25 @@ export default function ReturnsCalculator() {
                   data-testid="input-investment-date"
                 />
               </div>
+
+              <div>
+                <Label htmlFor="maturity" className="text-sm font-medium text-gray-700">
+                  Maturity Period
+                </Label>
+                <Select value={maturityPeriod.toString()} onValueChange={(value) => setMaturityPeriod(parseInt(value))}>
+                  <SelectTrigger className="mt-2" data-testid="select-maturity-period">
+                    <SelectValue placeholder="Select maturity period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 Years (Early Exit)</SelectItem>
+                    <SelectItem value="10">10 Years (Full Term)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {maturityPeriod === 5 ? "Exit after 5 years with milestone bonus" : "Complete 10-year investment cycle"}
+                </p>
+              </div>
+              
               <Button
                 onClick={handleCalculate}
                 className="w-full bg-primary hover:bg-primary-600 transition-colors"
@@ -131,10 +152,10 @@ export default function ReturnsCalculator() {
           {/* Bond Returns Schedule Table */}
           <div>
             <h4 className="font-medium mb-4">
-              Bond Returns Schedule 
+              Bond Returns Schedule - {maturityPeriod} Year Plan
               {calculation && (
                 <span className="text-sm font-normal text-gray-600">
-                  ({calculation.summary.principal === 2000000 ? 'Per ₹20 Lakh Bond' : 
+                  <br />({calculation.summary.principal === 2000000 ? 'Per ₹20 Lakh Bond' : 
                     calculation.summary.principal === 4000000 ? 'Total for ₹40 Lakhs (2 Bonds)' :
                     calculation.summary.principal === 6000000 ? 'Total for ₹60 Lakhs (3 Bonds)' :
                     `Total for ${formatCurrency(calculation.summary.principal)}`})
@@ -167,8 +188,14 @@ export default function ReturnsCalculator() {
                         // Calculate the number of bonds based on total investment
                         const numberOfBonds = calculation.summary.principal / 2000000;
                         
-                        // Present values per bond from reference image - CORRECTED
-                        const perBondPresentValues = {
+                        // Present values per bond based on maturity period
+                        const perBondPresentValues = maturityPeriod === 5 ? {
+                          1: 2000000,   // ₹20,00,000
+                          2: 2120000,   // ₹21,20,000  
+                          3: 2300000,   // ₹23,00,000
+                          4: 2540000,   // ₹25,40,000
+                          5: 4540000,   // ₹45,40,000 (5-year exit with milestone bonus)
+                        } : {
                           1: 2000000,   // ₹20,00,000
                           2: 2120000,   // ₹21,20,000  
                           3: 2300000,   // ₹23,00,000
