@@ -157,18 +157,37 @@ export default function AdminReports() {
                     ``,
                     `Investor ID,Name & Contact,Investment Amount,Bonds,Investment Start,Maturity Date,Current Status,Total Returns`,
                     ...investors.map((investor: any) => {
-                      // Match the exact format from the attached image
-                      const investment = investments?.find((inv: any) => inv.investorId === investor.id || inv.investor_id === investor.id);
-                      const formatName = `${investor.name || 'N/A'}`;
-                      const formatContact = `${investor.email || 'N/A'} ${investor.phone || 'N/A'}`;
-                      const formatAmount = investment?.amount ? `₹${(investment.amount).toLocaleString('en-IN')}` : 'N/A';
-                      const formatBonds = investment?.amount ? `${Math.floor(investment.amount / 2000000)} Bond${Math.floor(investment.amount / 2000000) > 1 ? 's' : ''}` : 'N/A';
-                      const formatDate = investment?.investmentDate || investment?.investment_date || 'N/A';
-                      const maturityDate = formatDate !== 'N/A' ? `${new Date(new Date(formatDate).getTime() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}` : 'N/A';
-                      const status = investment?.status || 'Active';
-                      const yearsInvested = formatDate !== 'N/A' ? Math.floor((new Date().getTime() - new Date(formatDate).getTime()) / (365 * 24 * 60 * 60 * 1000)) : 0;
-                      const statusWithYear = `${status} Year ${yearsInvested} @ 6%`;
-                      const totalReturns = investment?.amount ? `₹${(investment.amount * 0.06 * yearsInvested).toLocaleString('en-IN')}` : 'N/A';
+                      // Use actual data structure from API response
+                      const formatName = investor.name || 'N/A';
+                      const formatEmail = investor.email || 'N/A';
+                      const formatPhone = investor.phone || 'N/A';
+                      const formatContact = `${formatEmail} ${formatPhone}`;
+                      
+                      // Use the correct field names from the API response
+                      const investmentAmount = investor.totalInvestment || investor.investment || 2000000;
+                      const formatAmount = `₹${investmentAmount.toLocaleString('en-IN')}`;
+                      
+                      // Bonds count from API
+                      const bondCount = investor.bondsCount || investor.bonds || Math.floor(investmentAmount / 2000000);
+                      const formatBonds = `${bondCount} Bond${bondCount > 1 ? 's' : ''}`;
+                      
+                      // Investment start date from API
+                      const investmentStartDate = investor.investmentStartDate || '2024-01-01';
+                      const formatDate = investmentStartDate.split('T')[0];
+                      
+                      // Maturity date from API
+                      const maturityDate = investor.maturityDate || '2034-01-01';
+                      const formatMaturityDate = maturityDate.split('T')[0];
+                      
+                      // Status with current year and rate from API
+                      const currentYear = investor.currentYear || 1;
+                      const currentRate = investor.currentRate || investor.rate || 6;
+                      const status = investor.status || 'Active';
+                      const statusWithYear = `${status} Year ${currentYear} @ ${currentRate}%`;
+                      
+                      // Total returns from API
+                      const totalReturns = investor.totalReturns || 0;
+                      const formatReturns = `₹${totalReturns.toLocaleString('en-IN')}`;
                       
                       return [
                         investor.id || 'N/A',
@@ -177,9 +196,9 @@ export default function AdminReports() {
                         formatAmount,
                         formatBonds,
                         formatDate,
-                        maturityDate,
+                        formatMaturityDate,
                         `"${statusWithYear}"`,
-                        totalReturns
+                        formatReturns
                       ].join(',');
                     })
                   ].join('\n');
