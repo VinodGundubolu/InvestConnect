@@ -150,55 +150,58 @@ export default function AdminReports() {
                     return;
                   }
 
+                  // Debug: Log first investor data to console
+                  console.log('First investor data:', investors[0]);
+                  
                   const csvData = [
                     `Complete Investor Database Export,${new Date().toLocaleDateString()}`,
                     `Total Investors Exported,${investors.length}`,
                     `Export Source,Live Database - Investor Directory`,
                     ``,
-                    `Investor ID,Name & Contact,Investment Amount,Bonds,Investment Start,Maturity Date,Current Status,Total Returns`,
+                    `Investor ID,Name,Email,Phone,Investment Amount,Bonds,Investment Start,Maturity Date,Current Status,Total Returns`,
                     ...investors.map((investor: any) => {
-                      // Use actual data structure from API response
-                      const formatName = investor.name || 'N/A';
-                      const formatEmail = investor.email || 'N/A';
-                      const formatPhone = investor.phone || 'N/A';
-                      const formatContact = `${formatEmail} ${formatPhone}`;
+                      // Use exact field names from database
+                      const investorId = investor.id || 'N/A';
+                      const name = investor.name || 'N/A';
+                      const email = investor.email || 'N/A';
+                      const phone = investor.phone || 'N/A';
                       
-                      // Use the correct field names from the API response
-                      const investmentAmount = investor.totalInvestment || investor.investment || 2000000;
-                      const formatAmount = `₹${investmentAmount.toLocaleString('en-IN')}`;
+                      // Investment amount (should be 20,00,000 for most)
+                      const amount = investor.totalInvestment || 2000000;
+                      const formattedAmount = `₹${amount.toLocaleString('en-IN')}`;
                       
-                      // Bonds count from API
-                      const bondCount = investor.bondsCount || investor.bonds || Math.floor(investmentAmount / 2000000);
-                      const formatBonds = `${bondCount} Bond${bondCount > 1 ? 's' : ''}`;
+                      // Bond count (1 bond = ₹20,00,000)
+                      const bonds = investor.bondsCount || 1;
+                      const formattedBonds = `${bonds} Bond${bonds > 1 ? 's' : ''}`;
                       
-                      // Investment start date from API
-                      const investmentStartDate = investor.investmentStartDate || '2024-01-01';
-                      const formatDate = investmentStartDate.split('T')[0];
+                      // Investment start date
+                      const startDate = investor.investmentStartDate || '2024-01-01';
+                      const formattedStartDate = startDate.split('T')[0];
                       
-                      // Maturity date from API
+                      // Maturity date (10 years from start)
                       const maturityDate = investor.maturityDate || '2034-01-01';
-                      const formatMaturityDate = maturityDate.split('T')[0];
+                      const formattedMaturityDate = maturityDate.split('T')[0];
                       
-                      // Status with current year and rate from API
-                      const currentYear = investor.currentYear || 1;
-                      const currentRate = investor.currentRate || investor.rate || 6;
-                      const status = investor.status || 'Active';
-                      const statusWithYear = `${status} Year ${currentYear} @ ${currentRate}%`;
+                      // Current status
+                      const year = investor.currentYear || 1;
+                      const rate = investor.currentRate || 6;
+                      const status = `${investor.status || 'Active'} Year ${year} @ ${rate}%`;
                       
-                      // Total returns from API
-                      const totalReturns = investor.totalReturns || 0;
-                      const formatReturns = `₹${totalReturns.toLocaleString('en-IN')}`;
+                      // Total returns
+                      const returns = investor.totalReturns || 0;
+                      const formattedReturns = `₹${returns.toLocaleString('en-IN')}`;
                       
                       return [
-                        investor.id || 'N/A',
-                        `"${formatName}"`,
-                        `"${formatContact}"`,
-                        formatAmount,
-                        formatBonds,
-                        formatDate,
-                        formatMaturityDate,
-                        `"${statusWithYear}"`,
-                        formatReturns
+                        investorId,           // Column 1: Investor ID
+                        `"${name}"`,          // Column 2: Name  
+                        `"${email}"`,         // Column 3: Email
+                        `"${phone}"`,         // Column 4: Phone
+                        formattedAmount,      // Column 5: Investment Amount
+                        formattedBonds,       // Column 6: Bonds
+                        formattedStartDate,   // Column 7: Investment Start
+                        formattedMaturityDate,// Column 8: Maturity Date
+                        `"${status}"`,        // Column 9: Current Status
+                        formattedReturns      // Column 10: Total Returns
                       ].join(',');
                     })
                   ].join('\n');
