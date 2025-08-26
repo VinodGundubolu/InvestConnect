@@ -158,7 +158,7 @@ export default function AdminReports() {
                     `"Total Investors Exported","${investors.length}"`,
                     `"Export Source","Live Database - Investor Directory"`,
                     ``,
-                    `"Investor ID","Name","Email","Phone","Investment Amount","Bonds","Investment Start","Maturity Date","Current Status","Total Returns"`,
+                    `"Investor ID","Name","Email","Phone","Investment Amount","Debentures","Investment Start","Maturity Date","Current Status","Total Returns"`,
                     ...investors.map((investor: any) => {
                       // Use exact field names from database
                       const investorId = investor.id || 'N/A';
@@ -172,7 +172,7 @@ export default function AdminReports() {
                       
                       // Bond count (1 bond = Rs 20,00,000)
                       const bonds = investor.bondsCount || 1;
-                      const formattedBonds = `${bonds} Bond${bonds > 1 ? 's' : ''}`;
+                      const formattedBonds = `${bonds} Debenture${bonds > 1 ? 's' : ''}`;
                       
                       // Investment start date
                       const startDate = investor.investmentStartDate || '2024-01-01';
@@ -182,9 +182,9 @@ export default function AdminReports() {
                       const maturityDate = investor.maturityDate || '2034-01-01';
                       const formattedMaturityDate = maturityDate.split('T')[0];
                       
-                      // Current status
+                      // Current status - fix year 1 rate to show 0%
                       const year = investor.currentYear || 1;
-                      const rate = investor.currentRate || 6;
+                      const rate = year === 1 ? 0 : (investor.currentRate || 6);
                       const status = `${investor.status || 'Active'} Year ${year} @ ${rate}%`;
                       
                       // Total returns
@@ -197,7 +197,7 @@ export default function AdminReports() {
                         `"${email}"`,                // Column 3: Email
                         `"${phone}"`,                // Column 4: Phone
                         `"${formattedAmount}"`,      // Column 5: Investment Amount
-                        `"${formattedBonds}"`,       // Column 6: Bonds
+                        `"${formattedBonds}"`,       // Column 6: Debentures
                         `"${formattedStartDate}"`,   // Column 7: Investment Start
                         `"${formattedMaturityDate}"`,// Column 8: Maturity Date
                         `"${status}"`,               // Column 9: Current Status

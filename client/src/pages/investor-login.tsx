@@ -207,6 +207,37 @@ export default function InvestorLogin() {
             </Button>
           </form>
 
+          {/* Forgot Password */}
+          <div className="mt-4 text-center">
+            <Button 
+              variant="link"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium p-0"
+              onClick={() => {
+                const identifier = form.getValues('identifier');
+                if (!identifier) {
+                  toast({
+                    title: "Email/Phone Required",
+                    description: "Please enter your email or phone number first, then click 'Forgot Password'",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                // Simulate password reset request
+                toast({
+                  title: "Password Reset Requested", 
+                  description: `Password reset link will be sent to ${identifier}. Please check your email/SMS.`,
+                });
+                
+                // TODO: Implement actual password reset API call
+                console.log("Password reset requested for:", identifier);
+              }}
+              data-testid="button-forgot-password"
+            >
+              Forgot Password?
+            </Button>
+          </div>
+
           {/* Help Text */}
           <div className="mt-6 space-y-2 text-center">
             <p className="text-sm text-gray-600">

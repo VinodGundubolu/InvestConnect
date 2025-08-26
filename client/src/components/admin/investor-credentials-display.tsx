@@ -64,7 +64,7 @@ export default function InvestorCredentialsDisplay({ investor }: InvestorCredent
               <p><span className="font-medium">Name:</span> {investor?.investor?.firstName || investor?.firstName || 'N/A'} {investor?.investor?.lastName || investor?.lastName || ''}</p>
               <p><span className="font-medium">Email:</span> {investor?.investor?.email || investor?.email || 'N/A'}</p>
               <p><span className="font-medium">Investment:</span> {formatCurrency(investor?.investmentAmount || 0)}</p>
-              <p><span className="font-medium">Bonds:</span> {investor?.bondsCount || 0} units</p>
+              <p><span className="font-medium">Debentures:</span> {investor?.bondsCount || 0} units</p>
             </div>
           </div>
           
