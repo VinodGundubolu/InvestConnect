@@ -49,9 +49,9 @@ export default function AdminBonds() {
   const investmentsList = Array.isArray(investments) ? investments : [];
   
   const displayInvestments = investmentsList.map(inv => ({
-    id: inv.id || `INV-${Math.random().toString(36).substr(2, 9)}`,
+    id: inv.id || `Deb_${Math.random().toString(36).substr(2, 3)}`,
     investorName: inv.investorName || inv.investor_name || 'Unknown Investor',
-    bondType: inv.bondType || inv.bond_type || 'Fixed Income Bond',
+    investmentPlan: inv.investmentPlan || inv.investment_plan || '10',
     amount: inv.amount || inv.total_amount || inv.principal_amount || 0,
     purchaseDate: inv.purchaseDate || inv.purchase_date || inv.created_at || new Date().toISOString().split('T')[0],
     maturityDate: inv.maturityDate || inv.maturity_date || new Date(new Date().setFullYear(new Date().getFullYear() + 10)).toISOString().split('T')[0],
@@ -147,7 +147,7 @@ export default function AdminBonds() {
                       <tr className="border-b">
                         <th className="text-left p-4 font-medium">Debenture ID</th>
                         <th className="text-left p-4 font-medium">Investor</th>
-                        <th className="text-left p-4 font-medium">Type</th>
+                        <th className="text-left p-4 font-medium">Investment Plan</th>
                         <th className="text-right p-4 font-medium">Amount</th>
                         <th className="text-left p-4 font-medium">Purchase Date</th>
                         <th className="text-left p-4 font-medium">Maturity</th>
@@ -161,7 +161,7 @@ export default function AdminBonds() {
                         <tr key={investment.id} className="border-b hover:bg-gray-50">
                           <td className="p-4 font-mono text-sm">{investment.id}</td>
                           <td className="p-4">{investment.investorName}</td>
-                          <td className="p-4">{investment.bondType}</td>
+                          <td className="p-4">{investment.investmentPlan} Years</td>
                           <td className="p-4 text-right font-semibold">
                             {formatCurrency(investment.amount)}
                           </td>
@@ -218,7 +218,7 @@ export default function AdminBonds() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-900">Debenture Information</h4>
-                  <p className="text-sm text-gray-600">Type: {selectedBond.bondType}</p>
+                  <p className="text-sm text-gray-600">Investment Plan: {selectedBond.investmentPlan} Years</p>
                   <p className="text-sm text-gray-600">Debentures: {selectedBond.bondsPurchased}</p>
                 </div>
               </div>

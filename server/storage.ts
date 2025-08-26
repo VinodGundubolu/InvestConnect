@@ -271,11 +271,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createInvestment(investmentData: InsertInvestment): Promise<Investment> {
+    // Generate Deb_XXX format ID
+    const debentureId = await this.generateDebentureId();
     const [investment] = await db
       .insert(investments)
-      .values(investmentData)
+      .values({ ...investmentData, id: debentureId })
       .returning();
     return investment;
+  }
+
+  async generateDebentureId(): Promise<string> {
+    // Get total count of investments + 1 to get the next sequential number
+    const totalInvestments = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(investments);
+    
+    const nextNumber = (totalInvestments[0]?.count || 0) + 1;
+    return `Deb_${nextNumber.toString().padStart(3, '0')}`;
   }
 
   async updateInvestment(id: string, investmentData: Partial<InsertInvestment>): Promise<Investment> {
