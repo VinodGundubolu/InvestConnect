@@ -453,6 +453,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         investmentPlan
       } = req.body;
 
+      // Validate investment amount - only allow 20, 40, or 60 lakhs
+      const investmentAmountNum = parseInt(investmentAmount);
+      const allowedAmounts = [2000000, 4000000, 6000000]; // 20, 40, 60 lakhs in rupees
+      if (!allowedAmounts.includes(investmentAmountNum)) {
+        return res.status(400).json({
+          success: false,
+          message: "Investment amount must be exactly ₹20,00,000, ₹40,00,000, or ₹60,00,000"
+        });
+      }
+
+      // Calculate proper debenture count based on investment amount
+      const debentureCount = investmentAmountNum / 2000000; // Each debenture is worth ₹20 lakhs
+
       // Generate unique credentials
       const { username, password } = generateCredentials(firstName, lastName);
       const investorId = await storage.generateInvestorId({
@@ -512,19 +525,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create investment record in database
       const startDateObj = new Date(startDate);
       const maturityDate = new Date(startDateObj);
-      maturityDate.setFullYear(maturityDate.getFullYear() + 10);
+      const planYears = parseInt(investmentPlan) || 10; // Use actual investment plan duration
+      maturityDate.setFullYear(maturityDate.getFullYear() + planYears);
       const lockInExpiry = new Date(startDateObj);
       lockInExpiry.setFullYear(lockInExpiry.getFullYear() + 3);
 
       await storage.createInvestment({
         investorId: investorId,
-        planId: plans[0].id,
+        planId: plans[0].id.toString(),
         investmentDate: startDate,
         investedAmount: investmentAmount.toString(),
-        bondsPurchased: bondsCount,
+        bondsPurchased: debentureCount,
+        investmentPlan: investmentPlan || "10", // Store the investment plan
         lockInExpiry: lockInExpiry.toISOString().split('T')[0],
-        maturityDate: maturityDate.toISOString().split('T')[0],
-        investmentPlan: investmentPlan || "10", // Default to 10 years if not provided
+        maturityDate: maturityDate.toISOString().split('T')[0]
       });
 
       // Store credentials mapping for login

@@ -48,17 +48,38 @@ export default function AdminBonds() {
 
   const investmentsList = Array.isArray(investments) ? investments : [];
   
-  const displayInvestments = investmentsList.map(inv => ({
-    id: inv.id || `Deb_${Math.random().toString(36).substr(2, 3)}`,
-    investorName: inv.investorName || inv.investor_name || 'Unknown Investor',
-    investmentPlan: inv.investmentPlan || inv.investment_plan || '10',
-    amount: inv.amount || inv.total_amount || inv.principal_amount || 0,
-    purchaseDate: inv.purchaseDate || inv.purchase_date || inv.created_at || new Date().toISOString().split('T')[0],
-    maturityDate: inv.maturityDate || inv.maturity_date || new Date(new Date().setFullYear(new Date().getFullYear() + 10)).toISOString().split('T')[0],
-    currentRate: inv.currentRate || inv.current_rate || inv.interest_rate || 6,
-    status: inv.status || 'Active',
-    year: inv.year || inv.current_year || 1
-  }));
+  const displayInvestments = investmentsList.map(inv => {
+    const investmentPlan = parseInt(inv.investmentPlan || inv.investment_plan || '10');
+    const purchaseDate = new Date(inv.purchaseDate || inv.purchase_date || inv.created_at || new Date());
+    const currentDate = new Date();
+    
+    // Calculate proper maturity date based on investment plan
+    const maturityDate = new Date(purchaseDate);
+    maturityDate.setFullYear(maturityDate.getFullYear() + investmentPlan);
+    
+    // Calculate current year and rate based on investment plan
+    const yearsSinceInvestment = Math.floor((currentDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+    const currentYear = Math.min(yearsSinceInvestment + 1, investmentPlan);
+    
+    // Use correct rate schedule based on investment plan
+    const DIVIDEND_RATES_5_YEAR = { 1: 0, 2: 6, 3: 9, 4: 12, 5: 0 };
+    const DIVIDEND_RATES_10_YEAR = { 1: 0, 2: 6, 3: 9, 4: 12, 5: 18, 6: 18, 7: 18, 8: 18, 9: 18, 10: 0 };
+    
+    const rateSchedule = investmentPlan === 5 ? DIVIDEND_RATES_5_YEAR : DIVIDEND_RATES_10_YEAR;
+    const currentRate = rateSchedule[currentYear as keyof typeof rateSchedule] || 0;
+    
+    return {
+      id: inv.id || `Deb_${Math.random().toString(36).substr(2, 3)}`,
+      investorName: inv.investorName || inv.investor_name || 'Unknown Investor',
+      investmentPlan: investmentPlan.toString(),
+      amount: inv.amount || inv.total_amount || inv.principal_amount || 0,
+      purchaseDate: purchaseDate.toISOString().split('T')[0],
+      maturityDate: maturityDate.toISOString().split('T')[0],
+      currentRate: currentRate,
+      status: inv.status || 'Active',
+      year: currentYear
+    };
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 flex">

@@ -30,7 +30,14 @@ export default function InvestorsTable() {
     investmentPlan: inv.investmentPlan || inv.investment_plan || '10',
     joinDate: new Date(inv.created_at || Date.now()).toLocaleDateString(),
     investmentStartDate: inv.investmentStartDate || new Date(inv.created_at || Date.now()).toLocaleDateString(),
-    maturityDate: inv.maturityDate || new Date(new Date(inv.created_at || Date.now()).getTime() + 10 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+    maturityDate: (() => {
+      // Calculate maturity date based on actual investment plan duration
+      const planYears = parseInt(inv.investmentPlan || inv.investment_plan || '10');
+      const startDate = new Date(inv.created_at || Date.now());
+      const maturityDate = new Date(startDate);
+      maturityDate.setFullYear(maturityDate.getFullYear() + planYears);
+      return inv.maturityDate || maturityDate.toLocaleDateString();
+    })(),
     status: inv.status || 'Active',
     currentYear: inv.currentYear || 1,
     currentRate: inv.rate || 0,
