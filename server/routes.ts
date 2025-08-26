@@ -449,7 +449,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         proofNumber,
         startDate,
         investmentAmount,
-        bondsCount
+        bondsCount,
+        investmentPlan
       } = req.body;
 
       // Generate unique credentials
@@ -523,6 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bondsPurchased: bondsCount,
         lockInExpiry: lockInExpiry.toISOString().split('T')[0],
         maturityDate: maturityDate.toISOString().split('T')[0],
+        investmentPlan: investmentPlan || "10", // Default to 10 years if not provided
       });
 
       // Store credentials mapping for login
