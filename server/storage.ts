@@ -281,12 +281,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generateDebentureId(): Promise<string> {
-    // Get total count of investments + 1 to get the next sequential number
-    const totalInvestments = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(investments);
+    // Get the highest sequential number from existing Deb_XXX IDs
+    const existingDebIds = await db
+      .select({ id: investments.id })
+      .from(investments)
+      .where(sql`id LIKE 'Deb_%'`);
     
-    const nextNumber = (totalInvestments[0]?.count || 0) + 1;
+    let maxNumber = 0;
+    existingDebIds.forEach(row => {
+      const match = row.id.match(/^Deb_(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNumber) maxNumber = num;
+      }
+    });
+    
+    // Start from Deb_001 if no existing sequential IDs, otherwise increment
+    const nextNumber = maxNumber + 1;
     return `Deb_${nextNumber.toString().padStart(3, '0')}`;
   }
 
@@ -353,6 +364,13 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(transactions)
       .where(eq(transactions.investmentId, investmentId))
+      .orderBy(desc(transactions.createdAt));
+  }
+
+  async getAllTransactions(): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
       .orderBy(desc(transactions.createdAt));
   }
 

@@ -857,6 +857,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? new Date(investments[0].maturityDate).toISOString().split('T')[0]
             : new Date().toISOString().split('T')[0];
 
+          // Get investment plan from first investment
+          const investmentPlan = investments.length > 0 ? investments[0].investmentPlan : '10';
+
           return {
             id: investor.id,
             name: `${investor.firstName} ${investor.middleName || ''} ${investor.lastName}`.trim(),
@@ -864,6 +867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             phone: investor.primaryMobile,
             totalInvestment,
             bondsCount,
+            investmentPlan,
             joinDate: investor.createdAt ? new Date(investor.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             investmentStartDate,
             maturityDate,
@@ -1199,6 +1203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             id: investment.id,
             investorName: investor ? `${investor.firstName} ${investor.lastName}` : 'Unknown Investor',
             investorId: investment.investorId,
+            investmentPlan: investment.investmentPlan || '10',
             bondType: 'Fixed Income Bond',
             amount: parseFloat(investment.investedAmount),
             purchaseDate: investment.investmentDate,
@@ -1214,7 +1219,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             current_rate: currentRate,
             current_year: currentYear,
             bond_type: 'Fixed Income Bond',
-            investor_name: investor ? `${investor.firstName} ${investor.lastName}` : 'Unknown Investor'
+            investor_name: investor ? `${investor.firstName} ${investor.lastName}` : 'Unknown Investor',
+            investment_plan: investment.investmentPlan || '10'
           };
         });
         
@@ -1311,6 +1317,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const transactions = await storage.getTransactionsByInvestment(investmentId);
       res.json(transactions);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      res.status(500).json({ message: "Failed to fetch transactions" });
+    }
+  });
+
+  // Get all transactions for admin
+  app.get('/api/transactions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // Get all transactions with enriched data
+      const transactions = await storage.getAllTransactions();
+      const investors = await storage.getAllInvestors();
+      
+      // Create investor map for quick lookup
+      const investorMap = new Map();
+      investors.forEach(investor => {
+        investorMap.set(investor.id, investor);
+      });
+
+      // Enrich transactions with investor information
+      const enrichedTransactions = await Promise.all(
+        transactions.map(async (transaction: any) => {
+          const investment = await storage.getInvestment(transaction.investmentId);
+          const investor = investment ? investorMap.get(investment.investorId) : null;
+          
+          return {
+            id: transaction.id,
+            investorName: investor ? `${investor.firstName} ${investor.lastName}` : 'Unknown Investor',
+            type: transaction.type,
+            amount: parseFloat(transaction.amount),
+            date: transaction.transactionDate || transaction.createdAt,
+            status: transaction.status || 'completed',
+            description: transaction.notes || `${transaction.type} transaction`,
+            mode: transaction.mode || 'bank_transfer',
+            transactionId: transaction.transactionId
+          };
+        })
+      );
+
+      res.json(enrichedTransactions);
     } catch (error) {
       console.error("Error fetching transactions:", error);
       res.status(500).json({ message: "Failed to fetch transactions" });

@@ -27,6 +27,7 @@ export default function InvestorsTable() {
     phone: inv.primary_mobile || inv.phone || 'No phone',
     totalInvestment: inv.investment || inv.totalInvestment || 0,
     bondsCount: inv.bonds || inv.bondsCount || 0,
+    investmentPlan: inv.investmentPlan || inv.investment_plan || '10',
     joinDate: new Date(inv.created_at || Date.now()).toLocaleDateString(),
     investmentStartDate: inv.investmentStartDate || new Date(inv.created_at || Date.now()).toLocaleDateString(),
     maturityDate: inv.maturityDate || new Date(new Date(inv.created_at || Date.now()).getTime() + 10 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString(),
@@ -119,6 +120,7 @@ export default function InvestorsTable() {
                   <th className="text-left p-4 font-medium">Name & Contact</th>
                   <th className="text-right p-4 font-medium">Investment</th>
                   <th className="text-left p-4 font-medium">Debentures</th>
+                  <th className="text-left p-4 font-medium">Investment Plan Type</th>
                   <th className="text-left p-4 font-medium">Investment Start</th>
                   <th className="text-left p-4 font-medium">Maturity Date</th>
                   <th className="text-left p-4 font-medium">Current Status</th>
@@ -143,6 +145,11 @@ export default function InvestorsTable() {
                     <td className="p-4">
                       <Badge variant="secondary" className="bg-blue-50 text-blue-700">
                         {investor.bondsCount} Debenture{investor.bondsCount > 1 ? 's' : ''}
+                      </Badge>
+                    </td>
+                    <td className="p-4">
+                      <Badge variant="secondary" className="bg-purple-50 text-purple-700">
+                        {investor.investmentPlan || '10'} Years
                       </Badge>
                     </td>
                     <td className="p-4">{investor.investmentStartDate || investor.joinDate}</td>
