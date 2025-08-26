@@ -76,7 +76,7 @@ Name: {{investorName}}
 Email: {{email}}
 Phone: {{phone}}
 Investment Amount: {{investmentAmount}}
-Bond Units: {{bondUnits}}
+Debentures: {{bondUnits}}
 Investment Date: {{investmentDate}}
 
 🔐 Login Credentials:
@@ -138,7 +138,7 @@ IRM System Team
 
 👤 Investor: {{investorName}}
 💰 Investment Amount: {{investmentAmount}}
-🏦 Bond Units: {{bondUnits}}
+🏦 Debentures: {{bondUnits}}
 📅 Maturity Date: {{maturityDate}}
 
 ✅ Congratulations! Your investment has reached maturity.
@@ -174,7 +174,7 @@ Investor ID: {{investorId}}
 
 💰 Investment Summary:
 Amount: {{investmentAmount}}
-Bond Units: {{bondUnits}}
+Debentures: {{bondUnits}}
 Start Date: {{investmentDate}}
 
 🔐 Your Login Credentials:

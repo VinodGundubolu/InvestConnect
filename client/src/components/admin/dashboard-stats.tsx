@@ -103,7 +103,7 @@ export default function DashboardStats() {
           <span className="badge-primary">Units</span>
         </div>
         <div className="stats-value">{stats.totalBonds}</div>
-        <div className="stats-label">Investment Bonds</div>
+        <div className="stats-label">Investment Debentures</div>
         <p className="text-sm text-gray-500 mt-2">₹20L Each Unit</p>
       </div>
       

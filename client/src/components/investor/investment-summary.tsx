@@ -211,7 +211,7 @@ export default function InvestmentSummary({ investor }: InvestmentSummaryProps) 
             {(investor.investments || []).map((investment, index) => (
               <div key={investment.id} className="border-l-2 border-blue-400 pl-3 py-2">
                 <div className="text-sm space-y-1">
-                  <div className="font-medium">Investment {index + 1} ({investment.bondsPurchased} Unit{investment.bondsPurchased > 1 ? 's' : ''})</div>
+                  <div className="font-medium">Investment {index + 1} ({investment.bondsPurchased} Debenture{investment.bondsPurchased > 1 ? 's' : ''})</div>
                   <div className="text-gray-400">Start: {formatDate(investment.investmentDate)}</div>
                   <div className="text-gray-400">Maturity: {formatDate(investment.maturityDate)}</div>
                 </div>

@@ -266,15 +266,26 @@ export default function AdminBonds() {
               <div>
                 <h4 className="font-semibold text-gray-900 mb-2">Investment Timeline</h4>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-center">
-                    {[1, 2, 3, 4, 5].map((year) => (
-                      <div key={year} className={`p-2 rounded ${selectedBond.year >= year ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
-                        <div className="font-semibold">Year {year}</div>
-                        <div className="text-xs">
-                          {year === 1 ? '0%' : year === 2 ? '6%' : year === 3 ? '9%' : year === 4 ? '12%' : '18%'}
+                  <div className={`grid grid-cols-1 gap-4 text-center ${parseInt(selectedBond.investmentPlan) === 5 ? 'md:grid-cols-5' : 'md:grid-cols-10'}`}>
+                    {(() => {
+                      const planYears = parseInt(selectedBond.investmentPlan) || 10;
+                      const years = Array.from({length: planYears}, (_, i) => i + 1);
+                      
+                      // Rate schedules based on investment plan
+                      const rateSchedule5Year = { 1: 0, 2: 6, 3: 9, 4: 12, 5: 0 }; // Year 5 should be 0% with 100% bonus
+                      const rateSchedule10Year = { 1: 0, 2: 6, 3: 9, 4: 12, 5: 18, 6: 18, 7: 18, 8: 18, 9: 18, 10: 0 }; // Year 10 should be 0% with 100% bonus
+                      
+                      const rateSchedule = planYears === 5 ? rateSchedule5Year : rateSchedule10Year;
+                      
+                      return years.map((year) => (
+                        <div key={year} className={`p-2 rounded ${selectedBond.year >= year ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
+                          <div className="font-semibold">Year {year}</div>
+                          <div className="text-xs">
+                            {rateSchedule[year as keyof typeof rateSchedule] || 0}%
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ));
+                    })()}
                   </div>
                 </div>
               </div>

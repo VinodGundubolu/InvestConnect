@@ -39,6 +39,9 @@ export default function InvestorProfileModal({ isOpen, onClose, investorId, inve
     secondaryMobile: investor?.secondaryMobile || "",
     primaryAddress: investor?.primaryAddress || "",
     secondaryAddress: investor?.secondaryAddress || "",
+    city: investor?.city || "",
+    state: investor?.state || "",
+    zipcode: investor?.zipcode || "",
   });
 
   const updateProfileMutation = useMutation({
@@ -87,6 +90,9 @@ export default function InvestorProfileModal({ isOpen, onClose, investorId, inve
       secondaryMobile: investor?.secondaryMobile || "",
       primaryAddress: investor?.primaryAddress || "",
       secondaryAddress: investor?.secondaryAddress || "",
+      city: investor?.city || "",
+      state: investor?.state || "",
+      zipcode: investor?.zipcode || "",
     });
     setIsEditMode(false);
   };
@@ -308,6 +314,69 @@ export default function InvestorProfileModal({ isOpen, onClose, investorId, inve
                 )}
               </div>
 
+              {/* City, State, Zipcode Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="city" className="text-sm font-medium text-gray-700">
+                    City
+                  </Label>
+                  {isEditMode ? (
+                    <Input
+                      id="city"
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      className="mt-1"
+                      placeholder="City"
+                      data-testid="input-city"
+                    />
+                  ) : (
+                    <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
+                      <span>{investor?.city || "Not provided"}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="state" className="text-sm font-medium text-gray-700">
+                    State
+                  </Label>
+                  {isEditMode ? (
+                    <Input
+                      id="state"
+                      value={formData.state}
+                      onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                      className="mt-1"
+                      placeholder="State"
+                      data-testid="input-state"
+                    />
+                  ) : (
+                    <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
+                      <span>{investor?.state || "Not provided"}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="zipcode" className="text-sm font-medium text-gray-700">
+                    Zipcode
+                  </Label>
+                  {isEditMode ? (
+                    <Input
+                      id="zipcode"
+                      value={formData.zipcode}
+                      onChange={(e) => setFormData({ ...formData, zipcode: e.target.value })}
+                      className="mt-1"
+                      placeholder="Zipcode"
+                      data-testid="input-zipcode"
+                    />
+                  ) : (
+                    <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
+                      <span>{investor?.zipcode || "Not provided"}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {isEditMode && (
                 <div className="flex gap-3 pt-4">
                   <Button
@@ -350,7 +419,7 @@ export default function InvestorProfileModal({ isOpen, onClose, investorId, inve
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">1</div>
-                <div className="text-sm text-gray-600">Bond Units</div>
+                <div className="text-sm text-gray-600">Debentures</div>
               </div>
               <div className="text-center p-4 bg-orange-50 rounded-lg">
                 <div className="text-2xl font-bold text-orange-600">3 Years</div>

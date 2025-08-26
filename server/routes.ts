@@ -530,7 +530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const lockInExpiry = new Date(startDateObj);
       lockInExpiry.setFullYear(lockInExpiry.getFullYear() + 3);
 
-      await storage.createInvestment({
+      const investment = await storage.createInvestment({
         investorId: investorId,
         planId: plans[0].id.toString(),
         investmentDate: startDate,
@@ -539,6 +539,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         investmentPlan: investmentPlan || "10", // Store the investment plan
         lockInExpiry: lockInExpiry.toISOString().split('T')[0],
         maturityDate: maturityDate.toISOString().split('T')[0]
+      });
+
+      // Create initial investment transaction
+      await storage.createTransaction({
+        investmentId: investment.id,
+        type: "investment",
+        amount: investmentAmount.toString(),
+        transactionDate: startDate,
+        mode: "bank_transfer",
+        transactionId: `INV-${Date.now()}`,
+        status: "completed",
+        notes: `Initial investment of ₹${(parseInt(investmentAmount) / 100000).toFixed(2)} Lakhs for ${debentureCount} debenture${debentureCount > 1 ? 's' : ''}`
       });
 
       // Store credentials mapping for login
