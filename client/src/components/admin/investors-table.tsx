@@ -85,7 +85,7 @@ export default function InvestorsTable() {
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-sm text-gray-600">Active Bonds</p>
+              <p className="text-sm text-gray-600">Active Debentures</p>
               <p className="text-2xl font-bold">
                 {displayInvestors.reduce((sum, inv) => sum + inv.bondsCount, 0)}
               </p>
@@ -118,7 +118,7 @@ export default function InvestorsTable() {
                   <th className="text-left p-4 font-medium">Investor ID</th>
                   <th className="text-left p-4 font-medium">Name & Contact</th>
                   <th className="text-right p-4 font-medium">Investment</th>
-                  <th className="text-left p-4 font-medium">Bonds</th>
+                  <th className="text-left p-4 font-medium">Debentures</th>
                   <th className="text-left p-4 font-medium">Investment Start</th>
                   <th className="text-left p-4 font-medium">Maturity Date</th>
                   <th className="text-left p-4 font-medium">Current Status</th>
@@ -142,7 +142,7 @@ export default function InvestorsTable() {
                     </td>
                     <td className="p-4">
                       <Badge variant="secondary" className="bg-blue-50 text-blue-700">
-                        {investor.bondsCount} Bond{investor.bondsCount > 1 ? 's' : ''}
+                        {investor.bondsCount} Debenture{investor.bondsCount > 1 ? 's' : ''}
                       </Badge>
                     </td>
                     <td className="p-4">{investor.investmentStartDate || investor.joinDate}</td>

@@ -51,6 +51,9 @@ const investorSchema = z.object({
   startDate: z.string().min(1, "Start date is required"),
   investmentAmount: z.string().min(1, "Investment amount is required"),
   bondsCount: z.string().min(1, "Number of bonds is required"),
+  investmentPlan: z.enum(["5", "10"], {
+    required_error: "Please select an investment plan",
+  }),
 });
 
 type InvestorFormData = z.infer<typeof investorSchema>;
@@ -83,6 +86,7 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
       startDate: "",
       investmentAmount: "",
       bondsCount: "",
+      investmentPlan: undefined,
     },
   });
 
@@ -92,6 +96,7 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
         ...data,
         investmentAmount: parseInt(data.investmentAmount),
         bondsCount: parseInt(data.bondsCount),
+        investmentPlan: data.investmentPlan,
       };
       return await apiRequest("/api/admin/investors", "POST", payload);
     },
@@ -372,7 +377,7 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
                 <CardTitle className="text-lg">Investment Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="startDate"
@@ -390,6 +395,29 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="investmentPlan"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Investment Plan *</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-investment-plan">
+                              <SelectValue placeholder="Select investment plan" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="5">5 Years</SelectItem>
+                            <SelectItem value="10">10 Years</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="investmentAmount"
@@ -413,7 +441,7 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
                     name="bondsCount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Number of Bonds *</FormLabel>
+                        <FormLabel>Number of Debentures *</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
@@ -430,7 +458,8 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
                   />
                 </div>
                 <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
-                  <p><strong>Note:</strong> Each bond unit is ₹20,00,000. Maximum 3 units per investor (₹60,00,000 total).</p>
+                  <p><strong>Note:</strong> Each debenture unit is ₹20,00,000. Maximum 3 units per investor (₹60,00,000 total).</p>
+                  <p><strong>Investment Plan:</strong> Choose 5 years for early exit or 10 years for full term with maximum returns.</p>
                 </div>
               </CardContent>
             </Card>

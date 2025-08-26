@@ -68,8 +68,8 @@ export default function AdminBonds() {
         <header className="bg-white border-b border-gray-200 px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Bond Management</h1>
-              <p className="text-gray-600">Manage investment bonds and portfolio allocation</p>
+              <h1 className="text-2xl font-bold text-gray-900">Debenture Management</h1>
+              <p className="text-gray-600">Manage investment debentures and portfolio allocation</p>
             </div>
 
           </div>
@@ -83,7 +83,7 @@ export default function AdminBonds() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600">Total Bonds</p>
+                      <p className="text-sm text-gray-600">Total Debentures</p>
                       <p className="text-2xl font-bold">{displayInvestments.length}</p>
                     </div>
                     <TrendingUp className="h-8 w-8 text-blue-500" />
@@ -109,7 +109,7 @@ export default function AdminBonds() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600">Active Bonds</p>
+                      <p className="text-sm text-gray-600">Active Debentures</p>
                       <p className="text-2xl font-bold">
                         {displayInvestments.filter(inv => inv.status === 'Active').length}
                       </p>
@@ -138,14 +138,14 @@ export default function AdminBonds() {
             {/* Bonds Table */}
             <Card>
               <CardHeader>
-                <CardTitle>Investment Bonds</CardTitle>
+                <CardTitle>Investment Debentures</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left p-4 font-medium">Bond ID</th>
+                        <th className="text-left p-4 font-medium">Debenture ID</th>
                         <th className="text-left p-4 font-medium">Investor</th>
                         <th className="text-left p-4 font-medium">Type</th>
                         <th className="text-right p-4 font-medium">Amount</th>
@@ -207,7 +207,7 @@ export default function AdminBonds() {
         <Dialog open={showBondDetails} onOpenChange={setShowBondDetails}>
           <DialogContent className="max-w-2xl bg-white dark:bg-gray-900">
             <DialogHeader>
-              <DialogTitle>Bond Details - {selectedBond.id}</DialogTitle>
+              <DialogTitle>Debenture Details - {selectedBond.id}</DialogTitle>
             </DialogHeader>
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
@@ -217,9 +217,9 @@ export default function AdminBonds() {
                   <p className="text-sm text-gray-600">Investor ID: {selectedBond.investorId}</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">Bond Information</h4>
+                  <h4 className="font-semibold text-gray-900">Debenture Information</h4>
                   <p className="text-sm text-gray-600">Type: {selectedBond.bondType}</p>
-                  <p className="text-sm text-gray-600">Bonds: {selectedBond.bondsPurchased}</p>
+                  <p className="text-sm text-gray-600">Debentures: {selectedBond.bondsPurchased}</p>
                 </div>
               </div>
               
@@ -265,10 +265,10 @@ export default function AdminBonds() {
                 <Button onClick={() => {
                   toast({
                     title: "Feature Coming Soon",
-                    description: "Bond editing functionality will be available in the next update.",
+                    description: "Debenture editing functionality will be available in the next update.",
                   });
                 }}>
-                  Edit Bond
+                  Edit Debenture
                 </Button>
               </div>
             </div>

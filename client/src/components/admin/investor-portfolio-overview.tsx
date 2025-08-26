@@ -16,6 +16,7 @@ interface InvestorPortfolioItem {
   maturityStatus: string;
   year: number;
   bondMaturityProgress: string;
+  investmentPlan?: string;
 }
 
 function InvestorPortfolioCard({ investor }: { investor: InvestorPortfolioItem }) {
@@ -34,9 +35,17 @@ function InvestorPortfolioCard({ investor }: { investor: InvestorPortfolioItem }
               <p className="text-sm text-gray-500">Aadhar: {investor.aadhar}</p>
             </div>
           </div>
-          <Badge variant="secondary" className="bg-yellow-50 text-yellow-600">
-            Year {investor.year}
-          </Badge>
+          <div className="flex flex-col items-end space-y-1">
+            <Badge variant="secondary" className="bg-yellow-50 text-yellow-600">
+              Year {investor.year}
+            </Badge>
+            <div className="text-xs font-medium text-blue-600">
+              {investor.year === 1 ? '0%' : 
+               investor.year === 2 ? '6%' : 
+               investor.year === 3 ? '9%' : 
+               investor.year === 4 ? '12%' : '18%'} Annual Return
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
@@ -56,8 +65,12 @@ function InvestorPortfolioCard({ investor }: { investor: InvestorPortfolioItem }
             <span className="font-medium">{formatCurrency(investor.totalInvestment)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Bonds:</span>
-            <span className="font-medium">{investor.bonds} Bonds</span>
+            <span className="text-gray-600">Debentures:</span>
+            <span className="font-medium">{investor.bonds} Debentures</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Investment Type:</span>
+            <span className="font-medium">{investor.investmentPlan || '10'} Years</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Maturity Status:</span>
@@ -67,7 +80,7 @@ function InvestorPortfolioCard({ investor }: { investor: InvestorPortfolioItem }
 
         <div className="mt-4">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-sm text-gray-600">Bond Maturity Progress</span>
+            <span className="text-sm text-gray-600">Debenture Maturity Progress</span>
             <span className="text-sm font-medium">{investor.bondMaturityProgress}</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -118,7 +131,8 @@ export default function InvestorPortfolioOverview() {
     totalReturns: Number(investor.totalReturns) || Number(investor.total_returns) || 0,
     maturityStatus: investor.status || investor.maturityStatus || investor.maturity_status || 'Active',
     year: Number(investor.currentYear) || Number(investor.year) || Number(investor.current_year) || 1,
-    bondMaturityProgress: `${investor.maturityProgress || 0}%`
+    bondMaturityProgress: `${investor.maturityProgress || 0}%`,
+    investmentPlan: investor.investmentPlan || investor.investment_plan || '10'
   })) : [
     {
       id: "1",
@@ -130,7 +144,8 @@ export default function InvestorPortfolioOverview() {
       totalReturns: 400000,
       maturityStatus: "Year 2",
       year: 2,
-      bondMaturityProgress: "20%"
+      bondMaturityProgress: "20%",
+      investmentPlan: "10"
     },
     {
       id: "2", 
@@ -142,7 +157,8 @@ export default function InvestorPortfolioOverview() {
       totalReturns: 1200000,
       maturityStatus: "Year 2", 
       year: 2,
-      bondMaturityProgress: "20%"
+      bondMaturityProgress: "20%",
+      investmentPlan: "10"
     }
   ];
 

@@ -24,7 +24,7 @@ const navigationItems = [
     icon: Users,
   },
   {
-    name: "Bond Management",
+    name: "Debenture Management",
     href: "/admin/bonds",
     icon: TrendingUp,
   },

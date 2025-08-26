@@ -61,7 +61,7 @@ export const investmentPlans = pgTable("investment_plans", {
 
 // Investors
 export const investors = pgTable("investors", {
-  id: varchar("id").primaryKey(), // Auto-generated ID following the formula
+  id: varchar("id").primaryKey(), // Auto-generated ID following Deb_XXX format
   userId: varchar("user_id").references(() => users.id),
   firstName: varchar("first_name").notNull(),
   middleName: varchar("middle_name"),
@@ -99,6 +99,7 @@ export const investments = pgTable("investments", {
   maturityDate: date("maturity_date").notNull(),
   bonusEarned: decimal("bonus_earned", { precision: 15, scale: 2 }).notNull().default("0.00"),
   bonusEarnedDate: date("bonus_earned_date"),
+  investmentPlan: varchar("investment_plan").notNull().default("10"), // "5" or "10" for years
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

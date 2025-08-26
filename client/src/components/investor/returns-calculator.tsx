@@ -149,15 +149,15 @@ export default function ReturnsCalculator() {
             </div>
           </div>
 
-          {/* Bond Returns Schedule Table */}
+          {/* Debenture Returns Schedule Table */}
           <div>
             <h4 className="font-medium mb-4">
-              Bond Returns Schedule - {maturityPeriod} Year Plan
+              Debenture Returns Schedule - {maturityPeriod} Year Plan
               {calculation && (
                 <span className="text-sm font-normal text-gray-600">
-                  <br />({calculation.summary.principal === 2000000 ? 'Per ₹20 Lakh Bond' : 
-                    calculation.summary.principal === 4000000 ? 'Total for ₹40 Lakhs (2 Bonds)' :
-                    calculation.summary.principal === 6000000 ? 'Total for ₹60 Lakhs (3 Bonds)' :
+                  <br />({calculation.summary.principal === 2000000 ? 'Per ₹20 Lakh Debenture' : 
+                    calculation.summary.principal === 4000000 ? 'Total for ₹40 Lakhs (2 Debentures)' :
+                    calculation.summary.principal === 6000000 ? 'Total for ₹60 Lakhs (3 Debentures)' :
                     `Total for ${formatCurrency(calculation.summary.principal)}`})
                 </span>
               )}
@@ -185,11 +185,11 @@ export default function ReturnsCalculator() {
                     </thead>
                     <tbody>
                       {calculation.yearlyBreakdown.map((year, index) => {
-                        // Calculate the number of bonds based on total investment
-                        const numberOfBonds = calculation.summary.principal / 2000000;
+                        // Calculate the number of debentures based on total investment
+                        const numberOfDebentures = calculation.summary.principal / 2000000;
                         
-                        // Present values per bond based on maturity period
-                        const perBondPresentValues = maturityPeriod === 5 ? {
+                        // Present values per debenture based on maturity period
+                        const perDebenturePresentValues = maturityPeriod === 5 ? {
                           1: 2000000,   // ₹20,00,000
                           2: 2120000,   // ₹21,20,000  
                           3: 2300000,   // ₹23,00,000
@@ -208,8 +208,9 @@ export default function ReturnsCalculator() {
                           10: 8340000   // ₹83,40,000 (CORRECT: Capital + Interest + Bonus)
                         };
                         
-                        // Calculate total present value for all bonds
-                        const totalPresentValue = perBondPresentValues[year.year as keyof typeof perBondPresentValues] * numberOfBonds;
+                        // Calculate total present value for all debentures
+                        const presentValue = perDebenturePresentValues[year.year as keyof typeof perDebenturePresentValues];
+                        const totalPresentValue = (presentValue || 0) * numberOfDebentures;
                         
                         return (
                           <tr
@@ -245,7 +246,7 @@ export default function ReturnsCalculator() {
                             <td className="p-3 text-right font-semibold">
                               {(year.year >= 6 && year.year <= 9) ? (
                                 <span className="text-blue-600">
-                                  {formatCurrency(360000 * numberOfBonds)}/year
+                                  {formatCurrency(360000 * numberOfDebentures)}/year
                                 </span>
                               ) : (
                                 <span className="text-blue-600">
@@ -285,7 +286,7 @@ export default function ReturnsCalculator() {
               </div>
             ) : (
               <div className="text-gray-500 text-sm border border-gray-200 rounded-lg p-8 text-center">
-                Enter an amount and date to see bond returns schedule
+                Enter an amount and date to see debenture returns schedule
               </div>
             )}
           </div>
