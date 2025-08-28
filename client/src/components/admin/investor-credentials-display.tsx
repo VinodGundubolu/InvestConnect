@@ -100,11 +100,11 @@ export default function InvestorCredentialsDisplay({ investor }: InvestorCredent
               </div>
               <div className="flex items-center space-x-2">
                 <Badge variant="outline" className="text-blue-600 border-blue-300">Phone</Badge>
-                <span className="font-mono">{investor?.investor?.primaryMobile || investor?.phone || 'N/A'}</span>
+                <span className="font-mono">{investor?.investor?.primaryMobile || investor?.phone || investor?.mobileNumber || 'N/A'}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Badge variant="outline" className="text-purple-600 border-purple-300">Investor ID</Badge>
-                <span className="font-mono">{investor?.investor?.id || investor?.investorId || 'N/A'}</span>
+                <span className="font-mono">{investor?.investor?.id || investor?.investorId || investor?.id || 'N/A'}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Badge variant="outline" className="text-orange-600 border-orange-300">Username</Badge>
