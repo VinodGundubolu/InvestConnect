@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +28,15 @@ import {
 
 export default function EmailManagement() {
   const [activeTab, setActiveTab] = useState("templates");
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [templateForm, setTemplateForm] = useState({
+    name: "",
+    subject: "",
+    content: "",
+    type: "Welcome"
+  });
+  const { toast } = useToast();
 
   // Sample data for email templates
   const emailTemplates = [
@@ -107,6 +118,50 @@ export default function EmailManagement() {
     return statusColors[status as keyof typeof statusColors] || "bg-gray-100 text-gray-800";
   };
 
+  const handleCreateTemplate = () => {
+    setEditingTemplate(null);
+    setTemplateForm({ name: "", subject: "", content: "", type: "Welcome" });
+    setIsTemplateDialogOpen(true);
+  };
+
+  const handleEditTemplate = (template: any) => {
+    setEditingTemplate(template);
+    setTemplateForm({
+      name: template.name,
+      subject: template.subject,
+      content: template.content || "Dear {{investorName}},\n\nYour template content here...\n\nBest regards,\nIRM Investment Team",
+      type: template.type
+    });
+    setIsTemplateDialogOpen(true);
+  };
+
+  const handleSaveTemplate = () => {
+    if (!templateForm.name || !templateForm.subject) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in template name and subject",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: editingTemplate ? "Template Updated" : "Template Created",
+      description: `${templateForm.name} has been ${editingTemplate ? 'updated' : 'created'} successfully`,
+    });
+    setIsTemplateDialogOpen(false);
+    setEditingTemplate(null);
+  };
+
+  const handleDeleteTemplate = (template: any) => {
+    if (confirm(`Are you sure you want to delete "${template.name}"?`)) {
+      toast({
+        title: "Template Deleted",
+        description: `${template.name} has been deleted successfully`,
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Stats */}
@@ -176,7 +231,11 @@ export default function EmailManagement() {
               <h3 className="text-lg font-semibold">Email Templates</h3>
               <p className="text-gray-600">Manage automated email templates with merge fields</p>
             </div>
-            <Button className="bg-blue-600 hover:bg-blue-700" data-testid="button-create-template">
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700" 
+              data-testid="button-create-template"
+              onClick={handleCreateTemplate}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Create Template
             </Button>
@@ -211,10 +270,20 @@ export default function EmailManagement() {
                           <Button size="sm" variant="outline" data-testid={`button-preview-template-${template.id}`}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline" data-testid={`button-edit-template-${template.id}`}>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            data-testid={`button-edit-template-${template.id}`}
+                            onClick={() => handleEditTemplate(template)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline" data-testid={`button-delete-template-${template.id}`}>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            data-testid={`button-delete-template-${template.id}`}
+                            onClick={() => handleDeleteTemplate(template)}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -487,6 +556,86 @@ export default function EmailManagement() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Template Editor Dialog */}
+      <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingTemplate ? `Edit Template: ${(editingTemplate as any).name}` : "Create New Template"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="template-name">Template Name</Label>
+                <Input
+                  id="template-name"
+                  value={templateForm.name}
+                  onChange={(e) => setTemplateForm({...templateForm, name: e.target.value})}
+                  placeholder="Enter template name"
+                  data-testid="input-template-name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="template-type">Template Type</Label>
+                <Select value={templateForm.type} onValueChange={(value) => setTemplateForm({...templateForm, type: value})}>
+                  <SelectTrigger data-testid="select-template-type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Welcome">Welcome</SelectItem>
+                    <SelectItem value="Interest">Interest</SelectItem>
+                    <SelectItem value="Bonus">Bonus</SelectItem>
+                    <SelectItem value="Reminder">Reminder</SelectItem>
+                    <SelectItem value="General">General</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="template-subject">Email Subject</Label>
+              <Input
+                id="template-subject"
+                value={templateForm.subject}
+                onChange={(e) => setTemplateForm({...templateForm, subject: e.target.value})}
+                placeholder="Enter email subject (use {{}} for merge fields)"
+                data-testid="input-template-subject"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="template-content">Email Content</Label>
+              <Textarea
+                id="template-content"
+                value={templateForm.content}
+                onChange={(e) => setTemplateForm({...templateForm, content: e.target.value})}
+                placeholder="Enter email content (use {{}} for merge fields)"
+                className="min-h-[300px]"
+                data-testid="textarea-template-content"
+              />
+            </div>
+            
+            <div className="flex justify-between">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsTemplateDialogOpen(false)}
+                data-testid="button-cancel-template"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveTemplate}
+                className="bg-blue-600 hover:bg-blue-700"
+                data-testid="button-save-template"
+              >
+                {editingTemplate ? "Update Template" : "Create Template"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/utils";
-import { User, Mail, Phone, MapPin, FileText, Calendar, DollarSign } from "lucide-react";
+import { User, Mail, Phone, MapPin, FileText, Calendar, DollarSign, Download, Eye, CheckCircle } from "lucide-react";
 import type { Investor } from "@shared/schema";
 
 interface InvestorProfileModalProps {
@@ -30,6 +30,16 @@ interface InvestorProfileModalProps {
 export default function InvestorProfileModal({ isOpen, onClose, investorId, investor, editMode = false }: InvestorProfileModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Fetch signed agreements for this investor
+  const { data: agreements, isLoading: agreementsLoading } = useQuery({
+    queryKey: ["/api/investor/agreements", investor?.id || investorId],
+    queryFn: async () => {
+      const response = await apiRequest(`/api/investor/agreements/${investor?.id || investorId}`, "GET");
+      return await response.json();
+    },
+    enabled: !!investor?.id || !!investorId
+  });
   
   // Editable fields state
   const [isEditMode, setIsEditMode] = useState(editMode);
@@ -429,7 +439,126 @@ export default function InvestorProfileModal({ isOpen, onClose, investorId, inve
           </CardContent>
         </Card>
 
-        <div className="flex justify-end mt-6">
+        {/* Signed Agreements Section */}
+        <Card>
+          <div className="p-4 border-b">
+            <h3 className="font-semibold flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Investment Agreements
+            </h3>
+            <p className="text-sm text-gray-600">View and download signed investment agreements</p>
+          </div>
+          <CardContent className="p-4">
+            {agreementsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600">Loading agreements...</span>
+              </div>
+            ) : agreements && agreements.length > 0 ? (
+              <div className="space-y-4">
+                {agreements.map((agreement: any) => (
+                  <div key={agreement.id} className="border rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <h4 className="font-medium text-gray-900">{agreement.title}</h4>
+                          {agreement.status === "signed" ? (
+                            <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              Signed
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                              {agreement.status === "pending" ? "Pending Signature" : "Draft"}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Agreement ID: {agreement.agreementId}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Created: {new Date(agreement.createdAt).toLocaleDateString()}
+                          {agreement.signedAt && (
+                            <span className="ml-4">
+                              Signed: {new Date(agreement.signedAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            // Preview agreement content
+                            const newWindow = window.open("", "_blank");
+                            if (newWindow) {
+                              newWindow.document.write(`
+                                <html>
+                                  <head><title>Agreement Preview - ${agreement.title}</title></head>
+                                  <body style="font-family: Arial, sans-serif; margin: 40px; line-height: 1.6;">
+                                    <h1>${agreement.title}</h1>
+                                    <pre style="white-space: pre-wrap; font-family: inherit;">${agreement.content}</pre>
+                                  </body>
+                                </html>
+                              `);
+                              newWindow.document.close();
+                            }
+                          }}
+                          data-testid={`button-preview-agreement-${agreement.id}`}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        {agreement.status === "signed" && (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              // Download signed agreement
+                              const element = document.createElement("a");
+                              const file = new Blob([agreement.content], { type: "text/plain" });
+                              element.href = URL.createObjectURL(file);
+                              element.download = `${agreement.title.replace(/\s+/g, "_")}_${agreement.agreementId}.txt`;
+                              document.body.appendChild(element);
+                              element.click();
+                              document.body.removeChild(element);
+                              
+                              toast({
+                                title: "Download Started",
+                                description: "Your signed agreement is being downloaded.",
+                              });
+                            }}
+                            data-testid={`button-download-agreement-${agreement.id}`}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                <p className="text-lg font-medium">No Agreements Found</p>
+                <p className="text-sm">Investment agreements will appear here once generated</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-between mt-6">
+          {!isEditMode && (
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditMode(true)}
+              data-testid="button-edit-profile"
+            >
+              Edit Profile
+            </Button>
+          )}
           <Button variant="outline" onClick={onClose} data-testid="button-close-modal">
             Close
           </Button>
