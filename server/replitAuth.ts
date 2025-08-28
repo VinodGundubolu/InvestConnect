@@ -70,12 +70,23 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
+  // Determine user role based on email or user ID
+  const userId = claims["sub"];
+  const email = claims["email"];
+  
+  // Admin user IDs - you can add more admin user IDs here
+  const adminUserIds = ["46536152"]; // Your current user ID
+  const adminEmails = ["viku2615@gmail.com"]; // Your email
+  
+  const isAdmin = adminUserIds.includes(userId) || adminEmails.includes(email);
+  
   await storage.upsertUser({
-    id: claims["sub"],
-    email: claims["email"],
+    id: userId,
+    email: email,
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
+    role: isAdmin ? "admin" : "investor",
   });
 }
 
