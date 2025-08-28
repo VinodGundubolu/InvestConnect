@@ -12,7 +12,12 @@ export default function BackupManager() {
 
   const { data: backupsData, refetch: refetchBackups, isLoading, error } = useQuery({
     queryKey: ["/api/admin/backups"],
-    queryFn: () => apiRequest("/api/admin/backups", "GET") as Promise<any>,
+    queryFn: async () => {
+      console.log("Making API request to /api/admin/backups");
+      const result = await apiRequest("/api/admin/backups", "GET") as any;
+      console.log("API response:", result);
+      return result;
+    },
   });
 
   const handleCreateAndDownload = async () => {
@@ -80,11 +85,7 @@ export default function BackupManager() {
   const backups = backupsData?.backups || [];
   
   // Debug logging to see what's happening
-  if (backupsData) {
-    console.log("Backups received:", backupsData);
-    console.log("Backups array:", backups);
-    console.log("Backups length:", backups.length);
-  }
+  console.log("Component state:", { backupsData, backups, isLoading, error, backupsLength: backups?.length });
 
   return (
     <div className="space-y-6">
@@ -134,6 +135,15 @@ export default function BackupManager() {
               <p className="text-red-700">Failed to load backups</p>
             </div>
           )}
+
+          {/* Always show backup list for debugging */}
+          <div className="p-2 bg-gray-100 rounded text-sm">
+            <strong>Debug Info:</strong><br/>
+            Loading: {isLoading ? 'Yes' : 'No'}<br/>
+            Error: {error ? 'Yes' : 'No'}<br/>
+            Data: {backupsData ? 'Received' : 'None'}<br/>
+            Backups: {backups?.length || 0} items
+          </div>
 
           {!isLoading && !error && (!backups || backups.length === 0) && (
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
