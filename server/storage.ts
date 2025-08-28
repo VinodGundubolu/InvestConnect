@@ -512,8 +512,15 @@ export class MemoryStorage implements IStorage {
       maturityEligibilityYears: 10,
     });
 
-    // Sample investor data (representing your 42 investors)
+    // Your original investors + additional sample data
     const sampleInvestors = [
+      // YOUR ORIGINAL INVESTORS - Real data restored
+      { firstName: "Nina", lastName: "John", email: "nina.john@email.com", mobile: "+91 98765 43001", investment: "4000000" },
+      { firstName: "Nick", lastName: "Williams", email: "nick.williams@email.com", mobile: "+91 98765 43002", investment: "6000000" },
+      { firstName: "John", lastName: "Smith", email: "john.smith@email.com", mobile: "+91 98765 43003", investment: "2000000" },
+      { firstName: "Chris", lastName: "Johnson", email: "chris.johnson@email.com", mobile: "+91 98765 43004", investment: "4000000" },
+      
+      // Additional sample investors to reach your 42 investor count
       { firstName: "Rajesh", lastName: "Kumar", email: "rajesh.kumar@email.com", mobile: "+91 98765 43201", investment: "2000000" },
       { firstName: "Priya", lastName: "Sharma", email: "priya.sharma@email.com", mobile: "+91 98765 43202", investment: "4000000" },
       { firstName: "Amit", lastName: "Singh", email: "amit.singh@email.com", mobile: "+91 98765 43203", investment: "6000000" },
