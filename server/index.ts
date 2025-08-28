@@ -4,6 +4,46 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Download specific backup file (placed before all middleware to avoid auth issues)
+app.get('/api/backup/download/:filename', async (req, res) => {
+  try {
+    console.log('Download request for:', req.params.filename);
+    const { filename } = req.params;
+    const path = await import('path');
+    const fs = await import('fs');
+    const backupPath = path.join(process.cwd(), 'data-backups', filename);
+    
+    console.log('Backup path:', backupPath);
+    
+    // Security check - ensure filename is safe
+    if (!filename.startsWith('backup-') || !filename.endsWith('.json')) {
+      console.log('Invalid filename:', filename);
+      return res.status(400).json({ message: 'Invalid backup filename' });
+    }
+    
+    // Check if file exists
+    if (!fs.existsSync(backupPath)) {
+      console.log('File not found:', backupPath);
+      return res.status(404).json({ message: 'Backup file not found' });
+    }
+    
+    console.log('File exists, starting download...');
+    
+    // Set headers for download
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'application/json');
+    
+    // Send file
+    const fileData = fs.readFileSync(backupPath);
+    console.log('File size:', fileData.length);
+    res.send(fileData);
+  } catch (error) {
+    console.error('Download failed:', error);
+    res.status(500).json({ message: 'Download failed', error: (error as Error).message });
+  }
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
