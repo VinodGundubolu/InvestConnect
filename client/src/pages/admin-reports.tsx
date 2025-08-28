@@ -60,10 +60,10 @@ export default function AdminReports() {
     totalDividendsPaid: (dashboardStats as any).totalDividendsPaid || 0,
     averageROI: 6.8, // Calculate from actual data
     monthlyData: [
-      { month: "Jan 2024", investments: 25000000, dividends: 1700000, newInvestors: 8 },
-      { month: "Feb 2024", investments: 0, dividends: 0, newInvestors: 0 },
-      { month: "Mar 2024", investments: 15000000, dividends: 750000, newInvestors: 6 },
-      { month: "Dec 2024", investments: 35000000, dividends: 0, newInvestors: 12 },
+      { month: "Jan-24", investments: 25000000, dividends: 1700000, newInvestors: 8 },
+      { month: "Feb-24", investments: 0, dividends: 0, newInvestors: 0 },
+      { month: "Mar-24", investments: 15000000, dividends: 750000, newInvestors: 6 },
+      { month: "Dec-24", investments: 35000000, dividends: 0, newInvestors: 12 },
     ]
   } : {
     totalInvestors: 0,
@@ -112,14 +112,14 @@ export default function AdminReports() {
                   const csvData = [
                     `Investment Analytics Report Generated,${new Date().toLocaleDateString()}`,
                     `Total Active Investors,${reportData.totalInvestors}`,
-                    `Total Investment Amount,₹${reportData.totalInvestment.toLocaleString('en-IN')}`,
-                    `Total Dividends Paid,₹${reportData.totalDividendsPaid.toLocaleString('en-IN')}`,
+                    `Total Investment Amount,Rs ${(reportData.totalInvestment / 10000000).toFixed(1)} Crores`,
+                    `Total Dividends Paid,Rs ${(reportData.totalDividendsPaid / 100000).toFixed(1)} Lakhs`,
                     `Average ROI,${reportData.averageROI}%`,
                     `Data Source,Live Database`,
                     ``,
-                    `Month,New Investments (₹),Dividends Paid (₹),New Investors`,
+                    `Month,New Investments (Rs),Dividends Paid (Rs),New Investors`,
                     ...reportData.monthlyData.map(d => 
-                      `${d.month},₹${Math.round(d.investments).toLocaleString('en-IN')},₹${Math.round(d.dividends).toLocaleString('en-IN')},${d.newInvestors}`
+                      `${d.month},${d.investments > 0 ? (d.investments / 10000000).toFixed(1) + ' Cr' : '0'},${d.dividends > 0 ? (d.dividends / 100000).toFixed(1) + ' L' : '0'},${d.newInvestors}`
                     )
                   ].join('\n');
                   const blob = new Blob([csvData], { type: 'text/csv' });
@@ -168,7 +168,7 @@ export default function AdminReports() {
                       
                       // Investment amount (should be 20,00,000 for most)
                       const amount = investor.totalInvestment || 2000000;
-                      const formattedAmount = `Rs ${amount.toLocaleString('en-IN')}`;
+                      const formattedAmount = `Rs ${(amount / 100000).toFixed(1)} Lakhs`;
                       
                       // Bond count (1 bond = Rs 20,00,000)
                       const bonds = investor.bondsCount || 1;
@@ -189,7 +189,7 @@ export default function AdminReports() {
                       
                       // Total returns
                       const returns = investor.totalReturns || 0;
-                      const formattedReturns = `Rs ${returns.toLocaleString('en-IN')}`;
+                      const formattedReturns = `Rs ${(returns / 100000).toFixed(1)} Lakhs`;
                       
                       return [
                         `"${investorId}"`,           // Column 1: Investor ID
@@ -294,8 +294,8 @@ export default function AdminReports() {
                     <thead>
                       <tr className="border-b">
                         <th className="text-left p-4 font-medium">Month</th>
-                        <th className="text-right p-4 font-medium">New Investments</th>
-                        <th className="text-right p-4 font-medium">Dividends Paid</th>
+                        <th className="text-right p-4 font-medium">New Investments (₹)</th>
+                        <th className="text-right p-4 font-medium">Dividends Paid (₹)</th>
                         <th className="text-right p-4 font-medium">New Investors</th>
                         <th className="text-left p-4 font-medium">Growth</th>
                       </tr>
@@ -305,10 +305,10 @@ export default function AdminReports() {
                         <tr key={index} className="border-b hover:bg-gray-50">
                           <td className="p-4 font-medium">{data.month}</td>
                           <td className="p-4 text-right">
-                            {data.investments > 0 ? formatCurrency(data.investments) : '-'}
+                            {data.investments > 0 ? `₹${(data.investments / 10000000).toFixed(1)} Cr` : '-'}
                           </td>
                           <td className="p-4 text-right">
-                            {data.dividends > 0 ? formatCurrency(data.dividends) : '-'}
+                            {data.dividends > 0 ? `₹${(data.dividends / 100000).toFixed(1)} L` : '-'}
                           </td>
                           <td className="p-4 text-right">{data.newInvestors}</td>
                           <td className="p-4">

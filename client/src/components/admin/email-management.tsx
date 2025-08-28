@@ -559,7 +559,13 @@ export default function EmailManagement() {
 
       {/* Template Editor Dialog */}
       <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white z-50"
+          style={{
+            backgroundColor: "#ffffff",
+            borderRadius: "12px",
+            zIndex: 9999,
+            position: "fixed"
+          }}>
           <DialogHeader>
             <DialogTitle>
               {editingTemplate ? `Edit Template: ${(editingTemplate as any).name}` : "Create New Template"}
