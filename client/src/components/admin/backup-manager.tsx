@@ -78,7 +78,6 @@ export default function BackupManager() {
   };
 
   const backups = backupsData?.backups || [];
-  
 
   return (
     <div className="space-y-6">
@@ -129,7 +128,7 @@ export default function BackupManager() {
             </div>
           )}
 
-          {!isLoading && !error && backups && backups.length === 0 && (
+          {!isLoading && !error && (!backups || backups.length === 0) && (
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-yellow-700">No backup files found</p>
             </div>
