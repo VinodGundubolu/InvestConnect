@@ -638,27 +638,60 @@ export class MemoryStorage implements IStorage {
     };
   }
 
-  // Auto-backup after every data change (optimized to prevent spam)
+  // Enhanced auto-backup with bulletproof redundancy
   private backupPending = false;
-  private isRestoring = false; // Flag to prevent backup during restoration
+  private isRestoring = false;
   
   setRestoringMode(restoring: boolean) {
     this.isRestoring = restoring;
   }
   
   private async triggerAutoBackup() {
-    if (this.backupPending || this.isRestoring) return; // Prevent backup during restoration
+    if (this.backupPending || this.isRestoring) return;
     
     this.backupPending = true;
     try {
+      // Regular backup
       const { dataBackupManager } = await import('./data-backup');
+      
+      // Bulletproof backup (multiple locations)
+      const { bulletproofBackup } = await import('./bulletproof-backup');
+      
       setTimeout(async () => {
-        await dataBackupManager.autoBackupOnChange();
+        // Create both regular and bulletproof backups
+        await Promise.allSettled([
+          dataBackupManager.autoBackupOnChange(),
+          this.createBulletproofBackup()
+        ]);
         this.backupPending = false;
-      }, 3000); // 3 second delay to batch changes
+      }, 3000);
+      
     } catch (error) {
       console.error("Auto-backup trigger failed:", error);
       this.backupPending = false;
+    }
+  }
+
+  private async createBulletproofBackup() {
+    try {
+      const { bulletproofBackup } = await import('./bulletproof-backup');
+      
+      const currentData = {
+        investors: Array.from(this.investors.values()),
+        investments: Array.from(this.investments.values()),
+        transactions: Array.from(this.transactions.values()),
+        agreements: Array.from(this.agreements.values()),
+        credentials: Array.from(this.credentials.values())
+      };
+
+      const result = await bulletproofBackup.createBulletproofBackup(currentData);
+      
+      if (result.success) {
+        console.log(`🛡️ Bulletproof backup: ${result.locationsCreated}/${result.totalAttempted} locations`);
+      }
+      
+    } catch (error) {
+      console.error("Bulletproof backup failed:", error);
     }
   }
 

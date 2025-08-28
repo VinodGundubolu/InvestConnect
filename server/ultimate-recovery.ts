@@ -62,6 +62,28 @@ export class UltimateRecoverySystem {
   private async tryBackupDirectories(): Promise<any> {
     console.log('🔍 Searching all possible backup locations...');
     
+    // First try bulletproof backup system
+    try {
+      const { bulletproofBackup } = await import('./bulletproof-backup');
+      const bulletproofResult = await bulletproofBackup.findBestAvailableBackup();
+      
+      if (bulletproofResult.success && bulletproofResult.backupData) {
+        console.log(`🛡️ Found bulletproof backup from: ${bulletproofResult.source}`);
+        console.log(`📅 Backup age: ${Math.round((bulletproofResult.backupAge || 0) / 1000 / 60)} minutes`);
+        
+        return {
+          success: true,
+          dataSource: bulletproofResult.source,
+          investorsRecovered: bulletproofResult.backupData.investors?.length || 0,
+          recoveryMethod: 'BULLETPROOF_BACKUP_RECOVERY',
+          data: bulletproofResult.backupData
+        };
+      }
+    } catch (error) {
+      console.log(`❌ Bulletproof backup failed: ${error.message}`);
+    }
+    
+    // Fallback to regular backup search
     for (const backupPath of RECOVERY_SOURCES.backupPaths) {
       try {
         if (!fs.existsSync(backupPath)) continue;
@@ -80,7 +102,7 @@ export class UltimateRecoverySystem {
             success: true,
             dataSource: latestBackup,
             investorsRecovered: backupData.investors?.length || 0,
-            recoveryMethod: 'JSON_BACKUP_RECOVERY',
+            recoveryMethod: 'REGULAR_BACKUP_RECOVERY',
             data: backupData
           };
         }
@@ -90,7 +112,7 @@ export class UltimateRecoverySystem {
       }
     }
 
-    return { success: false, recoveryMethod: 'BACKUP_DIRECTORY_SEARCH_FAILED' };
+    return { success: false, recoveryMethod: 'ALL_BACKUP_SEARCHES_FAILED' };
   }
 
   private async tryMemoryRecovery(): Promise<any> {
