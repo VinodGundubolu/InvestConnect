@@ -44,10 +44,10 @@ function showRecoveryHierarchy() {
   console.log('   🔍 Extracts patterns: "📊 Backed up: X investors"');
   console.log('   ✅ If found: Reconstructs data from logged information\n');
   
-  console.log('📊 **RECOVERY ATTEMPT 4: Guaranteed Baseline (FINAL FALLBACK)**');
-  console.log('   🔒 Uses hardcoded verified original 41 investors');
-  console.log('   ✅ ALWAYS SUCCEEDS: Your minimum guaranteed data protection');
-  console.log('   ⚠️ Note: Returns you to original 41 investors (loses recent changes)\n');
+  console.log('📊 **RECOVERY ATTEMPT 4: Clean Start (FINAL FALLBACK)**');
+  console.log('   🆕 Starts with empty system - no hardcoded data');
+  console.log('   ✅ ALWAYS SUCCEEDS: Fresh start ready for new investors');
+  console.log('   ⚠️ Note: Starts with 0 investors - completely clean slate\n');
 }
 
 // Show what data gets recovered
@@ -61,12 +61,12 @@ function showRecoveryResults() {
   console.log('   🗑️ Deleted investors → STAY DELETED');
   console.log('   📈 Current portfolio value → PRESERVED\n');
   
-  console.log('🔒 **WORST CASE (Baseline Recovery):**');
-  console.log('   📊 Original 41 investors restored');
-  console.log('   💰 ₹1460 Lakhs total portfolio value');
-  console.log('   ⚠️ Recent additions/deletions lost (temporary setback)');
-  console.log('   ✅ Your business core data → FULLY PROTECTED');
-  console.log('   🚀 System ready to continue → ADD NEW INVESTORS AGAIN\n');
+  console.log('🆕 **WORST CASE (Clean Start):**');
+  console.log('   📊 Empty system - 0 investors');
+  console.log('   💰 ₹0 portfolio value');
+  console.log('   ⚠️ All data lost if no backups accessible');
+  console.log('   ✅ System ready for fresh start');
+  console.log('   🚀 Add investors dynamically through admin portal\n');
 }
 
 // Show the multiple backup formats created
@@ -97,14 +97,16 @@ function runCompleteDemo() {
   showBackupFormats();
   
   console.log('🏆 **BOTTOM LINE FOR FUTURE JSON CRASHES:**\n');
-  console.log('✅ **100% Recovery Guarantee** - You NEVER lose all data');
-  console.log('✅ **Multiple Recovery Layers** - 4 different methods try to save your current state');
-  console.log('✅ **Guaranteed Minimum** - Original 41 investors always recoverable');
-  console.log('✅ **Business Continuity** - System always starts successfully');
-  console.log('✅ **Future-Proof** - Continue adding/deleting investors after recovery');
+  console.log('✅ **Best-Effort Recovery** - Multiple methods try to save your current state');
+  console.log('✅ **Multiple Recovery Layers** - 3 different backup methods attempted');
+  console.log('✅ **Clean Start Guarantee** - System always starts successfully');
+  console.log('✅ **Business Continuity** - Ready to rebuild if all backups fail');
+  console.log('✅ **Future-Proof** - Add/delete investors dynamically');
   console.log('✅ **Zero Manual Work** - All recovery is automatic on system start\n');
   
-  console.log('🎯 **YOUR RISK LEVEL: VIRTUALLY ZERO** 🎯');
+  console.log('🎯 **YOUR RISK: DEPENDS ON BACKUP AVAILABILITY** 🎯');
+  console.log('✅ **With Backups:** Zero data loss');
+  console.log('⚠️ **Without Backups:** Fresh start needed');
 }
 
 // Run the demo

@@ -6,21 +6,9 @@ import * as path from 'path';
  * Handles complete JSON backup failure scenarios
  */
 
-// Multiple recovery data sources (redundancy layers)
+// Multiple recovery data sources (no hardcoded data)
 const RECOVERY_SOURCES = {
-  // Source 1: Verified original investors (your baseline)
-  originalInvestors: [
-    { firstName: "Nina", lastName: "John", email: "nina.john@email.com", mobile: "+91 98765 43001", investment: "4000000", investorId: "1" },
-    { firstName: "Nick", lastName: "Williams", email: "nick.williams@email.com", mobile: "+91 98765 43002", investment: "6000000", investorId: "2" },
-    { firstName: "John", lastName: "Smith", email: "john.smith@email.com", mobile: "+91 98765 43003", investment: "2000000", investorId: "3" },
-    { firstName: "Chris", lastName: "Johnson", email: "chris.johnson@email.com", mobile: "+91 98765 43004", investment: "4000000", investorId: "4" },
-    { firstName: "Krishna", lastName: "John", email: "krishna.john@email.com", mobile: "+91 98765 43005", investment: "2000000", investorId: "5" },
-    { firstName: "Sid", lastName: "Vid", email: "sid.vid@email.com", mobile: "+91 98765 43006", investment: "4000000", investorId: "6" },
-    { firstName: "VK", lastName: "2615", email: "vk2615@email.com", mobile: "+91 98765 43007", investment: "6000000", investorId: "7" },
-    // Add remaining 34 investors...
-  ],
-
-  // Source 2: Alternative backup locations
+  // Alternative backup locations
   backupPaths: [
     path.join(process.cwd(), 'data-backups'),
     path.join(process.cwd(), 'permanent-backups'),
@@ -66,9 +54,9 @@ export class UltimateRecoverySystem {
       return logRecovery;
     }
 
-    // RECOVERY ATTEMPT 4: Use verified original data (guaranteed baseline)
-    const originalRecovery = await this.useOriginalData();
-    return originalRecovery;
+    // RECOVERY ATTEMPT 4: Start with empty system (no hardcoded data)
+    const emptyRecovery = await this.startEmpty();
+    return emptyRecovery;
   }
 
   private async tryBackupDirectories(): Promise<any> {
@@ -153,16 +141,14 @@ export class UltimateRecoverySystem {
           if (investorMatch && valueMatch) {
             console.log(`✅ Found data in logs: ${investorMatch[1]} investors, ₹${valueMatch[1]} Lakhs`);
             
-            // Use original data but with logged metrics for validation
-            return {
-              success: true,
-              dataSource: logFile,
-              investorsRecovered: parseInt(investorMatch[1]),
-              recoveryMethod: 'LOG_FILE_ANALYSIS',
-              data: { 
-                investors: RECOVERY_SOURCES.originalInvestors.slice(0, parseInt(investorMatch[1])),
-                validatedFromLogs: true
-              }
+            // Found data traces in logs but no hardcoded fallback available
+            console.log(`📋 Found traces of ${investorMatch[1]} investors in logs`);
+            console.log(`⚠️ Cannot restore actual data without backup files`);
+            
+            return { 
+              success: false, 
+              recoveryMethod: 'LOG_TRACES_FOUND_BUT_NO_DATA',
+              note: `Found evidence of ${investorMatch[1]} investors but no actual data to restore`
             };
           }
         }
@@ -174,18 +160,21 @@ export class UltimateRecoverySystem {
     return { success: false, recoveryMethod: 'LOG_RECOVERY_FAILED' };
   }
 
-  private async useOriginalData(): Promise<any> {
-    console.log('🔒 Using verified original investor data as final fallback...');
+  private async startEmpty(): Promise<any> {
+    console.log('🆕 Starting with empty system - no hardcoded data fallback');
+    console.log('✅ System ready for you to add investors dynamically');
     
     return {
       success: true,
-      dataSource: 'VERIFIED_ORIGINAL_DATA',
-      investorsRecovered: RECOVERY_SOURCES.originalInvestors.length,
-      recoveryMethod: 'GUARANTEED_BASELINE_RECOVERY',
+      dataSource: 'EMPTY_SYSTEM_START',
+      investorsRecovered: 0,
+      recoveryMethod: 'CLEAN_START_NO_HARDCODE',
       data: { 
-        investors: RECOVERY_SOURCES.originalInvestors,
-        isBaseline: true,
-        note: 'This is your guaranteed minimum data - the original 41 investors'
+        investors: [],
+        investments: [],
+        transactions: [],
+        isEmpty: true,
+        note: 'Fresh start - add your investors through the admin portal'
       }
     };
   }
