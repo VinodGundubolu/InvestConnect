@@ -13,8 +13,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // Initialize dividend rates and auto-process transactions
-  await storage.initializeDividendRates();
+  // Initialize dividend rates and auto-process transactions with error handling
+  try {
+    await storage.initializeDividendRates();
+    console.log("✅ Dividend rates initialized successfully");
+  } catch (error) {
+    console.error("⚠️  Warning: Could not initialize dividend rates:", error instanceof Error ? error.message : String(error));
+    console.log("📝 The app will continue without dividend rates. Please check database connection.");
+  }
   
   // Auto-process all investment transactions on startup
   try {
