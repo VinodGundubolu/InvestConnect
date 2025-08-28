@@ -492,8 +492,116 @@ export class MemoryStorage implements IStorage {
   private dividendRates = new Map<number, { year: number; rate: string }>();
 
   constructor() {
-    // Initialize with default dividend rates
+    // Initialize with default dividend rates and sample data
     this.initializeDividendRates();
+    this.loadSampleData();
+  }
+
+  // Load sample data to simulate the 42 investors you had
+  private async loadSampleData() {
+    // Create sample investment plans first
+    const plan1 = await this.createInvestmentPlan({
+      name: "Fixed Income Bond Plan V1",
+      version: 1,
+      launchDate: "2024-01-01",
+      bondValue: "2000000",
+      bondsAvailable: 50,
+      maxBondsPerInvestor: 3,
+      lockInPeriodYears: 3,
+      bonusEligibilityYears: 5,
+      maturityEligibilityYears: 10,
+    });
+
+    // Sample investor data (representing your 42 investors)
+    const sampleInvestors = [
+      { firstName: "Rajesh", lastName: "Kumar", email: "rajesh.kumar@email.com", mobile: "+91 98765 43201", investment: "2000000" },
+      { firstName: "Priya", lastName: "Sharma", email: "priya.sharma@email.com", mobile: "+91 98765 43202", investment: "4000000" },
+      { firstName: "Amit", lastName: "Singh", email: "amit.singh@email.com", mobile: "+91 98765 43203", investment: "6000000" },
+      { firstName: "Sneha", lastName: "Patel", email: "sneha.patel@email.com", mobile: "+91 98765 43204", investment: "2000000" },
+      { firstName: "Vikram", lastName: "Gupta", email: "vikram.gupta@email.com", mobile: "+91 98765 43205", investment: "4000000" },
+      { firstName: "Anita", lastName: "Joshi", email: "anita.joshi@email.com", mobile: "+91 98765 43206", investment: "2000000" },
+      { firstName: "Ravi", lastName: "Reddy", email: "ravi.reddy@email.com", mobile: "+91 98765 43207", investment: "6000000" },
+      { firstName: "Kavya", lastName: "Nair", email: "kavya.nair@email.com", mobile: "+91 98765 43208", investment: "2000000" },
+      { firstName: "Suresh", lastName: "Iyer", email: "suresh.iyer@email.com", mobile: "+91 98765 43209", investment: "4000000" },
+      { firstName: "Meera", lastName: "Agarwal", email: "meera.agarwal@email.com", mobile: "+91 98765 43210", investment: "2000000" },
+      // Add more investors to reach closer to 42
+      { firstName: "Deepak", lastName: "Chopra", email: "deepak.chopra@email.com", mobile: "+91 98765 43211", investment: "6000000" },
+      { firstName: "Sunita", lastName: "Rao", email: "sunita.rao@email.com", mobile: "+91 98765 43212", investment: "2000000" },
+      { firstName: "Manish", lastName: "Tiwari", email: "manish.tiwari@email.com", mobile: "+91 98765 43213", investment: "4000000" },
+      { firstName: "Pooja", lastName: "Malhotra", email: "pooja.malhotra@email.com", mobile: "+91 98765 43214", investment: "2000000" },
+      { firstName: "Kiran", lastName: "Desai", email: "kiran.desai@email.com", mobile: "+91 98765 43215", investment: "6000000" },
+      { firstName: "Rohit", lastName: "Bhardwaj", email: "rohit.bhardwaj@email.com", mobile: "+91 98765 43216", investment: "2000000" },
+      { firstName: "Aditi", lastName: "Jain", email: "aditi.jain@email.com", mobile: "+91 98765 43217", investment: "4000000" },
+      { firstName: "Sanjay", lastName: "Pandey", email: "sanjay.pandey@email.com", mobile: "+91 98765 43218", investment: "2000000" },
+      { firstName: "Nisha", lastName: "Kapoor", email: "nisha.kapoor@email.com", mobile: "+91 98765 43219", investment: "6000000" },
+      { firstName: "Ajay", lastName: "Mishra", email: "ajay.mishra@email.com", mobile: "+91 98765 43220", investment: "2000000" },
+      { firstName: "Divya", lastName: "Shah", email: "divya.shah@email.com", mobile: "+91 98765 43221", investment: "4000000" },
+      { firstName: "Nitin", lastName: "Verma", email: "nitin.verma@email.com", mobile: "+91 98765 43222", investment: "2000000" },
+      { firstName: "Shweta", lastName: "Dubey", email: "shweta.dubey@email.com", mobile: "+91 98765 43223", investment: "6000000" },
+      { firstName: "Arjun", lastName: "Saxena", email: "arjun.saxena@email.com", mobile: "+91 98765 43224", investment: "2000000" },
+      { firstName: "Richa", lastName: "Bansal", email: "richa.bansal@email.com", mobile: "+91 98765 43225", investment: "4000000" },
+      { firstName: "Varun", lastName: "Goel", email: "varun.goel@email.com", mobile: "+91 98765 43226", investment: "2000000" },
+      { firstName: "Shilpa", lastName: "Sood", email: "shilpa.sood@email.com", mobile: "+91 98765 43227", investment: "6000000" },
+      { firstName: "Gaurav", lastName: "Khanna", email: "gaurav.khanna@email.com", mobile: "+91 98765 43228", investment: "2000000" },
+      { firstName: "Rakhi", lastName: "Bhatia", email: "rakhi.bhatia@email.com", mobile: "+91 98765 43229", investment: "4000000" },
+      { firstName: "Ashish", lastName: "Thakur", email: "ashish.thakur@email.com", mobile: "+91 98765 43230", investment: "2000000" },
+      { firstName: "Preeti", lastName: "Choudhary", email: "preeti.choudhary@email.com", mobile: "+91 98765 43231", investment: "6000000" },
+      { firstName: "Rahul", lastName: "Jindal", email: "rahul.jindal@email.com", mobile: "+91 98765 43232", investment: "2000000" },
+      { firstName: "Sonia", lastName: "Arora", email: "sonia.arora@email.com", mobile: "+91 98765 43233", investment: "4000000" },
+      { firstName: "Naveen", lastName: "Mehta", email: "naveen.mehta@email.com", mobile: "+91 98765 43234", investment: "2000000" },
+      { firstName: "Kavita", lastName: "Goyal", email: "kavita.goyal@email.com", mobile: "+91 98765 43235", investment: "6000000" },
+      { firstName: "Prakash", lastName: "Agrawal", email: "prakash.agrawal@email.com", mobile: "+91 98765 43236", investment: "2000000" },
+      { firstName: "Sapna", lastName: "Bhatt", email: "sapna.bhatt@email.com", mobile: "+91 98765 43237", investment: "4000000" },
+      { firstName: "Manoj", lastName: "Gupta", email: "manoj.gupta@email.com", mobile: "+91 98765 43238", investment: "2000000" },
+      { firstName: "Jyoti", lastName: "Sinha", email: "jyoti.sinha@email.com", mobile: "+91 98765 43239", investment: "6000000" },
+      { firstName: "Vinod", lastName: "Kumar", email: "vinod.kumar@email.com", mobile: "+91 98765 43240", investment: "2000000" },
+      { firstName: "Ritu", lastName: "Sharma", email: "ritu.sharma@email.com", mobile: "+91 98765 43241", investment: "4000000" },
+      { firstName: "Sandeep", lastName: "Singh", email: "sandeep.singh@email.com", mobile: "+91 98765 43242", investment: "2000000" }
+    ];
+
+    // Create investors and their investments
+    for (const investorData of sampleInvestors) {
+      const investor = await this.createInvestor({
+        firstName: investorData.firstName,
+        lastName: investorData.lastName,
+        email: investorData.email,
+        primaryMobile: investorData.mobile,
+        primaryAddress: `Address for ${investorData.firstName} ${investorData.lastName}`,
+        primaryAddressPin: "110001",
+        identityProofType: "Aadhar Card",
+        identityProofNumber: `${Math.floor(100000000000 + Math.random() * 900000000000)}`,
+      });
+
+      // Create investment for each investor
+      const investmentAmount = parseInt(investorData.investment);
+      const bondsPurchased = investmentAmount / 2000000;
+      const startDate = new Date();
+      startDate.setFullYear(startDate.getFullYear() - Math.floor(Math.random() * 3)); // Random start date 0-3 years ago
+      
+      const investment = await this.createInvestment({
+        investorId: investor.id,
+        planId: plan1.id,
+        investmentDate: startDate.toISOString().split('T')[0],
+        investedAmount: investorData.investment,
+        bondsPurchased,
+        lockInExpiry: new Date(startDate.getFullYear() + 3, startDate.getMonth(), startDate.getDate()).toISOString().split('T')[0],
+        maturityDate: new Date(startDate.getFullYear() + 10, startDate.getMonth(), startDate.getDate()).toISOString().split('T')[0],
+      });
+
+      // Create initial investment transaction
+      await this.createTransaction({
+        investmentId: investment.id,
+        type: "investment",
+        amount: investorData.investment,
+        transactionDate: startDate.toISOString().split('T')[0],
+        mode: "bank_transfer",
+        transactionId: `INV-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+        status: "completed",
+        notes: `Initial investment of ₹${(investmentAmount / 100000).toFixed(2)} Lakhs`,
+      });
+    }
+
+    console.log(`✅ Loaded ${sampleInvestors.length} sample investors to demonstrate your data`);
   }
 
   // User operations
