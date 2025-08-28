@@ -481,4 +481,643 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// Memory storage implementation for fallback when database is unavailable
+export class MemoryStorage implements IStorage {
+  private users = new Map<string, User>();
+  private investors = new Map<string, Investor>();
+  private investments = new Map<string, Investment>();
+  private investmentPlans = new Map<string, InvestmentPlan>();
+  private transactions = new Map<string, Transaction>();
+  private agreements = new Map<string, InvestmentAgreement>();
+  private dividendRates = new Map<number, { year: number; rate: string }>();
+
+  constructor() {
+    // Initialize with default dividend rates
+    this.initializeDividendRates();
+  }
+
+  // User operations
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const existingUser = this.users.get(userData.id);
+    const user: User = {
+      ...userData,
+      id: userData.id || this.generateId(),
+      email: userData.email || null,
+      firstName: userData.firstName || null,
+      lastName: userData.lastName || null,
+      profileImageUrl: userData.profileImageUrl || null,
+      role: userData.role || "investor",
+      createdAt: existingUser?.createdAt || new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(user.id, user);
+    return user;
+  }
+
+  async createUser(userData: any): Promise<User> {
+    const user: User = {
+      ...userData,
+      id: userData.id || this.generateId(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(user.id, user);
+    return user;
+  }
+
+  async storeTestCredentials(userId: string, username: string, password: string): Promise<void> {
+    console.log(`Test credentials created - UserId: ${userId}, Username: ${username}, Password: ${password}`);
+  }
+
+  // Investor operations
+  async getInvestor(id: string): Promise<Investor | undefined> {
+    return this.investors.get(id);
+  }
+
+  async getInvestorByUserId(userId: string): Promise<Investor | undefined> {
+    return Array.from(this.investors.values()).find(inv => inv.userId === userId);
+  }
+
+  async getInvestorWithInvestments(id: string): Promise<InvestorWithInvestments | undefined> {
+    const investor = this.investors.get(id);
+    if (!investor) return undefined;
+
+    const investorInvestments = Array.from(this.investments.values())
+      .filter(inv => inv.investorId === id);
+
+    const investmentsWithTransactions = investorInvestments.map(inv => {
+      const plan = this.investmentPlans.get(inv.planId);
+      const invTransactions = Array.from(this.transactions.values())
+        .filter(tx => tx.investmentId === inv.id);
+      
+      return {
+        ...inv,
+        plan: plan!,
+        transactions: invTransactions,
+      };
+    });
+
+    return {
+      ...investor,
+      investments: investmentsWithTransactions,
+    };
+  }
+
+  async createInvestor(investorData: InsertInvestor): Promise<Investor> {
+    const id = await this.generateInvestorId(investorData);
+    const investor: Investor = {
+      ...investorData,
+      id,
+      userId: investorData.userId || null,
+      middleName: investorData.middleName || null,
+      secondaryMobile: investorData.secondaryMobile || null,
+      secondaryAddress: investorData.secondaryAddress || null,
+      secondaryAddressPin: investorData.secondaryAddressPin || null,
+      kycStatus: investorData.kycStatus || "pending",
+      status: investorData.status || "active",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.investors.set(id, investor);
+    return investor;
+  }
+
+  async updateInvestor(id: string, investorData: Partial<InsertInvestor>): Promise<Investor> {
+    const existing = this.investors.get(id);
+    if (!existing) throw new Error(`Investor with id ${id} not found`);
+    
+    const updated: Investor = {
+      ...existing,
+      ...investorData,
+      updatedAt: new Date(),
+    };
+    this.investors.set(id, updated);
+    return updated;
+  }
+
+  async deleteInvestor(id: string): Promise<boolean> {
+    // Delete related investments and transactions
+    const investorInvestments = Array.from(this.investments.values())
+      .filter(inv => inv.investorId === id);
+    
+    investorInvestments.forEach(inv => {
+      this.investments.delete(inv.id);
+      // Delete related transactions
+      Array.from(this.transactions.entries())
+        .filter(([_, tx]) => tx.investmentId === inv.id)
+        .forEach(([txId, _]) => this.transactions.delete(txId));
+    });
+    
+    return this.investors.delete(id);
+  }
+
+  async getAllInvestors(): Promise<Investor[]> {
+    return Array.from(this.investors.values())
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async generateInvestorId(investorData: InsertInvestor): Promise<string> {
+    return (this.investors.size + 1).toString();
+  }
+
+  // Investment operations
+  async getInvestment(id: string): Promise<Investment | undefined> {
+    return this.investments.get(id);
+  }
+
+  async getInvestmentWithDetails(id: string): Promise<InvestmentWithDetails | undefined> {
+    const investment = this.investments.get(id);
+    if (!investment) return undefined;
+
+    const investor = this.investors.get(investment.investorId);
+    const plan = this.investmentPlans.get(investment.planId);
+    const investmentTransactions = Array.from(this.transactions.values())
+      .filter(tx => tx.investmentId === id);
+
+    return {
+      ...investment,
+      investor: investor!,
+      plan: plan!,
+      transactions: investmentTransactions,
+    };
+  }
+
+  async getInvestmentsByInvestor(investorId: string): Promise<Investment[]> {
+    return Array.from(this.investments.values())
+      .filter(inv => inv.investorId === investorId)
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async getInvestorInvestments(investorId: string): Promise<Investment[]> {
+    return this.getInvestmentsByInvestor(investorId);
+  }
+
+  async getInvestorTransactions(investorId: string, transactionType?: string): Promise<Transaction[]> {
+    const investorInvestments = Array.from(this.investments.values())
+      .filter(inv => inv.investorId === investorId);
+    
+    let transactions = Array.from(this.transactions.values())
+      .filter(tx => investorInvestments.some(inv => inv.id === tx.investmentId));
+    
+    if (transactionType) {
+      transactions = transactions.filter(tx => tx.type === transactionType);
+    }
+    
+    return transactions.sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());
+  }
+
+  async createInvestment(investmentData: InsertInvestment): Promise<Investment> {
+    const id = await this.generateDebentureId();
+    const investment: Investment = {
+      ...investmentData,
+      id,
+      bonusEarned: investmentData.bonusEarned || "0.00",
+      bonusEarnedDate: investmentData.bonusEarnedDate || null,
+      investmentPlan: investmentData.investmentPlan || "10",
+      isActive: investmentData.isActive !== undefined ? investmentData.isActive : true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.investments.set(id, investment);
+    return investment;
+  }
+
+  async generateDebentureId(): Promise<string> {
+    const existingDebIds = Array.from(this.investments.keys())
+      .filter(id => id.startsWith('Deb_'));
+    
+    let maxNumber = 0;
+    existingDebIds.forEach(id => {
+      const match = id.match(/^Deb_(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNumber) maxNumber = num;
+      }
+    });
+    
+    const nextNumber = maxNumber + 1;
+    return `Deb_${nextNumber.toString().padStart(3, '0')}`;
+  }
+
+  async updateInvestment(id: string, investmentData: Partial<InsertInvestment>): Promise<Investment> {
+    const existing = this.investments.get(id);
+    if (!existing) throw new Error(`Investment with id ${id} not found`);
+    
+    const updated: Investment = {
+      ...existing,
+      ...investmentData,
+      updatedAt: new Date(),
+    };
+    this.investments.set(id, updated);
+    return updated;
+  }
+
+  async getAllInvestments(): Promise<Investment[]> {
+    return Array.from(this.investments.values())
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  // Investment Plan operations
+  async getInvestmentPlan(id: string): Promise<InvestmentPlan | undefined> {
+    return this.investmentPlans.get(id);
+  }
+
+  async getAllInvestmentPlans(): Promise<InvestmentPlan[]> {
+    return Array.from(this.investmentPlans.values())
+      .filter(plan => plan.isActive)
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async createInvestmentPlan(planData: InsertInvestmentPlan): Promise<InvestmentPlan> {
+    const id = this.generateId();
+    const plan: InvestmentPlan = {
+      ...planData,
+      id,
+      version: planData.version || 1,
+      expiryDate: planData.expiryDate || null,
+      minBondsPerInvestor: planData.minBondsPerInvestor || 1,
+      bonusMultiplier: planData.bonusMultiplier || "2.00",
+      maturityEligibilityYears: planData.maturityEligibilityYears || 10,
+      maturityMultiplier: planData.maturityMultiplier || "3.00",
+      isActive: planData.isActive !== undefined ? planData.isActive : true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.investmentPlans.set(id, plan);
+    return plan;
+  }
+
+  async updateInvestmentPlan(id: string, planData: Partial<InsertInvestmentPlan>): Promise<InvestmentPlan> {
+    const existing = this.investmentPlans.get(id);
+    if (!existing) throw new Error(`Investment plan with id ${id} not found`);
+    
+    const updated: InvestmentPlan = {
+      ...existing,
+      ...planData,
+      updatedAt: new Date(),
+    };
+    this.investmentPlans.set(id, updated);
+    return updated;
+  }
+
+  // Transaction operations
+  async getTransaction(id: string): Promise<Transaction | undefined> {
+    return this.transactions.get(id);
+  }
+
+  async createTransaction(transactionData: InsertTransaction): Promise<Transaction> {
+    const id = this.generateId();
+    const transaction: Transaction = {
+      ...transactionData,
+      id,
+      disbursementDate: transactionData.disbursementDate || null,
+      yearCovered: transactionData.yearCovered || null,
+      interestRate: transactionData.interestRate || null,
+      proofDocument: transactionData.proofDocument || null,
+      status: transactionData.status || "completed",
+      notes: transactionData.notes || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.transactions.set(id, transaction);
+    return transaction;
+  }
+
+  async getTransactionsByInvestment(investmentId: string): Promise<Transaction[]> {
+    return Array.from(this.transactions.values())
+      .filter(tx => tx.investmentId === investmentId)
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async getAllTransactions(): Promise<Transaction[]> {
+    return Array.from(this.transactions.values())
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async updateTransaction(id: string, transactionData: Partial<InsertTransaction>): Promise<Transaction> {
+    const existing = this.transactions.get(id);
+    if (!existing) throw new Error(`Transaction with id ${id} not found`);
+    
+    const updated: Transaction = {
+      ...existing,
+      ...transactionData,
+      updatedAt: new Date(),
+    };
+    this.transactions.set(id, updated);
+    return updated;
+  }
+
+  // Analytics operations
+  async getPortfolioOverview(): Promise<{
+    totalInvestors: number;
+    totalPrincipal: string;
+    totalInterestPaid: string;
+    maturityDue: string;
+  }> {
+    const totalInvestors = this.investors.size;
+    
+    const totalPrincipal = Array.from(this.investments.values())
+      .reduce((sum, inv) => sum + parseFloat(inv.investedAmount), 0);
+    
+    const totalInterestPaid = Array.from(this.transactions.values())
+      .filter(tx => tx.type === "dividend_disbursement")
+      .reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+    
+    const now = new Date();
+    const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+    
+    const maturityDue = Array.from(this.investments.values())
+      .filter(inv => {
+        const maturityDate = new Date(inv.maturityDate);
+        return maturityDate >= now && maturityDate <= oneYearFromNow;
+      })
+      .reduce((sum, inv) => sum + parseFloat(inv.investedAmount), 0);
+
+    return {
+      totalInvestors,
+      totalPrincipal: totalPrincipal.toString(),
+      totalInterestPaid: totalInterestPaid.toString(),
+      maturityDue: maturityDue.toString(),
+    };
+  }
+
+  // Dividend rates
+  async getDividendRates(): Promise<{ year: number; rate: string }[]> {
+    return Array.from(this.dividendRates.values())
+      .sort((a, b) => a.year - b.year);
+  }
+
+  async initializeDividendRates(): Promise<void> {
+    const rates = [
+      { year: 1, rate: "0.00" },
+      { year: 2, rate: "6.00" },
+      { year: 3, rate: "9.00" },
+      { year: 4, rate: "12.00" },
+      { year: 5, rate: "18.00" },
+      { year: 6, rate: "18.00" },
+      { year: 7, rate: "18.00" },
+      { year: 8, rate: "18.00" },
+      { year: 9, rate: "18.00" },
+      { year: 10, rate: "0.00" },
+    ];
+
+    rates.forEach(rate => {
+      this.dividendRates.set(rate.year, rate);
+    });
+  }
+
+  // Agreement operations
+  async createInvestmentAgreement(agreement: InsertInvestmentAgreement): Promise<InvestmentAgreement> {
+    const id = this.generateId();
+    const result: InvestmentAgreement = {
+      ...agreement,
+      id,
+      status: agreement.status || "pending",
+      signedAt: agreement.signedAt || null,
+      signatureData: agreement.signatureData || null,
+      signatureType: agreement.signatureType || null,
+      createdAt: new Date(),
+    };
+    this.agreements.set(id, result);
+    return result;
+  }
+
+  async getInvestmentAgreementsByInvestor(investorId: string): Promise<InvestmentAgreement[]> {
+    return Array.from(this.agreements.values())
+      .filter(agreement => agreement.investorId === investorId)
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async updateInvestmentAgreement(id: string, agreement: Partial<InsertInvestmentAgreement>): Promise<InvestmentAgreement> {
+    const existing = this.agreements.get(id);
+    if (!existing) throw new Error(`Investment agreement with id ${id} not found`);
+    
+    const updated: InvestmentAgreement = {
+      ...existing,
+      ...agreement,
+    };
+    this.agreements.set(id, updated);
+    return updated;
+  }
+
+  private generateId(): string {
+    return `mem_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+}
+
+// Storage wrapper that handles database connection failures gracefully
+class StorageWrapper implements IStorage {
+  private storage: IStorage;
+  private isUsingMemoryStorage = false;
+
+  constructor() {
+    // Start with database storage, but will fallback on first error
+    this.storage = new DatabaseStorage();
+  }
+
+  private async ensureStorage<T>(operation: (storage: IStorage) => Promise<T>): Promise<T> {
+    try {
+      return await operation(this.storage);
+    } catch (error) {
+      // Check if this is a database connection error
+      if (!this.isUsingMemoryStorage && 
+          (error instanceof Error && 
+           (error.message.includes('endpoint has been disabled') || 
+            error.message.includes('DATABASE_URL') ||
+            error.message.includes('Neon') ||
+            error.message.includes('XX000')))) {
+        
+        console.warn("⚠️  Database connection failed, switching to memory storage:", error.message);
+        this.storage = new MemoryStorage();
+        this.isUsingMemoryStorage = true;
+        
+        // Retry the operation with memory storage
+        return await operation(this.storage);
+      }
+      throw error;
+    }
+  }
+
+  // Delegate all methods to the ensureStorage wrapper
+  async getUser(id: string): Promise<User | undefined> {
+    return this.ensureStorage(storage => storage.getUser(id));
+  }
+
+  async upsertUser(user: UpsertUser): Promise<User> {
+    return this.ensureStorage(storage => storage.upsertUser(user));
+  }
+
+  async createUser(user: any): Promise<User> {
+    return this.ensureStorage(storage => storage.createUser(user));
+  }
+
+  async storeTestCredentials(userId: string, username: string, password: string): Promise<void> {
+    return this.ensureStorage(storage => storage.storeTestCredentials(userId, username, password));
+  }
+
+  async getInvestor(id: string): Promise<Investor | undefined> {
+    return this.ensureStorage(storage => storage.getInvestor(id));
+  }
+
+  async getInvestorByUserId(userId: string): Promise<Investor | undefined> {
+    return this.ensureStorage(storage => storage.getInvestorByUserId(userId));
+  }
+
+  async getInvestorWithInvestments(id: string): Promise<InvestorWithInvestments | undefined> {
+    return this.ensureStorage(storage => storage.getInvestorWithInvestments(id));
+  }
+
+  async createInvestor(investor: InsertInvestor): Promise<Investor> {
+    return this.ensureStorage(storage => storage.createInvestor(investor));
+  }
+
+  async updateInvestor(id: string, investor: Partial<InsertInvestor>): Promise<Investor> {
+    return this.ensureStorage(storage => storage.updateInvestor(id, investor));
+  }
+
+  async deleteInvestor(id: string): Promise<boolean> {
+    return this.ensureStorage(storage => storage.deleteInvestor(id));
+  }
+
+  async getAllInvestors(): Promise<Investor[]> {
+    return this.ensureStorage(storage => storage.getAllInvestors());
+  }
+
+  async generateInvestorId(investorData: InsertInvestor): Promise<string> {
+    return this.ensureStorage(storage => storage.generateInvestorId(investorData));
+  }
+
+  async getInvestment(id: string): Promise<Investment | undefined> {
+    return this.ensureStorage(storage => storage.getInvestment(id));
+  }
+
+  async getInvestmentWithDetails(id: string): Promise<InvestmentWithDetails | undefined> {
+    return this.ensureStorage(storage => storage.getInvestmentWithDetails(id));
+  }
+
+  async getInvestmentsByInvestor(investorId: string): Promise<Investment[]> {
+    return this.ensureStorage(storage => storage.getInvestmentsByInvestor(investorId));
+  }
+
+  async createInvestment(investment: InsertInvestment): Promise<Investment> {
+    return this.ensureStorage(storage => storage.createInvestment(investment));
+  }
+
+  async updateInvestment(id: string, investment: Partial<InsertInvestment>): Promise<Investment> {
+    return this.ensureStorage(storage => storage.updateInvestment(id, investment));
+  }
+
+  async getAllInvestments(): Promise<Investment[]> {
+    return this.ensureStorage(storage => storage.getAllInvestments());
+  }
+
+  async getInvestmentPlan(id: string): Promise<InvestmentPlan | undefined> {
+    return this.ensureStorage(storage => storage.getInvestmentPlan(id));
+  }
+
+  async getAllInvestmentPlans(): Promise<InvestmentPlan[]> {
+    return this.ensureStorage(storage => storage.getAllInvestmentPlans());
+  }
+
+  async createInvestmentPlan(plan: InsertInvestmentPlan): Promise<InvestmentPlan> {
+    return this.ensureStorage(storage => storage.createInvestmentPlan(plan));
+  }
+
+  async updateInvestmentPlan(id: string, plan: Partial<InsertInvestmentPlan>): Promise<InvestmentPlan> {
+    return this.ensureStorage(storage => storage.updateInvestmentPlan(id, plan));
+  }
+
+  async getTransaction(id: string): Promise<Transaction | undefined> {
+    return this.ensureStorage(storage => storage.getTransaction(id));
+  }
+
+  async getTransactionsByInvestment(investmentId: string): Promise<Transaction[]> {
+    return this.ensureStorage(storage => storage.getTransactionsByInvestment(investmentId));
+  }
+
+  async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
+    return this.ensureStorage(storage => storage.createTransaction(transaction));
+  }
+
+  async updateTransaction(id: string, transaction: Partial<InsertTransaction>): Promise<Transaction> {
+    return this.ensureStorage(storage => storage.updateTransaction(id, transaction));
+  }
+
+  async getPortfolioOverview(): Promise<{
+    totalInvestors: number;
+    totalPrincipal: string;
+    totalInterestPaid: string;
+    maturityDue: string;
+  }> {
+    return this.ensureStorage(storage => storage.getPortfolioOverview());
+  }
+
+  async getDividendRates(): Promise<{ year: number; rate: string }[]> {
+    return this.ensureStorage(storage => storage.getDividendRates());
+  }
+
+  async initializeDividendRates(): Promise<void> {
+    return this.ensureStorage(storage => storage.initializeDividendRates());
+  }
+
+  async createInvestmentAgreement(agreement: InsertInvestmentAgreement): Promise<InvestmentAgreement> {
+    return this.ensureStorage(storage => storage.createInvestmentAgreement(agreement));
+  }
+
+  async getInvestmentAgreementsByInvestor(investorId: string): Promise<InvestmentAgreement[]> {
+    return this.ensureStorage(storage => storage.getInvestmentAgreementsByInvestor(investorId));
+  }
+
+  async updateInvestmentAgreement(id: string, agreement: Partial<InsertInvestmentAgreement>): Promise<InvestmentAgreement> {
+    return this.ensureStorage(storage => storage.updateInvestmentAgreement(id, agreement));
+  }
+
+  // Additional methods that may be used by routes
+  async getAllTransactions(): Promise<Transaction[]> {
+    return this.ensureStorage(async storage => {
+      if ('getAllTransactions' in storage) {
+        return (storage as any).getAllTransactions();
+      }
+      // Fallback for database storage that doesn't have this method
+      return [];
+    });
+  }
+
+  async getInvestorInvestments(investorId: string): Promise<Investment[]> {
+    return this.ensureStorage(async storage => {
+      if ('getInvestorInvestments' in storage) {
+        return (storage as any).getInvestorInvestments(investorId);
+      }
+      // Fallback to getInvestmentsByInvestor
+      return storage.getInvestmentsByInvestor(investorId);
+    });
+  }
+
+  async getInvestorTransactions(investorId: string, transactionType?: string): Promise<Transaction[]> {
+    return this.ensureStorage(async storage => {
+      if ('getInvestorTransactions' in storage) {
+        return (storage as any).getInvestorTransactions(investorId, transactionType);
+      }
+      // Fallback implementation
+      const investments = await storage.getInvestmentsByInvestor(investorId);
+      const allTransactions = await this.getAllTransactions();
+      let transactions = allTransactions.filter(tx => 
+        investments.some(inv => inv.id === tx.investmentId)
+      );
+      
+      if (transactionType) {
+        transactions = transactions.filter(tx => tx.type === transactionType);
+      }
+      
+      return transactions.sort((a, b) => 
+        new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime()
+      );
+    });
+  }
+}
+
+export const storage = new StorageWrapper();
