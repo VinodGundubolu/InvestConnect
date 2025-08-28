@@ -126,6 +126,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Download specific backup file
+  app.get('/api/admin/backup/download/:filename', async (req, res) => {
+    try {
+      const { filename } = req.params;
+      const path = require('path');
+      const fs = require('fs');
+      const backupPath = path.join(process.cwd(), 'data-backups', filename);
+      
+      // Security check - ensure filename is safe
+      if (!filename.startsWith('backup-') || !filename.endsWith('.json')) {
+        return res.status(400).json({ message: 'Invalid backup filename' });
+      }
+      
+      // Check if file exists
+      if (!fs.existsSync(backupPath)) {
+        return res.status(404).json({ message: 'Backup file not found' });
+      }
+      
+      // Set headers for download
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', 'application/json');
+      
+      // Send file
+      const fileData = fs.readFileSync(backupPath);
+      res.send(fileData);
+    } catch (error) {
+      console.error('Download failed:', error);
+      res.status(500).json({ message: 'Download failed' });
+    }
+  });
+
   app.post('/api/admin/restore', async (req, res) => {
     try {
       const { backupFile } = req.body;

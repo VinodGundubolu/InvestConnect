@@ -122,6 +122,34 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
         description: `${credentialsData.firstName} ${credentialsData.lastName} has been added with login credentials.`,
         variant: "default",
       });
+
+      // Auto-download backup after successful creation
+      setTimeout(async () => {
+        try {
+          const backupResponse = await apiRequest("/api/admin/backup", "POST") as any;
+          if (backupResponse.success) {
+            // Extract filename from path
+            const filename = backupResponse.backupPath.split('/').pop();
+            
+            // Trigger download
+            const downloadUrl = `/api/admin/backup/download/${filename}`;
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast({
+              title: "📥 Backup Downloaded",
+              description: "Current investor data has been backed up and downloaded for safety.",
+              variant: "default",
+            });
+          }
+        } catch (error) {
+          console.error("Auto-backup download failed:", error);
+        }
+      }, 1000);
       
       // Set credentials and show modal
       setCredentialsData(credentialsData);

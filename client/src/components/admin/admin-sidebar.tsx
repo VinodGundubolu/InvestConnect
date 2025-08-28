@@ -7,6 +7,7 @@ import {
   Calculator,
   FileText,
   Mail,
+  Database,
   User,
   LogOut
 } from "lucide-react";
@@ -47,6 +48,11 @@ const navigationItems = [
     name: "Email Management",
     href: "/admin/email-management",
     icon: Mail,
+  },
+  {
+    name: "Backup Management",
+    href: "/admin/backup",
+    icon: Database,
   },
 ];
 
