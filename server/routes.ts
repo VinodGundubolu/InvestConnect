@@ -90,6 +90,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Data backup and restore routes
+  app.post('/api/admin/backup', async (req, res) => {
+    try {
+      const { dataBackupManager } = await import('./data-backup');
+      const backupPath = await dataBackupManager.createBackup();
+      res.json({ 
+        success: true, 
+        message: 'Backup created successfully',
+        backupPath,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Backup creation failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Backup creation failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/admin/backups', async (req, res) => {
+    try {
+      const { dataBackupManager } = await import('./data-backup');
+      const backups = dataBackupManager.getAvailableBackups();
+      res.json({ success: true, backups });
+    } catch (error) {
+      console.error('Failed to get backup list:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to get backup list',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post('/api/admin/restore', async (req, res) => {
+    try {
+      const { backupFile } = req.body;
+      const { dataBackupManager } = await import('./data-backup');
+      const success = await dataBackupManager.restoreFromBackup(backupFile);
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: 'Data restored successfully from backup'
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Data restoration failed - backup file not found or corrupted'
+        });
+      }
+    } catch (error) {
+      console.error('Data restoration failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Data restoration failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {

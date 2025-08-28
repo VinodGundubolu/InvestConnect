@@ -602,6 +602,36 @@ export class MemoryStorage implements IStorage {
     }
 
     console.log(`✅ Loaded ${sampleInvestors.length} sample investors to demonstrate your data`);
+    
+    // Auto-backup system data every hour
+    this.scheduleDataBackups();
+  }
+
+  // Schedule automatic data backups
+  private async scheduleDataBackups() {
+    const { dataBackupManager } = await import('./data-backup');
+    
+    // Create initial backup after data is loaded
+    setTimeout(async () => {
+      try {
+        await dataBackupManager.createBackup();
+        console.log("🔒 Initial data backup created successfully");
+      } catch (error) {
+        console.error("Initial backup failed:", error);
+      }
+    }, 5000); // Wait 5 seconds after data loading
+
+    // Schedule backups every hour
+    setInterval(async () => {
+      try {
+        await dataBackupManager.createBackup();
+        console.log("🔒 Scheduled backup completed");
+      } catch (error) {
+        console.error("Scheduled backup failed:", error);
+      }
+    }, 60 * 60 * 1000); // Every hour
+
+    console.log("📋 Data backup system initialized - backups every hour");
   }
 
   // User operations
