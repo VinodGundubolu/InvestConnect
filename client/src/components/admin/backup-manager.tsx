@@ -26,7 +26,7 @@ export default function BackupManager() {
         const filename = backupResponse.backupPath.split('/').pop();
         
         // Trigger download
-        const downloadUrl = `/api/admin/backup/download/${filename}`;
+        const downloadUrl = `/api/backup/download/${filename}`;
         const link = document.createElement('a');
         link.href = downloadUrl;
         link.download = filename;
@@ -78,6 +78,13 @@ export default function BackupManager() {
   };
 
   const backups = backupsData?.backups || [];
+  
+  // Debug logging to see what's happening
+  if (backupsData) {
+    console.log("Backups received:", backupsData);
+    console.log("Backups array:", backups);
+    console.log("Backups length:", backups.length);
+  }
 
   return (
     <div className="space-y-6">
