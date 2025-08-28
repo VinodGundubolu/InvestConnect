@@ -77,6 +77,16 @@ export class DataBackupManager {
     }
   }
 
+  // Auto-backup whenever data changes (real-time)
+  async autoBackupOnChange(): Promise<void> {
+    try {
+      await this.createBackup();
+      console.log("📋 Auto-backup completed after data change");
+    } catch (error) {
+      console.error("❌ Auto-backup failed:", error);
+    }
+  }
+
   // Restore data from backup file
   async restoreFromBackup(backupFilePath?: string): Promise<boolean> {
     try {

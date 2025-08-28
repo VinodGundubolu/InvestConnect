@@ -492,14 +492,39 @@ export class MemoryStorage implements IStorage {
   private dividendRates = new Map<number, { year: number; rate: string }>();
 
   constructor() {
-    // Initialize with default dividend rates and sample data
+    // Initialize with default dividend rates and dynamic data recovery
     this.initializeDividendRates();
-    this.loadOriginalInvestors();
+    this.loadFromLatestBackup();
   }
 
-  // Load your original 41 verified investors
-  private async loadOriginalInvestors() {
-    // Create sample investment plans first
+  // Load data from the latest available backup (dynamic recovery)
+  private async loadFromLatestBackup() {
+    try {
+      const { dataBackupManager } = await import('./data-backup');
+      
+      // Try to restore from the most recent backup
+      const success = await dataBackupManager.restoreFromBackup();
+      
+      if (success) {
+        console.log("✅ Successfully restored data from latest backup");
+      } else {
+        // If no backup exists, create initial setup
+        console.log("📋 No backup found - initializing fresh system");
+        await this.initializeDefaultData();
+      }
+      
+      // Auto-backup system data every hour
+      this.scheduleDataBackups();
+    } catch (error) {
+      console.error("❌ Backup restoration failed:", error);
+      // Fallback to initialize default data
+      await this.initializeDefaultData();
+    }
+  }
+
+  // Initialize default data if no backups exist
+  private async initializeDefaultData() {
+    // Create default investment plan
     const plan1 = await this.createInvestmentPlan({
       name: "Fixed Income Bond Plan V1",
       version: 1,
@@ -511,77 +536,8 @@ export class MemoryStorage implements IStorage {
       bonusEligibilityYears: 5,
       maturityEligibilityYears: 10,
     });
-
-    // Import disaster recovery system for original investor data
-    const { disasterRecoveryManager } = await import('./disaster-recovery');
     
-    // Validate data integrity first
-    if (!disasterRecoveryManager.validateOriginalData()) {
-      console.error("❌ Data integrity check failed!");
-      return;
-    }
-
-    // Restore original investors from verified backup
-    const recoveryResult = await disasterRecoveryManager.restoreOriginalInvestors();
-    
-    if (!recoveryResult.success) {
-      console.error("❌ Failed to restore original investors");
-      return;
-    }
-
-    const originalInvestors = recoveryResult.investors;
-    console.log(`🔄 Loading ${originalInvestors.length} verified original investors...`);
-
-    // Create investors and their investments - exactly 41 original investors
-    for (const investorData of originalInvestors) {
-      const investor = await this.createInvestor({
-        firstName: investorData.firstName,
-        lastName: investorData.lastName,
-        email: investorData.email,
-        primaryMobile: investorData.mobile,
-        primaryAddress: `Address for ${investorData.firstName} ${investorData.lastName}`,
-        primaryAddressPin: "110001",
-        identityProofType: "Aadhar Card",
-        identityProofNumber: `${Math.floor(100000000000 + Math.random() * 900000000000)}`,
-      });
-
-      // Create investment for each investor
-      const investmentAmount = parseInt(investorData.investment);
-      const bondsPurchased = investmentAmount / 2000000;
-      const startDate = new Date();
-      startDate.setFullYear(startDate.getFullYear() - Math.floor(Math.random() * 3)); // Random start date 0-3 years ago
-      
-      const investment = await this.createInvestment({
-        investorId: investor.id,
-        planId: plan1.id,
-        investmentDate: startDate.toISOString().split('T')[0],
-        investedAmount: investorData.investment,
-        bondsPurchased,
-        lockInExpiry: new Date(startDate.getFullYear() + 3, startDate.getMonth(), startDate.getDate()).toISOString().split('T')[0],
-        maturityDate: new Date(startDate.getFullYear() + 10, startDate.getMonth(), startDate.getDate()).toISOString().split('T')[0],
-      });
-
-      // Create initial investment transaction
-      await this.createTransaction({
-        investmentId: investment.id,
-        type: "investment",
-        amount: investorData.investment,
-        transactionDate: startDate.toISOString().split('T')[0],
-        mode: "bank_transfer",
-        transactionId: `INV-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-        status: "completed",
-        notes: `Initial investment of ₹${(investmentAmount / 100000).toFixed(2)} Lakhs`,
-      });
-    }
-
-    // Display recovery statistics
-    const stats = disasterRecoveryManager.getRecoveryStats();
-    console.log(`✅ Successfully restored ${stats.totalOriginalInvestors} original investors`);
-    console.log(`💰 Total portfolio value: ₹${(stats.totalInvestment / 100000).toFixed(2)} Lakhs`);
-    console.log(`🔒 Emergency backup available: ${stats.emergencyBackupExists ? 'YES' : 'NO'}`);
-    
-    // Auto-backup system data every hour
-    this.scheduleDataBackups();
+    console.log("🏗️ Default investment plan created - system ready for new investors");
   }
 
   // Schedule automatic data backups
@@ -682,6 +638,16 @@ export class MemoryStorage implements IStorage {
     };
   }
 
+  // Auto-backup after every data change
+  private async triggerAutoBackup() {
+    try {
+      const { dataBackupManager } = await import('./data-backup');
+      setTimeout(() => dataBackupManager.autoBackupOnChange(), 2000); // Delayed backup
+    } catch (error) {
+      console.error("Auto-backup trigger failed:", error);
+    }
+  }
+
   async createInvestor(investorData: InsertInvestor): Promise<Investor> {
     const id = await this.generateInvestorId(investorData);
     const investor: Investor = {
@@ -698,6 +664,10 @@ export class MemoryStorage implements IStorage {
       updatedAt: new Date(),
     };
     this.investors.set(id, investor);
+    
+    // Trigger auto-backup after creating investor
+    this.triggerAutoBackup();
+    
     return investor;
   }
 
@@ -711,23 +681,69 @@ export class MemoryStorage implements IStorage {
       updatedAt: new Date(),
     };
     this.investors.set(id, updated);
+    
+    // Trigger auto-backup after update
+    this.triggerAutoBackup();
+    
     return updated;
   }
 
   async deleteInvestor(id: string): Promise<boolean> {
-    // Delete related investments and transactions
-    const investorInvestments = Array.from(this.investments.values())
-      .filter(inv => inv.investorId === id);
-    
-    investorInvestments.forEach(inv => {
-      this.investments.delete(inv.id);
-      // Delete related transactions
-      Array.from(this.transactions.entries())
-        .filter(([_, tx]) => tx.investmentId === inv.id)
-        .forEach(([txId, _]) => this.transactions.delete(txId));
-    });
-    
-    return this.investors.delete(id);
+    try {
+      console.log(`🗑️ Starting complete deletion of investor ${id}...`);
+
+      // Step 1: Delete all related agreements
+      Array.from(this.agreements.values())
+        .filter(agreement => agreement.investorId === id)
+        .forEach(agreement => {
+          this.agreements.delete(agreement.id);
+          console.log(`🗑️ Deleted agreement ${agreement.id}`);
+        });
+
+      // Step 2: Get and delete all related investments and their transactions
+      const investorInvestments = Array.from(this.investments.values())
+        .filter(inv => inv.investorId === id);
+      
+      investorInvestments.forEach(inv => {
+        // Delete all transactions for this investment
+        Array.from(this.transactions.entries())
+          .filter(([_, tx]) => tx.investmentId === inv.id)
+          .forEach(([txId, _]) => {
+            this.transactions.delete(txId);
+            console.log(`🗑️ Deleted transaction ${txId}`);
+          });
+        
+        // Delete the investment
+        this.investments.delete(inv.id);
+        console.log(`🗑️ Deleted investment ${inv.id}`);
+      });
+      
+      // Step 3: Delete from users/credentials (if exists)
+      this.users.forEach((user, userId) => {
+        if (user.investorId === id) {
+          this.users.delete(userId);
+          console.log(`🗑️ Deleted user credentials for investor ${id}`);
+        }
+      });
+      
+      // Step 4: Delete the investor completely
+      const deleted = this.investors.delete(id);
+      
+      if (deleted) {
+        console.log(`✅ Investor ${id} and ALL related data completely deleted from system`);
+        
+        // Trigger auto-backup after deletion to persist the change
+        this.triggerAutoBackup();
+        
+        return true;
+      } else {
+        console.log(`❌ Investor ${id} not found`);
+        return false;
+      }
+    } catch (error) {
+      console.error(`❌ Error deleting investor ${id}:`, error);
+      return false;
+    }
   }
 
   async getAllInvestors(): Promise<Investor[]> {
@@ -798,6 +814,10 @@ export class MemoryStorage implements IStorage {
       updatedAt: new Date(),
     };
     this.investments.set(id, investment);
+    
+    // Trigger auto-backup after creating investment
+    this.triggerAutoBackup();
+    
     return investment;
   }
 
@@ -828,6 +848,10 @@ export class MemoryStorage implements IStorage {
       updatedAt: new Date(),
     };
     this.investments.set(id, updated);
+    
+    // Trigger auto-backup after updating investment
+    this.triggerAutoBackup();
+    
     return updated;
   }
 
@@ -899,6 +923,10 @@ export class MemoryStorage implements IStorage {
       updatedAt: new Date(),
     };
     this.transactions.set(id, transaction);
+    
+    // Trigger auto-backup after creating transaction
+    this.triggerAutoBackup();
+    
     return transaction;
   }
 
@@ -923,6 +951,10 @@ export class MemoryStorage implements IStorage {
       updatedAt: new Date(),
     };
     this.transactions.set(id, updated);
+    
+    // Trigger auto-backup after updating transaction
+    this.triggerAutoBackup();
+    
     return updated;
   }
 
