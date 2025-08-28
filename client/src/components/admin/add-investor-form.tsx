@@ -103,22 +103,34 @@ export default function AddInvestorForm({ trigger }: AddInvestorFormProps) {
     onSuccess: (response: any) => {
       console.log("Full API Response:", response);
       
-      // Transform the response to match the expected format
-      const transformedData = {
-        firstName: response.investor?.firstName || form.getValues('firstName'),
-        lastName: response.investor?.lastName || form.getValues('lastName'),
-        email: response.investor?.email || form.getValues('email'),
+      // Backend returns exactly what we need, just extract it properly
+      const credentialsData = {
+        firstName: response.investor?.firstName,
+        lastName: response.investor?.lastName,
+        email: response.investor?.email,
         investmentAmount: response.investmentAmount,
         bondsCount: response.bondsCount,
         username: response.username,
         password: response.password
       };
       
-      console.log("Transformed Credentials Data:", transformedData);
+      console.log("Setting Credentials Data:", credentialsData);
       
-      setCredentialsData(transformedData);
+      // Show success toast first
+      toast({
+        title: "✅ Investor Created Successfully!",
+        description: `${credentialsData.firstName} ${credentialsData.lastName} has been added with login credentials.`,
+        variant: "default",
+      });
+      
+      // Set credentials and show modal
+      setCredentialsData(credentialsData);
       setShowCredentials(true);
+      
+      // Refresh the investor list
       queryClient.invalidateQueries({ queryKey: ["/api/admin/investors"] });
+      
+      // Reset form and close creation dialog
       form.reset();
       setOpen(false);
     },
