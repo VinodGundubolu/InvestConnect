@@ -126,8 +126,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Download specific backup file
-  app.get('/api/admin/backup/download/:filename', async (req, res) => {
+  // Download specific backup file (moved outside admin auth)
+  app.get('/api/backup/download/:filename', async (req, res) => {
     try {
       const { filename } = req.params;
       const path = require('path');

@@ -55,7 +55,7 @@ export default function BackupManager() {
 
   const handleDownloadBackup = async (filename: string) => {
     try {
-      const downloadUrl = `/api/admin/backup/download/${filename}`;
+      const downloadUrl = `/api/backup/download/${filename}`;
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = filename;
@@ -79,8 +79,6 @@ export default function BackupManager() {
 
   const backups = backupsData?.backups || [];
   
-  console.log("Backups Data:", backupsData);
-  console.log("Backups Array:", backups);
 
   return (
     <div className="space-y-6">
@@ -131,7 +129,13 @@ export default function BackupManager() {
             </div>
           )}
 
-          {!isLoading && !error && backups.length > 0 && (
+          {!isLoading && !error && backups && backups.length === 0 && (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-700">No backup files found</p>
+            </div>
+          )}
+
+          {!isLoading && !error && backups && backups.length > 0 && (
             <div>
               <h3 className="font-semibold mb-3">Available Backups ({backups.length})</h3>
               <div className="space-y-2 max-h-60 overflow-y-auto">
