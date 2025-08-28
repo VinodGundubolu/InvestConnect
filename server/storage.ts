@@ -638,13 +638,27 @@ export class MemoryStorage implements IStorage {
     };
   }
 
-  // Auto-backup after every data change
+  // Auto-backup after every data change (optimized to prevent spam)
+  private backupPending = false;
+  private isRestoring = false; // Flag to prevent backup during restoration
+  
+  setRestoringMode(restoring: boolean) {
+    this.isRestoring = restoring;
+  }
+  
   private async triggerAutoBackup() {
+    if (this.backupPending || this.isRestoring) return; // Prevent backup during restoration
+    
+    this.backupPending = true;
     try {
       const { dataBackupManager } = await import('./data-backup');
-      setTimeout(() => dataBackupManager.autoBackupOnChange(), 2000); // Delayed backup
+      setTimeout(async () => {
+        await dataBackupManager.autoBackupOnChange();
+        this.backupPending = false;
+      }, 3000); // 3 second delay to batch changes
     } catch (error) {
       console.error("Auto-backup trigger failed:", error);
+      this.backupPending = false;
     }
   }
 
