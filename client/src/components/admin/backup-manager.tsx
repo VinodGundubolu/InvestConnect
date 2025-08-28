@@ -10,7 +10,7 @@ export default function BackupManager() {
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const { toast } = useToast();
 
-  const { data: backupsData, refetch: refetchBackups } = useQuery({
+  const { data: backupsData, refetch: refetchBackups, isLoading, error } = useQuery({
     queryKey: ["/api/admin/backups"],
     queryFn: () => apiRequest("/api/admin/backups", "GET") as Promise<any>,
   });
@@ -78,6 +78,9 @@ export default function BackupManager() {
   };
 
   const backups = backupsData?.backups || [];
+  
+  console.log("Backups Data:", backupsData);
+  console.log("Backups Array:", backups);
 
   return (
     <div className="space-y-6">
@@ -115,9 +118,22 @@ export default function BackupManager() {
             </Button>
           </div>
 
-          {backups.length > 0 && (
+          {isLoading && (
+            <div className="p-4 text-center">
+              <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
+              <p className="text-gray-500">Loading backups...</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700">Failed to load backups</p>
+            </div>
+          )}
+
+          {!isLoading && !error && backups.length > 0 && (
             <div>
-              <h3 className="font-semibold mb-3">Available Backups</h3>
+              <h3 className="font-semibold mb-3">Available Backups ({backups.length})</h3>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {backups.slice(0, 10).map((backup: any, index: number) => (
                   <div
@@ -127,7 +143,7 @@ export default function BackupManager() {
                     <div>
                       <p className="font-mono text-sm">{backup.filename}</p>
                       <p className="text-xs text-gray-500">
-                        {new Date(backup.timestamp).toLocaleString()}
+                        {backup.timestamp} • {backup.size}
                       </p>
                     </div>
                     <Button
