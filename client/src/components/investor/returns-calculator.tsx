@@ -270,8 +270,8 @@ export default function ReturnsCalculator() {
                       <div className="text-xs text-gray-500">Over 10 years</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-medium text-green-600 text-lg">11.6%</div>
-                      <div className="text-gray-600">Annual Average Return</div>
+                      <div className="font-medium text-green-600 text-lg">22.4%</div>
+                      <div className="text-gray-600">XIRR (Annual Return)</div>
                       <div className="text-xs text-gray-500">Compounded</div>
                     </div>
                     <div className="text-center">
