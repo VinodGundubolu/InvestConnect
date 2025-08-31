@@ -265,7 +265,7 @@ export default function ReturnsCalculator() {
                 <div className="bg-gray-50 border-t border-gray-200 p-4">
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div className="text-center">
-                      <div className="font-medium text-blue-600 text-lg">316%</div>
+                      <div className="font-medium text-blue-600 text-lg">417%</div>
                       <div className="text-gray-600">Total Investment Recovery</div>
                       <div className="text-xs text-gray-500">Over 10 years</div>
                     </div>
