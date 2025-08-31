@@ -265,12 +265,16 @@ export default function ReturnsCalculator() {
                 <div className="bg-gray-50 border-t border-gray-200 p-4">
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div className="text-center">
-                      <div className="font-medium text-blue-600 text-lg">417%</div>
+                      <div className="font-medium text-blue-600 text-lg">
+                        {maturityPeriod === 5 ? "227%" : "417%"}
+                      </div>
                       <div className="text-gray-600">Total Investment Recovery</div>
-                      <div className="text-xs text-gray-500">Over 10 years</div>
+                      <div className="text-xs text-gray-500">Over {maturityPeriod} years</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-medium text-green-600 text-lg">22.4%</div>
+                      <div className="font-medium text-green-600 text-lg">
+                        {maturityPeriod === 5 ? "17.8%" : "22.4%"}
+                      </div>
                       <div className="text-gray-600">XIRR (Annual Return)</div>
                       <div className="text-xs text-gray-500">Compounded</div>
                     </div>
@@ -278,7 +282,7 @@ export default function ReturnsCalculator() {
                       <div className="font-medium text-orange-600 text-lg">
                         {formatCurrency(calculation.summary.maturityValue)}
                       </div>
-                      <div className="text-gray-600">Final Value (10Y)</div>
+                      <div className="text-gray-600">Final Value ({maturityPeriod}Y)</div>
                       <div className="text-xs text-gray-500">Total amount</div>
                     </div>
                   </div>
