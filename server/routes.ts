@@ -411,6 +411,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     email: "sid.vid@example.com",
     phone: "+91 98765 43212"
   });
+
+  // Add credentials for Kiran Kaluva (investor ID 43)
+  addInvestorCredentials({
+    username: "kiran_kaluva",
+    password: "KK2025",
+    investorId: "43",
+    email: "test1234@gmail.com",
+    phone: "9876543210"
+  });
   
   addInvestorCredentials({
     username: "vinod_kumar",
