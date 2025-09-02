@@ -64,10 +64,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (username === staticCreds.username && password === staticCreds.password) {
         validCreds = { ...staticCreds, investorId: "2024-V1-B5-1234-001" };
       } else {
-        // Check dynamic credentials
-        const dynamicCred = credentialsMap.get(username);
-        if (dynamicCred && password === dynamicCred.password) {
-          validCreds = { ...dynamicCred, userId: `user-${dynamicCred.investorId}` };
+        // Check dynamic credentials from storage (backed up data)
+        const allInvestors = await storage.getAllInvestors();
+        for (const investor of allInvestors) {
+          const investorUsername = `${investor.firstName.toLowerCase().trim()}_${investor.lastName.toLowerCase().trim()}`;
+          const investorPassword = `${investor.firstName.toUpperCase().substring(0, 2)}${new Date().getFullYear()}`;
+          
+          if (username === investorUsername && password === investorPassword) {
+            validCreds = { 
+              username: investorUsername, 
+              password: investorPassword, 
+              investorId: investor.id, 
+              userId: `user-${investor.id}` 
+            };
+            break;
+          }
         }
       }
       
@@ -766,25 +777,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Identifier and password are required" });
       }
 
-      // Check enhanced credentials map for any identifier type
-      const credentials = enhancedCredentialsMap.get(identifier);
+      // Check credentials from storage system (backed up data)
+      const allInvestors = await storage.getAllInvestors();
+      let matchedInvestor = null;
+      let expectedPassword = null;
       
-      if (!credentials || credentials.password !== password) {
+      // Find investor by any identifier
+      for (const investor of allInvestors) {
+        const username = `${investor.firstName.toLowerCase().trim()}_${investor.lastName.toLowerCase().trim()}`;
+        const password = `${investor.firstName.toUpperCase().substring(0, 2)}${new Date().getFullYear()}`;
+        
+        if (identifier === username || 
+            identifier === investor.id || 
+            identifier === investor.email || 
+            identifier === investor.primaryMobile) {
+          matchedInvestor = investor;
+          expectedPassword = password;
+          break;
+        }
+      }
+      
+      if (!matchedInvestor || password !== expectedPassword) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      // Get investor from database
-      const investor = await storage.getInvestor(credentials.investorId);
-      
-      if (!investor) {
-        return res.status(404).json({ message: "Investor not found" });
-      }
-
-      // Store session
+      // Store session - use the matched investor data
       (req.session as any).investorAuth = {
         isAuthenticated: true,
-        investorId: credentials.investorId,
-        username: credentials.username,
+        investorId: matchedInvestor.id,
+        username: `${matchedInvestor.firstName.toLowerCase().trim()}_${matchedInvestor.lastName.toLowerCase().trim()}`,
         loginTime: new Date().toISOString()
       };
 
@@ -795,14 +816,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ message: "Session error" });
         }
         
-        console.log("Session saved successfully for investor:", credentials.username);
+        console.log("Session saved successfully for investor:", `${matchedInvestor.firstName.toLowerCase().trim()}_${matchedInvestor.lastName.toLowerCase().trim()}`);
         res.json({
           success: true,
           investor: {
-            id: investor.id,
-            firstName: investor.firstName,
-            lastName: investor.lastName,
-            email: investor.email
+            id: matchedInvestor.id,
+            firstName: matchedInvestor.firstName,
+            lastName: matchedInvestor.lastName,
+            email: matchedInvestor.email
           }
         });
       });
