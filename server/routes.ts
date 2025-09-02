@@ -239,8 +239,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Calculate today's interest
           const todayInterest = Math.round(totalInvestment * (rate / 100) / 365);
           
-          // Calculate total returns (rough estimate)
-          const totalReturns = Math.round(totalInvestment * (rate / 100) * (currentYear - 1));
+          // Calculate total returns correctly for all completed years
+          let totalReturns = 0;
+          const rates = [0, 6, 9, 12, 18, 18, 18, 18, 18, 0];
+          for (let year = 1; year <= Math.min(currentYear - 1, 9); year++) {
+            totalReturns += totalInvestment * (rates[year] / 100);
+          }
+          totalReturns = Math.round(totalReturns);
           
           // Calculate bond maturity progress (percentage through the 10-year term)
           const maturityProgress = investorInvestments.length > 0 ? 
