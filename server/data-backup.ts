@@ -9,6 +9,7 @@ export interface DataBackup {
   transactions: any[];
   investmentPlans: any[];
   agreements: any[];
+  credentials: any[]; // Add credentials to backup schema
   metadata: {
     totalInvestors: number;
     totalInvestments: string;
@@ -48,6 +49,20 @@ export class DataBackupManager {
 
       const totalInvestment = investments.reduce((sum, inv) => sum + parseFloat(inv.investedAmount), 0);
 
+      // Generate credentials for all investors
+      const credentials = [];
+      for (const investor of investors) {
+        const username = `${investor.firstName.toLowerCase().trim()}_${investor.lastName.toLowerCase().trim()}`;
+        const password = `${investor.firstName.toUpperCase().substring(0, 2)}${new Date().getFullYear()}`;
+        credentials.push({
+          username,
+          password,
+          investorId: investor.id,
+          email: investor.email,
+          phone: investor.primaryMobile
+        });
+      }
+
       const backup: DataBackup = {
         timestamp,
         investors,
@@ -55,6 +70,7 @@ export class DataBackupManager {
         transactions,
         investmentPlans,
         agreements,
+        credentials,
         metadata: {
           totalInvestors: investors.length,
           totalInvestments: totalInvestment.toString(),
@@ -140,6 +156,23 @@ export class DataBackupManager {
       // Restore agreements
       for (const agreement of backupData.agreements) {
         await storage.createInvestmentAgreement(agreement);
+      }
+
+      // Restore or regenerate credentials
+      if (backupData.credentials && backupData.credentials.length > 0) {
+        // Restore existing credentials from backup
+        for (const cred of backupData.credentials) {
+          await storage.storeCredentials(cred.username, cred.password, cred.investorId, cred.email, cred.phone);
+        }
+        console.log(`🔐 Restored ${backupData.credentials.length} investor credentials`);
+      } else {
+        // Generate credentials for all investors (fallback for old backups)
+        for (const investor of backupData.investors) {
+          const username = `${investor.firstName.toLowerCase().trim()}_${investor.lastName.toLowerCase().trim()}`;
+          const password = `${investor.firstName.toUpperCase().substring(0, 2)}${new Date().getFullYear()}`;
+          await storage.storeCredentials(username, password, investor.id, investor.email, investor.primaryMobile);
+        }
+        console.log(`🔐 Generated credentials for ${backupData.investors.length} investors`);
       }
 
       console.log(`✅ Data restoration completed successfully`);

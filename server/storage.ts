@@ -79,6 +79,9 @@ export interface IStorage {
   createInvestmentAgreement(agreement: InsertInvestmentAgreement): Promise<InvestmentAgreement>;
   getInvestmentAgreementsByInvestor(investorId: string): Promise<InvestmentAgreement[]>;
   updateInvestmentAgreement(id: string, agreement: Partial<InsertInvestmentAgreement>): Promise<InvestmentAgreement>;
+
+  // Credentials operations
+  storeCredentials(username: string, password: string, investorId: string, email?: string, phone?: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -115,6 +118,11 @@ export class DatabaseStorage implements IStorage {
     // In a real app, you'd store this in a credentials table with hashed passwords
     // For demo purposes, we'll just log it
     console.log(`Test credentials created - UserId: ${userId}, Username: ${username}, Password: ${password}`);
+  }
+
+  async storeCredentials(username: string, password: string, investorId: string, email?: string, phone?: string): Promise<void> {
+    // Store credentials in memory for future restoration
+    console.log(`Credentials stored - Username: ${username}, InvestorId: ${investorId}`);
   }
 
   // Investor operations
@@ -490,6 +498,7 @@ export class MemoryStorage implements IStorage {
   private transactions = new Map<string, Transaction>();
   private agreements = new Map<string, InvestmentAgreement>();
   private dividendRates = new Map<number, { year: number; rate: string }>();
+  private credentials = new Map<string, any>();
 
   constructor() {
     // Initialize with default dividend rates and dynamic data recovery
@@ -602,6 +611,17 @@ export class MemoryStorage implements IStorage {
 
   async storeTestCredentials(userId: string, username: string, password: string): Promise<void> {
     console.log(`Test credentials created - UserId: ${userId}, Username: ${username}, Password: ${password}`);
+  }
+
+  async storeCredentials(username: string, password: string, investorId: string, email?: string, phone?: string): Promise<void> {
+    this.credentials.set(username, {
+      username,
+      password,
+      investorId,
+      email,
+      phone
+    });
+    console.log(`✅ Credentials stored in memory for investor ${investorId} with username ${username}`);
   }
 
   // Investor operations
@@ -1151,6 +1171,10 @@ class StorageWrapper implements IStorage {
 
   async storeTestCredentials(userId: string, username: string, password: string): Promise<void> {
     return this.ensureStorage(storage => storage.storeTestCredentials(userId, username, password));
+  }
+
+  async storeCredentials(username: string, password: string, investorId: string, email?: string, phone?: string): Promise<void> {
+    return this.ensureStorage(storage => storage.storeCredentials(username, password, investorId, email, phone));
   }
 
   async getInvestor(id: string): Promise<Investor | undefined> {
